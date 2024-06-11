@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	botToken := "7484235929:AAHiFUWLo2nmqXyMe9gby7yc0SBUb8ZysE4"
+	botToken := "6898558980:AAFIMHCvgfDugzk8NSxVPoZ-TKMNyahVPOI"
 	err := controller.StartBot(botToken)
 	if err != nil {
 		log.Panic("error strting bot: ", err)
