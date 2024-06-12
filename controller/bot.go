@@ -3,6 +3,7 @@ package controller
 import (
 	"fmt"
 	"log"
+	"net/http"
 	"sync"
 
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/model"
@@ -27,6 +28,7 @@ var (
 
 // StartBot initializes and starts the bot
 func StartBot(token string) error {
+	go startHTTPServer() //start http server with go routine
 	// Create a new instance of the bot using the provided token.
 	bot, err := tgbotapi.NewBotAPI(token)
 	if err != nil {
@@ -195,4 +197,12 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery)
 	}
 	// Acknowledge the callback query to remove the "loading" state in the client.
 	bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
+}
+
+// startHTTPServer starts a simple HTTP server for health checks
+func startHTTPServer() {
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "Bot is running!")
+	})
+	log.Fatal(http.ListenAndServe(":8080", nil))
 }
