@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: restapi
+    repo: https://github.com/MUSTAFA-A-KHAN/telegram-bot-anime
+    plan: free
+    branch: main
+    runtime: go
+    startCommand: ./telegram-bot-anime
+    buildCommand: |
+      go mod tidy
+      go build
