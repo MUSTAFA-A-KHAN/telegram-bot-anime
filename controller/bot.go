@@ -91,6 +91,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 		buttons := []tgbotapi.InlineKeyboardButton{
 			tgbotapi.NewInlineKeyboardButtonData("🗣️ Explain", "explain"),
 			tgbotapi.NewInlineKeyboardButtonData("Next", "next"),
+			tgbotapi.NewInlineKeyboardButtonData("Changed my mind", "droplead"),
 		}
 
 		// Update the chat state with the new word and reset the user explaining it.
@@ -167,6 +168,13 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery)
 		chatState.Word, _ = model.GetRandomWord()
 		bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, chatState.Word))
 		view.SendMessage(bot, callback.Message.Chat.ID, fmt.Sprintf("%s is explaining the word:", callback.From.UserName))
+	case "droplead":
+		view.SendMessage(bot, callback.Message.Chat.ID, fmt.Sprintf(" %s refused to lead -> %s \n /word", callback.From.UserName, chatState.Word))
+		// Reset the chat state after a drop lead.
+		chatState.Lock()
+		chatState.Word = ""
+		chatState.User = ""
+		chatState.Unlock()
 	default:
 		// Handle guesses from callback queries (if any).
 		chatState.RLock()
