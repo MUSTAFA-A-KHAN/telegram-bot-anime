@@ -28,7 +28,7 @@ var (
 
 // StartBot initializes and starts the bot
 func StartBot(token string) error {
-	// go startHTTPServer() //start http server with go routine
+	go startHTTPServer() //start http server with go routine
 	// Create a new instance of the bot using the provided token.
 	bot, err := tgbotapi.NewBotAPI(token)
 	if err != nil {
