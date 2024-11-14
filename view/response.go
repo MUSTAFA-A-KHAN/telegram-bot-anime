@@ -12,12 +12,10 @@ func SendMessage(bot *tgbotapi.BotAPI, chatID int64, text string) error {
 }
 
 // SendMessageWithButtons sends a message with inline keyboard buttons to the user
-func SendMessageWithButtons(bot *tgbotapi.BotAPI, chatID int64, text string, buttons []tgbotapi.InlineKeyboardButton) error {
+func SendMessageWithButtons(bot *tgbotapi.BotAPI, chatID int64, text string, buttons tgbotapi.InlineKeyboardMarkup) error {
 	msg := tgbotapi.NewMessage(chatID, text)
-	if len(buttons) > 0 {
-		var keyboard [][]tgbotapi.InlineKeyboardButton
-		keyboard = append(keyboard, buttons)
-		msg.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(keyboard...)
+	if len(buttons.InlineKeyboard) > 0 {
+		msg.ReplyMarkup = buttons
 	}
 	_, err := bot.Send(msg)
 	return err
