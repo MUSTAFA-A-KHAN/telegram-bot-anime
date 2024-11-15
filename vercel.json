@@ -2,7 +2,7 @@
   "version": 2,
   "builds": [
     {
-      "src": "api/*.go",
+      "src": "go.mod",
       "use": "@vercel/go"
     }
   ],
@@ -11,5 +11,8 @@
       "src": "/api/.*",
       "dest": "/api/$1"
     }
-  ]
+  ],
+  "build": {
+    "command": "go run ."
+  }
 }
