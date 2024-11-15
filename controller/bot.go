@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/model"
+	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/repository"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/service"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/view"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
@@ -123,6 +124,8 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 
 		// Check if the guessed word matches the current word.
 		if user != "" && service.NormalizeAndCompare(message.Text, word) {
+
+			repository.DbManager(message.From.ID, message.From.FirstName, message.Chat.ID)
 			view.SendMessage(bot, message.Chat.ID, fmt.Sprintf("Congratulations! %s guessed the word correctly.\n /word", message.From.UserName))
 			// Reset the chat state after a correct guess.
 			chatState.Lock()
@@ -154,6 +157,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery)
 		if chatState.User != callback.From.UserName && chatState.User != "" {
 			// If another user is already explaining the word, alert the current user.
 			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("%s is already explaining the word. %s", chatState.User, callback.From.UserName)))
+
 			chatState.Unlock()
 			return
 		}
@@ -209,7 +213,9 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery)
 		fmt.Printf("%s == %s ", callback.Message.Text, word)
 		// Check if the guessed word matches the current word.
 		if service.NormalizeAndCompare(callback.Message.Text, word) {
+			fmt.Print("calling Sendmessage")
 			view.SendMessage(bot, callback.Message.Chat.ID, fmt.Sprintf("Congratulations! %s guessed the word correctly.", callback.From.UserName))
+			fmt.Println("calling DBManager")
 			// Reset the chat state after a correct guess.
 			chatState.Lock()
 			chatState.Word = ""
