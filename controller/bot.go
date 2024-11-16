@@ -101,14 +101,6 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 			tgbotapi.NewInlineKeyboardRow(
 				tgbotapi.NewInlineKeyboardButtonData("🗣️ Explain", "explain"),
 			),
-			// Second line with a single button
-			tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonData("Next", "next"),
-			),
-			// Third line with a single button
-			tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonData("Changed my mind", "droplead"),
-			),
 		)
 		// Update the chat state with the new word and reset the user explaining it.
 		chatState.Lock()
@@ -143,7 +135,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 			chatState.User = ""
 			chatState.Unlock()
 		} else if user != "" {
-			view.SendMessage(bot, message.Chat.ID, "That's not correct. Try again!")
+			// view.SendMessage(bot, message.Chat.ID, "That's not correct. Try again!")
 		}
 	}
 }
@@ -176,8 +168,23 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery)
 			if err != nil {
 				return
 			}
+			// Create the inline keyboard with each button on a separate line.
+			buttons := tgbotapi.NewInlineKeyboardMarkup(
+				// First line with a single button
+				tgbotapi.NewInlineKeyboardRow(
+					tgbotapi.NewInlineKeyboardButtonData("See word 👀", "explain"),
+				),
+				// Second line with a single button
+				tgbotapi.NewInlineKeyboardRow(
+					tgbotapi.NewInlineKeyboardButtonData("Next ⏭️", "next"),
+				),
+				// Third line with a single button
+				tgbotapi.NewInlineKeyboardRow(
+					tgbotapi.NewInlineKeyboardButtonData("Changed my mind ❌", "droplead"),
+				),
+			)
 			chatState.Word = word
-			view.SendMessage(bot, callback.Message.Chat.ID, fmt.Sprintf("@%s is explaining the word:", callback.From.UserName))
+			view.SendMessageWithButtons(bot, callback.Message.Chat.ID, fmt.Sprintf("@%s is explaining the word:", callback.From.UserName), buttons)
 		}
 		// Set the current user as the one explaining the word.
 		chatState.User = callback.From.UserName
