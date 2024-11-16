@@ -11,7 +11,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func DbManager(ID int, Name string, chatID int64) {
+func DbManager() *mongo.Client {
 	fmt.Print("into DBmanager")
 	passsword := "pass@123"
 	encodedPassword := url.QueryEscape(passsword)
@@ -26,10 +26,12 @@ func DbManager(ID int, Name string, chatID int64) {
 	// Ensure connection is established
 	err = client.Ping(context.TODO(), nil)
 	if err != nil {
-		log.Fatal(err)
+		return nil
 	}
 	fmt.Println("Connected to MongoDB successfully!")
-
+	return client
+}
+func InsertDoc(ID int, Name string, chatID int64, client *mongo.Client) {
 	// Select the database and collections
 	database := client.Database("Telegram")
 	// movieCollection := database.Collection("CrocEn")
@@ -58,14 +60,18 @@ func DbManager(ID int, Name string, chatID int64) {
 		log.Fatal(err)
 	}
 	fmt.Println("Inserted comment with ID:", insertResult.InsertedID)
-
+}
+func ReadAllDoc(client *mongo.Client) []bson.M {
+	database := client.Database("Telegram")
+	// movieCollection := database.Collection("CrocEn")
+	commentCollection := database.Collection("CrocEn")
 	// Optionally, print all comments from the collection
 	cursor, err := commentCollection.Find(context.TODO(), bson.D{})
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer cursor.Close(context.TODO())
-
+	var results []bson.M
 	for cursor.Next(context.TODO()) {
 		var result bson.M
 		if err := cursor.Decode(&result); err != nil {
@@ -79,5 +85,48 @@ func DbManager(ID int, Name string, chatID int64) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	return results
 
+}
+
+// Function to count occurrences of each ID along with the Name
+func CountIDOccurrences(client *mongo.Client) ([]map[string]interface{}, error) {
+	database := client.Database("Telegram")
+	commentCollection := database.Collection("CrocEn")
+
+	// Aggregation pipeline to count occurrences of each ID and include the Name
+	pipeline := mongo.Pipeline{
+		// Group by ID, count occurrences, and include Name
+		{{"$group", bson.D{
+			{Key: "_id", Value: "$ID"},                                    // Group by the "ID" field
+			{Key: "count", Value: bson.D{{Key: "$sum", Value: 1}}},        // Count occurrences
+			{Key: "Name", Value: bson.D{{Key: "$first", Value: "$Name"}}}, // Get the first "Name" encountered for the grouped ID
+		}}},
+
+		// Sort by count (descending)
+		{{"$sort", bson.D{{Key: "count", Value: -1}}}},
+	}
+
+	// Execute the aggregation query
+	cursor, err := commentCollection.Aggregate(context.TODO(), pipeline)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(context.TODO())
+
+	var results []map[string]interface{}
+	for cursor.Next(context.TODO()) {
+		var result map[string]interface{}
+		if err := cursor.Decode(&result); err != nil {
+			return nil, err
+		}
+		results = append(results, result)
+	}
+
+	// Check for any errors that occurred during iteration
+	if err := cursor.Err(); err != nil {
+		return nil, err
+	}
+
+	return results, nil
 }
