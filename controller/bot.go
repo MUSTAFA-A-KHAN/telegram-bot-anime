@@ -99,7 +99,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 		buttons := tgbotapi.NewInlineKeyboardMarkup(
 			// First line with a single button
 			tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonData("🗣️ Explain", "explain"),
+				tgbotapi.NewInlineKeyboardButtonData(" 🗣️ Explain ", "explain"),
 			),
 		)
 		// Update the chat state with the new word and reset the user explaining it.
