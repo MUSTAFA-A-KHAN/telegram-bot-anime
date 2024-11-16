@@ -82,6 +82,10 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 	case "start":
 		// Send a welcome message with instructions to start the game.
 		view.SendMessage(bot, message.Chat.ID, "Welcome! Use /word to start a game.")
+	case "stats":
+		// Send the user stats of game.
+		result := service.LeaderBoardList()
+		view.SendMessage(bot, message.Chat.ID, result)
 	case "word":
 		// Fetch a random word from the model.
 		word, err := model.GetRandomWord()
@@ -124,9 +128,15 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 
 		// Check if the guessed word matches the current word.
 		if user != "" && service.NormalizeAndCompare(message.Text, word) {
-
-			repository.DbManager(message.From.ID, message.From.FirstName, message.Chat.ID)
-			view.SendMessage(bot, message.Chat.ID, fmt.Sprintf("Congratulations! %s guessed the word correctly.\n /word", message.From.UserName))
+			client := repository.DbManager()
+			repository.InsertDoc(message.From.ID, message.From.FirstName, message.Chat.ID, client)
+			buttons := tgbotapi.NewInlineKeyboardMarkup(
+				// First line with a single button
+				tgbotapi.NewInlineKeyboardRow(
+					tgbotapi.NewInlineKeyboardButtonData("🌟 Claim Leadership 🙋", "explain"),
+				),
+			)
+			view.SendMessageWithButtons(bot, message.Chat.ID, fmt.Sprintf("Congratulations! %s guessed the word correctly.\n /word", message.From.FirstName), buttons)
 			// Reset the chat state after a correct guess.
 			chatState.Lock()
 			chatState.Word = ""
