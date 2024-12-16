@@ -189,7 +189,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery)
 			chatState.Word = word
 			// leader := fmt.Sprintf("[%s](tg://user?id=%d)", callback.From.UserName, callback.From.ID)
 			// leader=tgbotapi.Inline
-			view.SendMessageWithButtons(bot, callback.Message.Chat.ID, fmt.Sprintf("We just updated our [Docs %s Guide](tg://user?id=%d)!", callback.From.FirstName, chatID), buttons)
+			view.SendMessageWithButtons(bot, callback.Message.Chat.ID, fmt.Sprintf(" [ %s](@%s)is explaining the word!", callback.From.FirstName, callback.From.UserName), buttons)
 		}
 		// Set the current user as the one explaining the word.
 		chatState.User = callback.From.UserName
@@ -223,8 +223,14 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery)
 			chatState.Unlock()
 			return
 		}
+		buttons := tgbotapi.NewInlineKeyboardMarkup(
+			// First line with a single button
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("🌟 Claim Leadership 🙋", "explain"),
+			),
+		)
 		// Reset the chat state after dropping the lead.
-		view.SendMessage(bot, callback.Message.Chat.ID, fmt.Sprintf("%s refused to lead -> %s \n /word", callback.From.UserName, chatState.Word))
+		view.SendMessageWithButtons(bot, callback.Message.Chat.ID, fmt.Sprintf("%s refused to lead -> %s \n", callback.From.FirstName, chatState.Word), buttons)
 		chatState.Word = ""
 		chatState.User = ""
 		chatState.LeadTimestamp = time.Time{}
@@ -238,7 +244,13 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery)
 		// Check if the guessed word matches the current word.
 		if service.NormalizeAndCompare(callback.Message.Text, word) {
 			fmt.Print("calling Sendmessage")
-			view.SendMessage(bot, callback.Message.Chat.ID, fmt.Sprintf("Congratulations! %s guessed the word correctly.", callback.From.UserName))
+			buttons := tgbotapi.NewInlineKeyboardMarkup(
+				// First line with a single button
+				tgbotapi.NewInlineKeyboardRow(
+					tgbotapi.NewInlineKeyboardButtonData("🌟 Claim Leadership 🙋", "explain"),
+				),
+			)
+			view.SendMessageWithButtons(bot, callback.Message.Chat.ID, fmt.Sprintf("Congratulations! %s guessed the word correctly.", callback.From.FirstName), buttons)
 			fmt.Println("calling DBManager")
 			// Reset the chat state after a correct guess.
 			chatState.Lock()
