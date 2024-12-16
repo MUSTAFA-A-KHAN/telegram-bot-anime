@@ -14,6 +14,7 @@ func SendMessage(bot *tgbotapi.BotAPI, chatID int64, text string) error {
 // SendMessageWithButtons sends a message with inline keyboard buttons to the user
 func SendMessageWithButtons(bot *tgbotapi.BotAPI, chatID int64, text string, buttons tgbotapi.InlineKeyboardMarkup) error {
 	msg := tgbotapi.NewMessage(chatID, text)
+	msg.ParseMode = tgbotapi.ModeMarkdown
 	if len(buttons.InlineKeyboard) > 0 {
 		msg.ReplyMarkup = buttons
 	}
