@@ -189,7 +189,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery)
 			chatState.Word = word
 			// leader := fmt.Sprintf("[%s](tg://user?id=%d)", callback.From.UserName, callback.From.ID)
 			// leader=tgbotapi.Inline
-			view.SendMessageWithButtons(bot, callback.Message.Chat.ID, fmt.Sprintf(" [ %s](@%s)is explaining the word!", callback.From.FirstName, callback.From.UserName), buttons)
+			view.SendMessageWithButtons(bot, callback.Message.Chat.ID, fmt.Sprintf(" [%s](tg://user?id=%d)is explaining the word!", callback.From.FirstName, callback.From.ID), buttons)
 		}
 		// Set the current user as the one explaining the word.
 		chatState.User = callback.From.UserName
