@@ -21,3 +21,10 @@ func SendMessageWithButtons(bot *tgbotapi.BotAPI, chatID int64, text string, but
 	_, err := bot.Send(msg)
 	return err
 }
+
+// SendSticker sends a sticker to the user
+func SendSticker(bot *tgbotapi.BotAPI, chatID int64, stickerFileID string) error {
+	sticker := tgbotapi.NewStickerShare(chatID, stickerFileID)
+	_, err := bot.Send(sticker)
+	return err
+}
