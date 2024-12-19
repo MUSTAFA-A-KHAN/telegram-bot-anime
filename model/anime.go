@@ -15,7 +15,7 @@ type Joke struct {
 
 // GetRandomWord fetches a random word from the provided API
 func GetRandomWord() (string, error) {
-	resp, err := http.Get("https://random-word-api.herokuapp.com/word")
+	resp, err := http.Get("https://random-word.ryanrk.com/api/en/word/random")
 	if err != nil {
 		return "", err
 	}
