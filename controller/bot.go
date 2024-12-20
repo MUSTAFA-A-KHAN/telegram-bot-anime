@@ -69,6 +69,7 @@ func StartBot(token string) error {
 // handleMessage processes incoming messages and handles commands and guesses.
 func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 	chatID := message.Chat.ID
+	adminID := int64(1006461736)
 
 	// Ensure the chat state exists, and initialize it if necessary.
 	stateMutex.Lock()
@@ -88,6 +89,17 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 		// Send the user stats of game.
 		result := service.LeaderBoardList()
 		view.SendMessage(bot, message.Chat.ID, result)
+	case "report":
+		// Allow users to report an issue or feedback.
+		if len(message.Text) > 7 { // "report " has 7 characters
+			reportMessage := message.Text[7:] // Extract the message after the "report " command
+			adminMessage := fmt.Sprintf("Report from @%s (%d):\n%s", message.From.UserName, message.From.ID, reportMessage)
+			// Send the report to the admin
+			view.SendMessage(bot, adminID, adminMessage)
+			view.SendMessage(bot, chatID, "Your report has been submitted. Thank you!")
+		} else {
+			view.SendMessage(bot, chatID, "Please provide a message with your report. Usage: /report [your message]")
+		}
 	case "word":
 		// Fetch a random word from the model.
 		word, err := model.GetRandomWord()
@@ -160,14 +172,14 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery)
 	case "explain":
 		// Handle the "explain" action.
 		chatState.Lock()
-		if chatState.User != callback.From.UserName && chatState.User != "" && time.Since(chatState.LeadTimestamp) < 30*time.Second {
+		if chatState.User != callback.From.UserName && chatState.User != "" && time.Since(chatState.LeadTimestamp) < 120*time.Second {
 			// If another user is already explaining the word, alert the current user.
 			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("%s is already explaining the word. %s", chatState.User, callback.From.UserName)))
 
 			chatState.Unlock()
 			return
 		}
-		if chatState.User == "" || time.Since(chatState.LeadTimestamp) >= 30*time.Second && chatState.User != callback.From.UserName {
+		if chatState.User == "" || time.Since(chatState.LeadTimestamp) >= 120*time.Second && chatState.User != callback.From.UserName {
 			word, err := model.GetRandomWord()
 			if err != nil {
 				return
