@@ -220,6 +220,12 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery)
 			chatState.Unlock()
 			return
 		}
+		if chatState.User == "" {
+			// If no user is explaining the word, alert the current user.
+			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("%s Please click on see word/claim Leadership", callback.From.FirstName)))
+			chatState.Unlock()
+			return
+		}
 		// Set the current user as the one explaining the word.
 		chatState.User = callback.From.UserName
 		chatState.Unlock()
