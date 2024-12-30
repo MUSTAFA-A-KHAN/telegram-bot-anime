@@ -49,7 +49,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 
 		info, err := model.GetInstagramUserInfo(username)
 		if err != nil {
-			view.SendMessage(bot, chatID, "Failed to fetch user information. Please ensure the username is correct.")
+			view.SendMessage(bot, chatID, "Failed to fetch user information. Please ensure the username is correct."+err.Error())
 			log.Println("Error fetching Instagram user info:", err)
 			return
 		}
