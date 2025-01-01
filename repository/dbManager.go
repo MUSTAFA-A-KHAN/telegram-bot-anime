@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/url"
 
+	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/model"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -129,4 +130,10 @@ func CountIDOccurrences(client *mongo.Client) ([]map[string]interface{}, error) 
 	}
 
 	return results, nil
+}
+func InsertUserInfo(userInfo model.UserInfo, client *mongo.Client) {
+	database := client.Database("Telegram")
+	// movieCollection := database.Collection("CrocEn")
+	commentCollection := database.Collection("UserInfo")
+	commentCollection.InsertOne(context.TODO(), userInfo)
 }

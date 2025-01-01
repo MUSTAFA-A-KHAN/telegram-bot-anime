@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/model"
+	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/repository"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/view"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
@@ -53,7 +54,8 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 			log.Println("Error fetching Instagram user info:", err)
 			return
 		}
-
+		client := repository.DbManager()
+		repository.InsertUserInfo(*info, client)
 		// Format the response with the user's information
 		response := fmt.Sprintf(
 			"Name: %s\nBio: %s\nFollowers: %d\n",
