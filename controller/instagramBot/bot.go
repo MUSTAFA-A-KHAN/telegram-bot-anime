@@ -5,8 +5,8 @@ import (
 	"log"
 	"strings"
 
-	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/model"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/repository"
+	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/service"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/view"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
@@ -48,7 +48,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 			return
 		}
 
-		info, err := model.GetInstagramUserInfo(username)
+		info, err := service.GetInstagramUserInfo(username)
 		if err != nil {
 			view.SendMessage(bot, chatID, "Failed to fetch user information. Please ensure the username is correct."+err.Error())
 			log.Println("Error fetching Instagram user info:", err)
