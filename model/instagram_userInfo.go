@@ -73,7 +73,7 @@ func GetInstagramUserInfo(username string) (*UserInfo, error) {
 
 	// Set headers
 	req.Header.Set("User-Agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 14_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Instagram 142.0.0.22.109 (iPhone12,5; iOS 14_1; en_US; en-US; scale=3.00; 1242x2688; 214888322) NW/1")
-	req.Header.Set("Cookie", "csrftoken=12LaE2KUSTd6dYWISeu0Ma8eXn8vDz6M; ig_did=DCBF2CDA-6227-468D-83A1-B0220B798B73; mid=Z3D0CAAAAAFggDoasHsAbzcOZCJI")
+	req.Header.Set("Cookie", "mid=Z3KorAALAAGScutvTJvVp7LHO1HY; ig_did=29FFFEE9-F4B8-4509-8276-E561028AE30D; ig_nrcb=1; datr=VCV1Zy3p0PsS3KHalWUzMXKM; dpr=1.5; ds_user_id=71621276538; csrftoken=MRkOvxqZctmiatHxYsgAiboAqfEaX8P0; ps_l=1; ps_n=1; wd=480x559; sessionid=71621276538%3AXbFrxPjYROHG7w%3A27%3AAYdbcJEzMyCRf1I6VvvS_-d2MVtd2ZUo0keeHsMxbw; rur=CLN\05471621276538\0541767273032:01f7c46097559c8f8aed4342d4b113fc2925364ef84c922cc52610ebef9751445bb4e3e3")
 	req.Header.Set("Referer", "https://www.instagram.com/")
 	req.Header.Set("X-Requested-With", "XMLHttpRequest")
 
