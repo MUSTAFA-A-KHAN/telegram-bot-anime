@@ -171,14 +171,14 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery)
 	case "explain":
 		// Handle the "explain" action.
 		chatState.Lock()
-		if chatState.User != callback.From.UserName && chatState.User != "" && time.Since(chatState.LeadTimestamp) < 120*time.Second {
+		if chatState.User != string(callback.From.ID) && chatState.User != "" && time.Since(chatState.LeadTimestamp) < 120*time.Second {
 			// If another user is already explaining the word, alert the current user.
-			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("%s is already explaining the word. %s", chatState.User, callback.From.UserName)))
+			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("%s is already explaining the word. %s", chatState.User, string(callback.From.ID))))
 
 			chatState.Unlock()
 			return
 		}
-		if chatState.User == "" || time.Since(chatState.LeadTimestamp) >= 120*time.Second && chatState.User != callback.From.UserName {
+		if chatState.User == "" || time.Since(chatState.LeadTimestamp) >= 120*time.Second && chatState.User != string(callback.From.ID) {
 			word, err := model.GetRandomWord()
 			if err != nil {
 				return
@@ -202,12 +202,12 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery)
 				),
 			)
 			chatState.Word = word
-			// leader := fmt.Sprintf("[%s](tg://user?id=%d)", callback.From.UserName, callback.From.ID)
+			// leader := fmt.Sprintf("[%s](tg://user?id=%d)", string(callback.From.ID), callback.From.ID)
 			// leader=tgbotapi.Inline
 			view.SendMessageWithButtons(bot, callback.Message.Chat.ID, fmt.Sprintf(" [%s](tg://user?id=%d)is explaining the word!", callback.From.FirstName, callback.From.ID), buttons)
 		}
 		// Set the current user as the one explaining the word.
-		chatState.User = callback.From.UserName
+		chatState.User = string(callback.From.ID)
 		chatState.LeadTimestamp = time.Now()
 		chatState.Unlock()
 		// Notify the user about the word to explain.
@@ -216,9 +216,9 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery)
 	case "next":
 		// Handle the "next" action.
 		chatState.Lock()
-		if chatState.User != callback.From.UserName && chatState.User != "" {
+		if chatState.User != string(callback.From.ID) && chatState.User != "" {
 			// If another user is already explaining the word, alert the current user.
-			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("%s is already explaining the word. %s", chatState.User, callback.From.UserName)))
+			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("%s is already explaining the word. %s", chatState.User, string(callback.From.ID))))
 			chatState.Unlock()
 			return
 		}
@@ -229,18 +229,18 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery)
 			return
 		}
 		// Set the current user as the one explaining the word.
-		chatState.User = callback.From.UserName
+		chatState.User = string(callback.From.ID)
 		chatState.Unlock()
 		// Notify the user about the word to explain.
 		chatState.Word, _ = model.GetRandomWord()
 		bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, chatState.Word))
-		// view.SendMessage(bot, callback.Message.Chat.ID, fmt.Sprintf("%s is explaining the word:", callback.From.UserName))
+		// view.SendMessage(bot, callback.Message.Chat.ID, fmt.Sprintf("%s is explaining the word:", string(callback.From.ID)))
 	case "flower":
 		// Handle the "next" action.
 		chatState.Lock()
-		if chatState.User != callback.From.UserName && chatState.User != "" {
+		if chatState.User != string(callback.From.ID) && chatState.User != "" {
 			// If another user is already explaining the word, alert the current user.
-			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("%s is already explaining the word. %s", chatState.User, callback.From.UserName)))
+			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("%s is already explaining the word. %s", chatState.User, string(callback.From.ID))))
 			chatState.Unlock()
 			return
 		}
@@ -251,7 +251,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery)
 			return
 		}
 		// Set the current user as the one explaining the word.
-		chatState.User = callback.From.UserName
+		chatState.User = string(callback.From.ID)
 		chatState.Unlock()
 		// Notify the user about the word to explain.
 		chatState.Word, _ = model.GetRandomFlower()
@@ -260,9 +260,9 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery)
 	case "car":
 		// Handle the "next" action.
 		chatState.Lock()
-		if chatState.User != callback.From.UserName && chatState.User != "" {
+		if chatState.User != string(callback.From.ID) && chatState.User != "" {
 			// If another user is already explaining the word, alert the current user.
-			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("%s is already explaining the word. %s", chatState.User, callback.From.UserName)))
+			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("%s is already explaining the word. %s", chatState.User, string(callback.From.ID))))
 			chatState.Unlock()
 			return
 		}
@@ -273,7 +273,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery)
 			return
 		}
 		// Set the current user as the one explaining the word.
-		chatState.User = callback.From.UserName
+		chatState.User = string(callback.From.ID)
 		chatState.Unlock()
 		// Notify the user about the word to explain.
 		chatState.Word, _ = model.GetRandomCar()
@@ -282,7 +282,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery)
 	case "droplead":
 		// Handle the "droplead" action.
 		chatState.Lock()
-		if chatState.User != callback.From.UserName {
+		if chatState.User != string(callback.From.ID) {
 			// If the current user is not the leader, prevent them from dropping the lead.
 			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, "You are not the leader, so you cannot drop the lead!"))
 			chatState.Unlock()
