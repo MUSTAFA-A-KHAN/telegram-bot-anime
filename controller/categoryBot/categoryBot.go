@@ -178,6 +178,10 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery)
 			chatState.Unlock()
 			return
 		}
+		if chatState.User == callback.From.UserName {
+			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, chatState.Word))
+
+		}
 		if chatState.User == "" || time.Since(chatState.LeadTimestamp) >= 120*time.Second && chatState.User != callback.From.UserName {
 			word, err := model.GetRandomWord()
 			if err != nil {
