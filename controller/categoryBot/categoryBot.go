@@ -17,7 +17,7 @@ import (
 type ChatState struct {
 	sync.RWMutex
 	Word          string
-	User          string
+	User          int
 	LeadTimestamp time.Time
 }
 
@@ -118,7 +118,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 		// Update the chat state with the new word and reset the user explaining it.
 		chatState.Lock()
 		chatState.Word = word
-		chatState.User = ""
+		chatState.User = 0
 		chatState.Unlock()
 		view.SendSticker(bot, chatID, "CAACAgUAAxkBAAEwCnNnYW-OkgV7Odt9osVwoBSzLC6vsAACMhMAAj45CFdCstMoIYiPfjYE")
 
@@ -133,7 +133,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 		chatState.RUnlock()
 
 		// Check if the guessed word matches the current word.
-		if user != "" && service.NormalizeAndCompare(message.Text, word) {
+		if user != 0 && service.NormalizeAndCompare(message.Text, word) {
 			client := repository.DbManager()
 			repository.InsertDoc(message.From.ID, message.From.FirstName, message.Chat.ID, client)
 			buttons := tgbotapi.NewInlineKeyboardMarkup(
@@ -146,10 +146,10 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 			// Reset the chat state after a correct guess.
 			chatState.Lock()
 			chatState.Word = ""
-			chatState.User = ""
+			chatState.User = 0
 			chatState.LeadTimestamp = time.Time{}
 			chatState.Unlock()
-		} else if user != "" {
+		} else if user != 0 {
 			// view.SendMessage(bot, message.Chat.ID, "That's not correct. Try again!")
 		}
 	}
@@ -171,18 +171,18 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery)
 	case "explain":
 		// Handle the "explain" action.
 		chatState.Lock()
-		if chatState.User != callback.From.UserName && chatState.User != "" && time.Since(chatState.LeadTimestamp) < 120*time.Second {
+		if chatState.User != callback.From.ID && chatState.User != 0 && time.Since(chatState.LeadTimestamp) < 120*time.Second {
 			// If another user is already explaining the word, alert the current user.
-			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("%s is already explaining the word. %s", chatState.User, callback.From.UserName)))
+			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("someone already explaining the word. %s", callback.From.UserName)))
 
 			chatState.Unlock()
 			return
 		}
-		if chatState.User == callback.From.UserName {
+		if chatState.User == callback.From.ID {
 			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, chatState.Word))
 
 		}
-		if chatState.User == "" || time.Since(chatState.LeadTimestamp) >= 120*time.Second && chatState.User != callback.From.UserName {
+		if chatState.User == 0 || time.Since(chatState.LeadTimestamp) >= 120*time.Second && chatState.User != callback.From.ID {
 			word, err := model.GetRandomWord()
 			if err != nil {
 				return
@@ -211,7 +211,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery)
 			view.SendMessageWithButtons(bot, callback.Message.Chat.ID, fmt.Sprintf(" [%s](tg://user?id=%d)is explaining the word!", callback.From.FirstName, callback.From.ID), buttons)
 		}
 		// Set the current user as the one explaining the word.
-		chatState.User = callback.From.UserName
+		chatState.User = callback.From.ID
 		chatState.LeadTimestamp = time.Now()
 		chatState.Unlock()
 		// Notify the user about the word to explain.
@@ -220,20 +220,20 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery)
 	case "next":
 		// Handle the "next" action.
 		chatState.Lock()
-		if chatState.User != callback.From.UserName && chatState.User != "" {
+		if chatState.User != callback.From.ID && chatState.User != 0 {
 			// If another user is already explaining the word, alert the current user.
-			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("%s is already explaining the word. %s", chatState.User, callback.From.UserName)))
+			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("someone is already explaining the word. %s", callback.From.UserName)))
 			chatState.Unlock()
 			return
 		}
-		if chatState.User == "" {
+		if chatState.User == 0 {
 			// If no user is explaining the word, alert the current user.
 			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("%s Please click on see word/claim Leadership", callback.From.FirstName)))
 			chatState.Unlock()
 			return
 		}
 		// Set the current user as the one explaining the word.
-		chatState.User = callback.From.UserName
+		chatState.User = callback.From.ID
 		chatState.Unlock()
 		// Notify the user about the word to explain.
 		chatState.Word, _ = model.GetRandomWord()
@@ -242,20 +242,20 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery)
 	case "flower":
 		// Handle the "next" action.
 		chatState.Lock()
-		if chatState.User != callback.From.UserName && chatState.User != "" {
+		if chatState.User != callback.From.ID && chatState.User != 0 {
 			// If another user is already explaining the word, alert the current user.
-			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("%s is already explaining the word. %s", chatState.User, callback.From.UserName)))
+			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("someone is already explaining the word. %s", callback.From.UserName)))
 			chatState.Unlock()
 			return
 		}
-		if chatState.User == "" {
+		if chatState.User == 0 {
 			// If no user is explaining the word, alert the current user.
 			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("%s Please click on see word/claim Leadership", callback.From.FirstName)))
 			chatState.Unlock()
 			return
 		}
 		// Set the current user as the one explaining the word.
-		chatState.User = callback.From.UserName
+		chatState.User = callback.From.ID
 		chatState.Unlock()
 		// Notify the user about the word to explain.
 		chatState.Word, _ = model.GetRandomFlower()
@@ -264,20 +264,20 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery)
 	case "car":
 		// Handle the "next" action.
 		chatState.Lock()
-		if chatState.User != callback.From.UserName && chatState.User != "" {
+		if chatState.User != callback.From.ID && chatState.User != 0 {
 			// If another user is already explaining the word, alert the current user.
-			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("%s is already explaining the word. %s", chatState.User, callback.From.UserName)))
+			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("someone is already explaining the word. %s", callback.From.UserName)))
 			chatState.Unlock()
 			return
 		}
-		if chatState.User == "" {
+		if chatState.User == 0 {
 			// If no user is explaining the word, alert the current user.
 			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("%s Please click on see word/claim Leadership", callback.From.FirstName)))
 			chatState.Unlock()
 			return
 		}
 		// Set the current user as the one explaining the word.
-		chatState.User = callback.From.UserName
+		chatState.User = callback.From.ID
 		chatState.Unlock()
 		// Notify the user about the word to explain.
 		chatState.Word, _ = model.GetRandomCar()
@@ -286,7 +286,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery)
 	case "droplead":
 		// Handle the "droplead" action.
 		chatState.Lock()
-		if chatState.User != callback.From.UserName {
+		if chatState.User != callback.From.ID {
 			// If the current user is not the leader, prevent them from dropping the lead.
 			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, "You are not the leader, so you cannot drop the lead!"))
 			chatState.Unlock()
@@ -301,7 +301,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery)
 		// Reset the chat state after dropping the lead.
 		view.SendMessageWithButtons(bot, callback.Message.Chat.ID, fmt.Sprintf("%s refused to lead -> %s \n", callback.From.FirstName, chatState.Word), buttons)
 		chatState.Word = ""
-		chatState.User = ""
+		chatState.User = 0
 		chatState.LeadTimestamp = time.Time{}
 		chatState.Unlock()
 	default:
@@ -324,7 +324,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery)
 			// Reset the chat state after a correct guess.
 			chatState.Lock()
 			chatState.Word = ""
-			chatState.User = ""
+			chatState.User = 0
 			chatState.Unlock()
 		} else {
 			// view.SendMessage(bot, callback.Message.Chat.ID, "That's not correct. Try again!")
