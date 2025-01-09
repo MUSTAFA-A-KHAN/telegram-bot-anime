@@ -8,10 +8,10 @@ import (
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/repository"
 )
 
-func LeaderBoardList() string {
+func LeaderBoardList(collection string) string {
 	// Get MongoDB client
 	client := repository.DbManager()
-	idCounts, err := repository.CountIDOccurrences(client)
+	idCounts, err := repository.CountIDOccurrences(client, collection)
 	if err != nil {
 		log.Fatal(err)
 	}
