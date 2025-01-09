@@ -32,11 +32,11 @@ func DbManager() *mongo.Client {
 	fmt.Println("Connected to MongoDB successfully!")
 	return client
 }
-func InsertDoc(ID int, Name string, chatID int64, client *mongo.Client) {
+func InsertDoc(ID int, Name string, chatID int64, client *mongo.Client, collection string) {
 	// Select the database and collections
 	database := client.Database("Telegram")
 	// movieCollection := database.Collection("CrocEn")
-	commentCollection := database.Collection("CrocEn")
+	commentCollection := database.Collection(collection)
 
 	// // Example: Find a movie document and get the ObjectId
 	// var movie bson.M
@@ -91,9 +91,9 @@ func ReadAllDoc(client *mongo.Client) []bson.M {
 }
 
 // Function to count occurrences of each ID along with the Name
-func CountIDOccurrences(client *mongo.Client) ([]map[string]interface{}, error) {
+func CountIDOccurrences(client *mongo.Client, collection string) ([]map[string]interface{}, error) {
 	database := client.Database("Telegram")
-	commentCollection := database.Collection("CrocEn")
+	commentCollection := database.Collection(collection)
 
 	// Aggregation pipeline to count occurrences of each ID and include the Name
 	pipeline := mongo.Pipeline{
