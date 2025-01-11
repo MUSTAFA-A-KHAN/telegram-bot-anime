@@ -22,6 +22,20 @@ func SendMessageWithButtons(bot *tgbotapi.BotAPI, chatID int64, text string, but
 	return err
 }
 
+// SendMessageWithButtons sends a message with inline keyboard buttons to the user
+func SendMessageWithKeyboardButton(bot *tgbotapi.BotAPI, chatID int64, text string, buttons tgbotapi.InlineKeyboardButton) error {
+	// button := tgbotapi.NewInlineKeyboardButtonURL("Click Here", "url")
+	inlineKeyboard := tgbotapi.NewInlineKeyboardMarkup([]tgbotapi.InlineKeyboardButton{buttons})
+
+	// Create the message with the inline keyboard
+	msg := tgbotapi.NewMessage(chatID, text)
+	msg.ReplyMarkup = inlineKeyboard
+
+	// Send the message
+	_, err := bot.Send(msg)
+	return err
+}
+
 // SendSticker sends a sticker to the user
 func SendSticker(bot *tgbotapi.BotAPI, chatID int64, stickerFileID string) error {
 	sticker := tgbotapi.NewStickerShare(chatID, stickerFileID)
