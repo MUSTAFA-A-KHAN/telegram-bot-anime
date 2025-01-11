@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -83,6 +84,19 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 	log.Printf("[%s] %s", message.From.UserName, message.Text)
 
 	switch message.Command() {
+	case "getButton":
+		Announcement := strings.Split(message.Text, "  ")
+		if len(Announcement) > 1 {
+			parts := strings.Split(Announcement[2], " ")
+			if len(parts) > 2 {
+				url := parts[0]
+
+				// Extract the message (everything after the URL)
+				messageText := strings.Join(parts[1:], " ")
+				button := tgbotapi.NewInlineKeyboardButtonURL(messageText, url)
+				view.SendMessageWithKeyboardButton(bot, message.Chat.ID, Announcement[1], button)
+			}
+		}
 	case "start":
 		// Send a welcome message with instructions to start the game.
 		view.SendMessage(bot, message.Chat.ID, "Welcome! Use /word to start a game.")
