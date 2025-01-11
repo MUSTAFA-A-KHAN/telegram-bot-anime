@@ -57,10 +57,10 @@ func StartBot(token string) error {
 	for update := range updates {
 		if update.Message != nil {
 			// Handle incoming messages.
-			handleMessage(bot, update.Message)
+			go handleMessage(bot, update.Message)
 		} else if update.CallbackQuery != nil {
 			// Handle incoming callback queries.
-			handleCallbackQuery(bot, update.CallbackQuery)
+			go handleCallbackQuery(bot, update.CallbackQuery)
 		}
 	}
 
