@@ -152,7 +152,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 		chatState.RUnlock()
 
 		// Check if the guessed word matches the current word.
-		if user != 0 && service.NormalizeAndCompare(message.Text, word) {
+		if user != 0 && service.NormalizeAndCompare(message.Text, word) && message.From.ID != user {
 			buttons := tgbotapi.NewInlineKeyboardMarkup(
 				// First line with a single button
 				tgbotapi.NewInlineKeyboardRow(
