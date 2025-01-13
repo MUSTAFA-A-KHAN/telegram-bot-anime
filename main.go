@@ -10,9 +10,9 @@ import (
 )
 
 func main() {
-	charades := "6898558980:AAFswe1zihkO2xAnKRQCAoLzt0gLW1uMJ88"
-	categorycharades := "7563609270:AAFG12c-eWTKt8L2v_IN8pPF-HsmDDZGVgo"
-	instagram := "7995903003:AAEcvtxq1Swak9W_uuMwQ-Jv-YXKOp_i-pw"
+	charades := "7920679753:AAF57YgZSD1pMJR6kXWDidTokqTAOAf-Sxw"
+	// categorycharades := "7563609270:AAFG12c-eWTKt8L2v_IN8pPF-HsmDDZGVgo"
+	// instagram := "7995903003:AAEcvtxq1Swak9W_uuMwQ-Jv-YXKOp_i-pw"
 	// WaitGroup to wait for all goroutines to finish
 	var wg sync.WaitGroup
 
@@ -21,8 +21,8 @@ func main() {
 
 	// Start bots in separate goroutines
 	go runWordBot(charades, &wg)
-	go runCategoryBot(categorycharades, &wg)
-	go runInstagramBot(instagram, &wg)
+	// go runCategoryBot(categorycharades, &wg)
+	// go runInstagramBot(instagram, &wg)
 
 	// Wait for goroutines to complete
 	wg.Wait()
