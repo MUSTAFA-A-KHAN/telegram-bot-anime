@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	charades := "6898558980:AAFswe1zihkO2xAnKRQCAoLzt0gLW1uMJ88"
+	charades := "6898558980:AAEBSjAEvgbeqiupvJ49niWuQzRE8ZDJBkQ"
 	categorycharades := "7563609270:AAFG12c-eWTKt8L2v_IN8pPF-HsmDDZGVgo"
 	instagram := "7995903003:AAEcvtxq1Swak9W_uuMwQ-Jv-YXKOp_i-pw"
 	// WaitGroup to wait for all goroutines to finish
