@@ -105,7 +105,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 		variable += "v" + os.Getenv("SHARED_TEST")
 		variable += "w" + os.Getenv("test")
 		fmt.Print("Test:" + os.Getenv("TEST"))
-		view.SendMessage(bot, message.Chat.ID, "")
+		view.SendMessage(bot, message.Chat.ID, variable)
 	case "stats":
 		// Send the user stats of game.
 		result := service.LeaderBoardList("CrocEn")
