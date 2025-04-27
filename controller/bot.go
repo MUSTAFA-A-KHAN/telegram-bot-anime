@@ -101,6 +101,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 	case "start":
 		// Send a welcome message with instructions to start the game.
 		variable := os.Getenv("TEST")
+		fmt.Print("Test:" + os.Getenv("TEST"))
 		view.SendMessage(bot, message.Chat.ID, "Welcome! Use /word to start a game.test-"+variable)
 	case "stats":
 		// Send the user stats of game.
