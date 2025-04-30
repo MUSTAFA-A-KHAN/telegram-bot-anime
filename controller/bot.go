@@ -121,6 +121,11 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 		}
 	case "word":
 		// Fetch a random word from the model.
+		if chatState.User != message.From.ID && chatState.User != 0 && time.Since(chatState.LeadTimestamp) < 120*time.Second {
+			view.SendMessage(bot, chatID, "Someone is explaining the word. Too early!")
+			chatState.Unlock()
+			return
+		}
 		word, err := model.GetRandomWord()
 		if err != nil {
 			view.SendMessage(bot, message.Chat.ID, "Failed to fetch a word.")
@@ -144,8 +149,32 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 		view.SendSticker(bot, chatID, "CAACAgUAAxkBAAEwCnNnYW-OkgV7Odt9osVwoBSzLC6vsAACMhMAAj45CFdCstMoIYiPfjYE")
 
 		// Send a message with the word and the explain button.
-		view.SendMessageWithButtons(bot, message.Chat.ID, fmt.Sprintf("The word is ready! Click 'Explain' to explain the word."), buttons)
+		view.SendMessageWithButtons(bot, message.Chat.ID, "The word is ready! Click 'Explain' to explain the word.", buttons)
 
+	case "reveal":
+		// Handle the "reveal" action.
+		chatState.Lock()
+		if chatState.User != message.From.ID && chatState.User != 0 && time.Since(chatState.LeadTimestamp) < 120*time.Second {
+			// If another user is already explaining the word, and time isn't over.
+			view.SendMessage(bot, chatID, "Someone is explaining the word. Too early to reveal")
+			chatState.Unlock()
+			return
+		} else {
+			chatState.RLock()
+			word := chatState.Word
+			buttons := tgbotapi.NewInlineKeyboardMarkup(
+				// First line with a single button
+				tgbotapi.NewInlineKeyboardRow(
+					tgbotapi.NewInlineKeyboardButtonData("🌟 Claim Leadership 🙋", "explain"),
+				),
+			)
+			view.SendMessageWithButtons(bot, message.Chat.ID, fmt.Sprintf("Fine! The word was %s ", word), buttons)
+			chatState.Lock()
+			chatState.Word = ""
+			chatState.User = 0
+			chatState.LeadTimestamp = time.Time{}
+			chatState.Unlock()
+		}
 	default:
 		// Handle guesses from users.
 		chatState.RLock()
@@ -278,15 +307,15 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery)
 		)
 		// Reset the chat state after dropping the lead.
 		view.SendMessageWithButtons(
-			bot, 
-			callback.Message.Chat.ID, 
+			bot,
+			callback.Message.Chat.ID,
 			fmt.Sprintf(
-				"%s refused to lead -> %s \n", 
-				callback.From.FirstName, 
+				"%s refused to lead -> %s \n",
+				callback.From.FirstName,
 				chatState.Word,
-				), 
-			buttons
-			)
+			),
+			buttons,
+		)
 		chatState.Word = ""
 		chatState.User = 0
 		chatState.LeadTimestamp = time.Time{}
@@ -300,7 +329,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery)
 			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("%s is explaining the word. Too early to reveal%s", chatState.User, callback.From.UserName)))
 			chatState.Unlock()
 			return
-		}else{
+		} else {
 			chatState.RLock()
 			word := chatState.Word
 			buttons := tgbotapi.NewInlineKeyboardMarkup(
@@ -310,8 +339,12 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery)
 				),
 			)
 			view.SendMessageWithButtons(bot, callback.Message.Chat.ID, fmt.Sprintf("Fine! The word was %s ", word), buttons)
+			chatState.Lock()
+			chatState.Word = ""
+			chatState.User = 0
+			chatState.LeadTimestamp = time.Time{}
+			chatState.Unlock()
 		}
-
 
 	default:
 		// Handle guesses from callback queries (if any).
