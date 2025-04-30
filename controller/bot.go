@@ -120,32 +120,56 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 			view.SendMessage(bot, chatID, "Please provide a message with your report. Usage: /report [your message]")
 		}
 	case "word":
-		// Fetch a random word from the model.
-		word, err := model.GetRandomWord()
-		if err != nil {
-			view.SendMessage(bot, message.Chat.ID, "Failed to fetch a word.")
-			return
+		if chatState.Word == "" || time.Since(chatState.LeadTimestamp) >= 120*time.Second {
+			word, err := model.GetRandomWord()
+			if err != nil {
+				view.SendMessage(bot, message.Chat.ID, "Failed to fetch a word.")
+				return
+			}
+
+			// Create a button to start explaining the word.
+			// Create the inline keyboard with each button on a separate line.
+			buttons := tgbotapi.NewInlineKeyboardMarkup(
+				// First line with a single button
+				tgbotapi.NewInlineKeyboardRow(
+					tgbotapi.NewInlineKeyboardButtonData(" 🗣️ Explain ", "explain"),
+				),
+			)
+
+			// Update the chat state with the new word and reset the user explaining it.
+			chatState.Lock()
+			chatState.Word = word
+			chatState.User = 0
+			chatState.Leader = ""
+			chatState.Unlock()
+			view.SendSticker(bot, chatID, "CAACAgUAAxkBAAEwCnNnYW-OkgV7Odt9osVwoBSzLC6vsAACMhMAAj45CFdCstMoIYiPfjYE")
+
+			// Send a message with the word and the explain button.
+			view.SendMessageWithButtons(bot, message.Chat.ID, "The word is ready! Click 'Explain' to explain the word.", buttons)
+		} else {
+			view.SendMessage(bot, message.Chat.ID, "A game is on.")
 		}
 
-		// Create a button to start explaining the word.
-		// Create the inline keyboard with each button on a separate line.
-		buttons := tgbotapi.NewInlineKeyboardMarkup(
-			// First line with a single button
-			tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonData(" 🗣️ Explain ", "explain"),
-			),
-		)
-		// Update the chat state with the new word and reset the user explaining it.
-		chatState.Lock()
-		chatState.Word = word
-		chatState.User = 0
-		chatState.Leader = ""
-		chatState.Unlock()
-		view.SendSticker(bot, chatID, "CAACAgUAAxkBAAEwCnNnYW-OkgV7Odt9osVwoBSzLC6vsAACMhMAAj45CFdCstMoIYiPfjYE")
+	case "reveal":
+		// Handle the "reveal" action.
+		fmt.Print(chatState.Word)
+		if time.Since(chatState.LeadTimestamp) >= 600*time.Second {
+			buttons := tgbotapi.NewInlineKeyboardMarkup(
+				// First line with a single button
+				tgbotapi.NewInlineKeyboardRow(
+					tgbotapi.NewInlineKeyboardButtonData(" 🗣️ Explain ", "explain"),
+				),
+			)
 
-		// Send a message with the word and the explain button.
-		view.SendMessageWithButtons(bot, message.Chat.ID, fmt.Sprintf("The word is ready! Click 'Explain' to explain the word."), buttons)
-
+			view.SendMessageWithButtons(bot, message.Chat.ID, fmt.Sprintf("The word was:%s", chatState.Word), buttons)
+			chatState.Lock()
+			chatState.Word = ""
+			chatState.User = 0
+			chatState.LeadTimestamp = time.Time{}
+			chatState.Unlock()
+		} else {
+			view.SendMessage(bot, message.Chat.ID, "Wait for ten minutes")
+		}
 	default:
 		// Handle guesses from users.
 		chatState.RLock()
