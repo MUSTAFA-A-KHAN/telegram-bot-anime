@@ -95,6 +95,7 @@ func GenerateMeaningHint(word string) string {
 	}
 
 	meaning, err := fetchMeaningFromAPI(word)
+	meaning = strings.ReplaceAll(meaning, word, "_")
 	if err != nil {
 		// fallback to placeholder
 		return "Meaning hint: This is a placeholder for the meaning or context of the word: " + word + ":(."
@@ -103,6 +104,5 @@ func GenerateMeaningHint(word string) string {
 	meaningCache.Lock()
 	meaningCache.m[word] = meaning
 	meaningCache.Unlock()
-	meaning = strings.ReplaceAll(meaning, word, "_")
 	return "ⓘ Hint: " + meaning
 }
