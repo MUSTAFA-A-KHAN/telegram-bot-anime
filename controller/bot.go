@@ -110,12 +110,21 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 
 	// New DM scenario: if chat is private, bot gives hint and user guesses
 	if message.Chat.IsPrivate() {
+
+		if message.Command() == "stats" {
+			result := service.LeaderBoardList("CrocEn")
+			view.SendMessage(bot, chatID, result)
+		}
+
+		if message.Command() == "leaderstats" {
+			result := service.LeaderBoardList("CrocEnLeader")
+			view.SendMessage(bot, chatID, result)
+		}
 		chatState.RLock()
 		wordEmpty := chatState.Word == ""
 		lastHint := chatState.LastHintTimestamp
 		lastHintType := chatState.LastHintTypeSent
 		chatState.RUnlock()
-
 		// Start a new game if no word or lead expired
 		if wordEmpty || time.Since(chatState.LeadTimestamp) >= 240*time.Second {
 			word, err := model.GetRandomWord()
@@ -138,8 +147,8 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 
 		// Handle /hint command in DM
 		if message.Command() == "hint" {
-			if !lastHint.IsZero() && time.Since(lastHint) < 1*time.Minute {
-				view.SendMessage(bot, chatID, "Please try for a min before requesting another hint.")
+			if !lastHint.IsZero() && time.Since(lastHint) < 15*time.Second {
+				view.SendMessage(bot, chatID, "Please think a bit before requesting another hint.")
 				return
 			}
 
@@ -164,11 +173,11 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 
 		// Handle /reveal command in DM
 		if message.Command() == "reveal" {
-			if time.Since(chatState.LeadTimestamp) >= 180*time.Second {
+			if time.Since(chatState.LeadTimestamp) >= 18*time.Second {
 				view.SendMessage(bot, chatID, fmt.Sprintf("The word was: %s", chatState.Word))
 				chatState.reset()
 			} else {
-				view.SendMessage(bot, chatID, "Wait for three minutes before revealing the word.")
+				view.SendMessage(bot, chatID, "Atleast read the hint before revealing the word.")
 			}
 			return
 		}
