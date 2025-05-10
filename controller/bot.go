@@ -108,6 +108,91 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 
 	log.Printf("[%s] %s", message.From.UserName, message.Text)
 
+	// New DM scenario: if chat is private, bot gives hint and user guesses
+	if message.Chat.IsPrivate() {
+		chatState.RLock()
+		wordEmpty := chatState.Word == ""
+		lastHint := chatState.LastHintTimestamp
+		lastHintType := chatState.LastHintTypeSent
+		chatState.RUnlock()
+
+		// Start a new game if no word or lead expired
+		if wordEmpty || time.Since(chatState.LeadTimestamp) >= 120*time.Second {
+			word, err := model.GetRandomWord()
+			if err != nil {
+				view.SendMessage(bot, chatID, "Failed to fetch a word.")
+				return
+			}
+			chatState.Lock()
+			chatState.Word = word
+			chatState.User = message.From.ID
+			chatState.Leader = message.From.FirstName
+			chatState.LeadTimestamp = time.Now()
+			chatState.LastHintTimestamp = time.Time{}
+			chatState.LastHintTypeSent = 0
+			chatState.Unlock()
+
+			view.SendMessage(bot, chatID, "I have a word for you to guess! Ask me for a hint by typing /hint.")
+			return
+		}
+
+		// Handle /hint command in DM
+		if message.Command() == "hint" {
+			if !lastHint.IsZero() && time.Since(lastHint) < 1*time.Minute {
+				view.SendMessage(bot, chatID, "Please try for a min before requesting another hint.")
+				return
+			}
+
+			chatState.RLock()
+			var hint string
+			if lastHintType == 0 {
+				hint = model.GenerateMeaningHint(chatState.Word)
+			} else {
+				hint = model.GenerateHint(chatState.Word)
+				hint = hint + "\n" + model.GenerateMeaningHint(chatState.Word)
+			}
+			chatState.RUnlock()
+
+			view.SendMessage(bot, chatID, hint)
+
+			chatState.Lock()
+			chatState.LastHintTimestamp = time.Now()
+			chatState.LastHintTypeSent = 1 - lastHintType
+			chatState.Unlock()
+			return
+		}
+
+		// Handle /reveal command in DM
+		if message.Command() == "reveal" {
+			if time.Since(chatState.LeadTimestamp) >= 600*time.Second {
+				view.SendMessage(bot, chatID, fmt.Sprintf("The word was: %s", chatState.Word))
+				chatState.reset()
+			} else {
+				view.SendMessage(bot, chatID, "Wait for ten minutes before revealing the word.")
+			}
+			return
+		}
+
+		// Check user's guess in DM
+		chatState.RLock()
+		word := chatState.Word
+		chatState.RUnlock()
+
+		if service.NormalizeAndCompare(message.Text, word) && message.From.ID == chatState.User {
+			view.SendMessage(bot, chatID, fmt.Sprintf("Congratulations! You guessed the word %s correctly.", word))
+
+			client := repository.DbManager()
+			repository.InsertDoc(message.From.ID, message.From.FirstName, chatID, client, "CrocEn")
+
+			chatState.reset()
+			return
+		} else {
+			view.SendMessage(bot, chatID, "Try again or ask for a hint by typing /hint.")
+			return
+		}
+	}
+
+	// Existing group chat handling
 	switch message.Command() {
 	case "getButton":
 		Announcement := strings.Split(message.Text, "  ")
