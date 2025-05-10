@@ -131,8 +131,8 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 			chatState.LastHintTimestamp = time.Time{}
 			chatState.LastHintTypeSent = 0
 			chatState.Unlock()
-
-			view.SendMessage(bot, chatID, "I have a word for you to guess! Ask me for a hint by typing /hint.")
+			button := tgbotapi.NewInlineKeyboardButtonURL("add to group", "https://t.me/Croco_rebirth_bot?startgroup=true")
+			view.SendMessageWithKeyboardButton(bot, chatID, "You can unlock full potential via adding this to a group meanwhile \n I have a word for you to guess! Ask me for a hint by tapping /hint.", button)
 			return
 		}
 
@@ -261,8 +261,8 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 			return
 		}
 
-		if !lastHint.IsZero() && time.Since(lastHint) < 2*time.Minute {
-			view.SendMessage(bot, message.Chat.ID, "Please wait before requesting another hint.")
+		if !lastHint.IsZero() && time.Since(lastHint) < 1*time.Minute {
+			view.SendMessage(bot, message.Chat.ID, "Please a min before requesting another hint.")
 			return
 		}
 
@@ -271,7 +271,8 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 		if lastHintType == 0 {
 			hint = model.GenerateMeaningHint(chatState.Word)
 		} else {
-			hint = model.GenerateHint(chatState.Word)
+			hint = model.GenerateMeaningHint(chatState.Word)
+			hint = hint + "\n" + model.GenerateHint(chatState.Word)
 		}
 		chatState.RUnlock()
 
