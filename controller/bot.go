@@ -18,10 +18,12 @@ import (
 // ChatState holds the state for a specific chat, including the current word and user explaining it.
 type ChatState struct {
 	sync.RWMutex
-	Word          string
-	User          int
-	LeadTimestamp time.Time
-	Leader        string
+	Word              string
+	User              int
+	LeadTimestamp     time.Time
+	Leader            string
+	LastHintTimestamp time.Time
+	LastHintTypeSent  int // 0 or 1 to track which hint was last sent
 }
 
 var (
@@ -161,6 +163,39 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 		} else {
 			view.SendMessage(bot, message.Chat.ID, "A game is on.")
 		}
+	case "hint":
+		chatState.RLock()
+		wordEmpty := chatState.Word == ""
+		lastHint := chatState.LastHintTimestamp
+		lastHintType := chatState.LastHintTypeSent
+		chatState.RUnlock()
+
+		if wordEmpty {
+			buttons := createSingleButtonKeyboard(" 🗣️ Explain ", "explain")
+			view.SendMessageWithButtons(bot, message.Chat.ID, "No active game. Click below to start a game first.", buttons)
+			return
+		}
+
+		if !lastHint.IsZero() && time.Since(lastHint) < 2*time.Minute {
+			view.SendMessage(bot, message.Chat.ID, "Please wait before requesting another hint.")
+			return
+		}
+
+		chatState.RLock()
+		var hint string
+		if lastHintType == 0 {
+			hint = model.GenerateMeaningHint(chatState.Word)
+		} else {
+			hint = model.GenerateHint(chatState.Word)
+		}
+		chatState.RUnlock()
+
+		view.SendMessage(bot, message.Chat.ID, hint)
+
+		chatState.Lock()
+		chatState.LastHintTimestamp = time.Now()
+		chatState.LastHintTypeSent = 1 - lastHintType
+		chatState.Unlock()
 
 	case "reveal":
 		chatState.RLock()
