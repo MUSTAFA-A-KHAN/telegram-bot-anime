@@ -225,7 +225,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 	case "report":
 		if len(message.Text) > 7 {
 			reportMessage := message.Text[7:]
-			adminMessage := fmt.Sprintf("Report from @%s (%d):\n%s", message.From.UserName, message.From.ID, reportMessage)
+			adminMessage := fmt.Sprintf("Report from @%s FromID-(%d) ChatID-(%d) From-(%s):\n Message-%s", message.From.UserName, message.From.ID, message.Chat.ID, message.From.FirstName, reportMessage)
 			view.SendMessage(bot, adminID, adminMessage)
 			view.SendMessage(bot, chatID, "Your report has been submitted. Thank you!")
 		} else {
