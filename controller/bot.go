@@ -117,7 +117,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 		chatState.RUnlock()
 
 		// Start a new game if no word or lead expired
-		if wordEmpty || time.Since(chatState.LeadTimestamp) >= 120*time.Second {
+		if wordEmpty || time.Since(chatState.LeadTimestamp) >= 240*time.Second {
 			word, err := model.GetRandomWord()
 			if err != nil {
 				view.SendMessage(bot, chatID, "Failed to fetch a word.")
@@ -164,11 +164,11 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 
 		// Handle /reveal command in DM
 		if message.Command() == "reveal" {
-			if time.Since(chatState.LeadTimestamp) >= 600*time.Second {
+			if time.Since(chatState.LeadTimestamp) >= 180*time.Second {
 				view.SendMessage(bot, chatID, fmt.Sprintf("The word was: %s", chatState.Word))
 				chatState.reset()
 			} else {
-				view.SendMessage(bot, chatID, "Wait for ten minutes before revealing the word.")
+				view.SendMessage(bot, chatID, "Wait for three minutes before revealing the word.")
 			}
 			return
 		}
