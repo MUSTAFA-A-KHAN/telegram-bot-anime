@@ -329,91 +329,137 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 }
 
 // handleCallbackQuery processes incoming callback queries and handles the "explain" action.
+// handleCallbackQuery processes incoming callback queries and handles the "explain" action.
 func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery) {
 	chatID := callback.Message.Chat.ID
-	chatState := getOrCreateChatState(chatID)
+
+	// Ensure the chat state exists, and initialize it if necessary.
+	stateMutex.Lock()
+	if _, exists := chatStates[chatID]; !exists {
+		chatStates[chatID] = &ChatState{}
+	}
+	chatState := chatStates[chatID]
+	stateMutex.Unlock()
 
 	switch callback.Data {
 	case "explain":
+		// Handle the "explain" action.
 		chatState.Lock()
 		if chatState.User != callback.From.ID && chatState.User != 0 && time.Since(chatState.LeadTimestamp) < 120*time.Second {
+			// If another user is already explaining the word, alert the current user.
 			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("%s is already explaining the word. %s", chatState.User, callback.From.UserName)))
+
 			chatState.Unlock()
 			return
 		}
 		if chatState.User == callback.From.ID {
 			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, chatState.Word))
-			chatState.Unlock()
-			return
+
 		}
-		if chatState.User == 0 || (time.Since(chatState.LeadTimestamp) >= 120*time.Second && chatState.User != callback.From.ID) {
+		if chatState.User == 0 || time.Since(chatState.LeadTimestamp) >= 120*time.Second && chatState.User != callback.From.ID {
 			word, err := model.GetRandomWord()
 			if err != nil {
-				chatState.Unlock()
 				return
 			}
+			// Create the inline keyboard with each button on a separate line.
 			buttons := tgbotapi.NewInlineKeyboardMarkup(
+				// First line with a single button
 				tgbotapi.NewInlineKeyboardRow(
 					tgbotapi.NewInlineKeyboardButtonData("See word 👀", "explain"),
 				),
+				// Second line with a single button
 				tgbotapi.NewInlineKeyboardRow(
 					tgbotapi.NewInlineKeyboardButtonData("Next ⏭️", "next"),
 				),
+				// Third line with a single button
 				tgbotapi.NewInlineKeyboardRow(
 					tgbotapi.NewInlineKeyboardButtonData("Changed my mind ❌", "droplead"),
 				),
 			)
 			chatState.Word = word
+			// leader := fmt.Sprintf("[%s](tg://user?id=%d)", callback.From.UserName, callback.From.ID)
+			// leader=tgbotapi.Inline
 			view.SendMessageWithButtons(bot, callback.Message.Chat.ID, fmt.Sprintf(" [%s](tg://user?id=%d)is explaining the word!", callback.From.FirstName, callback.From.ID), buttons)
 		}
+		// Set the current user as the one explaining the word.
 		chatState.User = callback.From.ID
 		chatState.Leader = callback.From.FirstName
 		chatState.LeadTimestamp = time.Now()
 		chatState.Unlock()
+		// Notify the user about the word to explain.
 		bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, chatState.Word))
 
 	case "next":
+		// Handle the "next" action.
 		chatState.Lock()
 		if chatState.User != callback.From.ID && chatState.User != 0 {
+			// If another user is already explaining the word, alert the current user.
 			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("%s is already explaining the word. %s", chatState.User, callback.From.UserName)))
 			chatState.Unlock()
 			return
 		}
 		if chatState.User == 0 {
+			// If no user is explaining the word, alert the current user.
 			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("%s Please click on see word/claim Leadership", callback.From.FirstName)))
 			chatState.Unlock()
 			return
 		}
+		// Set the current user as the one explaining the word.
 		chatState.User = callback.From.ID
 		chatState.Leader = callback.From.FirstName
 		chatState.Unlock()
+		// Notify the user about the word to explain.
 		chatState.Word, _ = model.GetRandomWord()
 		bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, chatState.Word))
-
+		// view.SendMessage(bot, callback.Message.Chat.ID, fmt.Sprintf("%s is explaining the word:", callback.From.UserName))
 	case "droplead":
+		// Handle the "droplead" action.
 		chatState.Lock()
 		if chatState.User != callback.From.ID {
+			// If the current user is not the leader, prevent them from dropping the lead.
 			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, "You are not the leader, so you cannot drop the lead!"))
 			chatState.Unlock()
 			return
 		}
-		buttons := createSingleButtonKeyboard("🌟 Claim Leadership 🙋", "explain")
+		buttons := tgbotapi.NewInlineKeyboardMarkup(
+			// First line with a single button
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("🌟 Claim Leadership 🙋", "explain"),
+			),
+		)
+		// Reset the chat state after dropping the lead.
 		view.SendMessageWithButtons(bot, callback.Message.Chat.ID, fmt.Sprintf("%s refused to lead -> %s \n", callback.From.FirstName, chatState.Word), buttons)
-		chatState.reset()
+		chatState.Word = ""
+		chatState.User = 0
+		chatState.LeadTimestamp = time.Time{}
 		chatState.Unlock()
-
 	default:
+		// Handle guesses from callback queries (if any).
 		chatState.RLock()
 		word := chatState.Word
 		chatState.RUnlock()
+		fmt.Printf("%s == %s ", callback.Message.Text, word)
+		// Check if the guessed word matches the current word.
 		if service.NormalizeAndCompare(callback.Message.Text, word) {
-			buttons := createSingleButtonKeyboard("🌟 Claim Leadership 🙋", "explain")
+			fmt.Print("calling Sendmessage")
+			buttons := tgbotapi.NewInlineKeyboardMarkup(
+				// First line with a single button
+				tgbotapi.NewInlineKeyboardRow(
+					tgbotapi.NewInlineKeyboardButtonData("🌟 Claim Leadership 🙋", "explain"),
+				),
+			)
 			view.SendMessageWithButtons(bot, callback.Message.Chat.ID, fmt.Sprintf("Congratulations! %s guessed the word correctly.", callback.From.FirstName), buttons)
+			fmt.Println("calling DBManager")
+			// Reset the chat state after a correct guess.
 			chatState.Lock()
-			chatState.reset()
+			chatState.Word = ""
+			chatState.User = 0
 			chatState.Unlock()
+		} else {
+			// view.SendMessage(bot, callback.Message.Chat.ID, "That's not correct. Try again!")
 		}
 	}
+	// Acknowledge the callback query to remove the "loading" state in the client.
 	bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
 }
 
