@@ -247,7 +247,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 				return
 			}
 
-			buttons := createSingleButtonKeyboard(" 🗣️ Explain ", "explain")
+			buttons := createSingleButtonKeyboard(" 🗣️ Explain! ", "explain")
 
 			chatState.Lock()
 			chatState.Word = word
