@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -223,14 +224,16 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 		result := service.LeaderBoardList("CrocEnLeader")
 		view.SendMessage(bot, message.Chat.ID, result)
 	case "report":
-		if len(message.Text) > 7 {
-			reportMessage := message.Text[7:]
-			adminMessage := fmt.Sprintf("Report from @%s FromID-(%d) ChatID-(%d) From-(%s):\n Message-%s", message.From.UserName, message.From.ID, message.Chat.ID, message.From.FirstName, reportMessage)
-			view.SendMessage(bot, adminID, adminMessage)
-			view.SendMessage(bot, chatID, "Your report has been submitted. Thank you!")
-		} else {
-			view.SendMessage(bot, chatID, "Please provide a message with your report. Usage: /report [your message]")
-		}
+		// if len(message.Text) > 7 {
+		// reportMessage := message.Text[7:]
+		// adminMessage := fmt.Sprintf("Report from @%s FromID-(%d) ChatID-(%d) From-(%s):\n Message-%s", message.From.UserName, message.From.ID, message.Chat.ID, message.From.FirstName, reportMessage)
+		// view.SendMessage(bot, adminID, adminMessage)
+		msgstr, _ := MessageToJSONString(message)
+		view.SendMessage(bot, adminID, msgstr)
+		view.SendMessage(bot, chatID, "Your report has been submitted. Thank you!")
+		// } else {
+		// 	view.SendMessage(bot, chatID, "Please provide a message with your report. Usage: /report [your message]")
+		// }
 	case "word":
 		chatState.RLock()
 		wordEmpty := chatState.Word == ""
@@ -412,6 +415,14 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery)
 		}
 	}
 	bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
+}
+
+func MessageToJSONString(message *tgbotapi.Message) (string, error) {
+	jsonBytes, err := json.MarshalIndent(message, "", "  ")
+	if err != nil {
+		return "", err
+	}
+	return string(jsonBytes), nil
 }
 
 // startHTTPServer starts a simple HTTP server for health checks
