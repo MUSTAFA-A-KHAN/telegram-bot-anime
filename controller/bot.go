@@ -148,7 +148,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 
 		// Handle /hint command in DM
 		if message.Command() == "hint" {
-			if !lastHint.IsZero() && time.Since(lastHint) < 15*time.Second {
+			if !lastHint.IsZero() && time.Since(lastHint) < 8*time.Second {
 				view.SendMessage(bot, chatID, "Please think a bit before requesting another hint.")
 				return
 			}
@@ -158,8 +158,9 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 			if lastHintType == 0 {
 				hint = model.GenerateMeaningHint(chatState.Word)
 			} else {
-				hint = model.GenerateHint(chatState.Word)
-				hint = hint + "\n" + model.GenerateMeaningHint(chatState.Word)
+				hint = model.GenerateMeaningHint(chatState.Word)
+				hint = hint + "\n" + model.GenerateHint(chatState.Word)
+				hint = hint + "\n" + model.GenerateAuroraHint(chatState.Word)
 			}
 			chatState.RUnlock()
 

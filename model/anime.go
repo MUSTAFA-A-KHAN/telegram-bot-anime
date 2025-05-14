@@ -56,7 +56,7 @@ func GenerateHint(word string) string {
 	}
 	firstLetter := strings.ToUpper(string(word[0]))
 	length := strconv.Itoa(len(word))
-	return "Hint: The word starts with '" + firstLetter + "' and is " + length + " letters long."
+	return "ⓘ Hint: The word starts with '" + firstLetter + "' and is " + length + " letters long."
 }
 
 var meaningCache = struct {
@@ -91,18 +91,116 @@ func GenerateMeaningHint(word string) string {
 	cachedMeaning, found := meaningCache.m[word]
 	meaningCache.RUnlock()
 	if found {
-		return "Meaning hint: " + cachedMeaning
+		return "ⓘ Hint: " + cachedMeaning
 	}
 
 	meaning, err := fetchMeaningFromAPI(word)
 	meaning = strings.ReplaceAll(meaning, word, "_")
 	if err != nil {
 		// fallback to placeholder
-		return "Meaning hint: This is a placeholder for the meaning or context of the word: " + word + ":(."
+		return "ⓘ Hint: This is a placeholder for the meaning or context of the word: " + word + ":(."
 	}
 
 	meaningCache.Lock()
 	meaningCache.m[word] = meaning
 	meaningCache.Unlock()
 	return "ⓘ Hint: " + meaning
+}
+
+type Transformation struct {
+	pattern string
+	output  string
+}
+
+// Full transformation rules from your sheet
+var transformations = []Transformation{
+	{"www. the devil ahad dot", "com"},
+	{"com", "www. the devil ahad dot"},
+	{"indi", "the croc is ... ( without the article) "},
+	{"u", "me*"},
+	{"al", "each of ... - one sick"},
+	{"thank you", "ty"},
+	{"ty", "thank you"},
+	{"me*", "you"},
+	{"qu", "British line"},
+	{"you*", "me"},
+	{"your lover", "ex"},
+	{"ex", "lover"},
+	{"be", "is are am"},
+	{"is", "be"},
+	{"are", "be"},
+	{"am", "be"},
+	{"or", "link between alternatives"},
+	{"er", "express hesitation"},
+	{"re", "again"},
+	{"again", "re"},
+	{"great", "gr"},
+	{"gr", "great"},
+	{"dr", "doctor"},
+	{"doctor", "dr"},
+	{"adv", "ly"},
+	{"why", "y"},
+	{"y", "why"},
+	{"ion", "particle charged"},
+	{"electron", "e"},
+	{"e", "electron"},
+	{"eye", "i"},
+	{"i", "eye"},
+	{"tea", "t"},
+	{"t", "tea"},
+	{"r", "are"},
+	{"p", "b flip it"},
+	{"b", "p flip it"},
+	{"d", "b to the left"},
+	{"b to the left", "d"},
+	{"d to the right", "b"},
+	{"see", "c"},
+	{"c", "see"},
+	{"ill", "L"},
+	{"sick", "L"},
+	{"l", "ill"},
+	{"v", "| x | or absolute value"},
+	{"falak", "F"},
+	{"f", "Falak"},
+	{"sarah", "S"},
+	{"s", "Sarah"},
+	{"m", "Marah"},
+	{"en", "English"},
+	{"ar", "En*"},
+	{"jury", "12 people in court"},
+	{"sen", "Tooth in ar"},
+	{"si", "yes in Spanish"},
+	{"no", "Yes*"},
+	{"yes", "no*"},
+	{"se", "SouthEast"},
+	{"at", "prep. of time"},
+}
+
+func GenerateAuroraHint(word string) string {
+
+	word = strings.ToLower(word)
+	var result []string
+
+	for i := 0; i < len(word); {
+		matched := false
+
+		// Check for longest matching pattern first (e.g., "en" before "e")
+		for _, t := range transformations {
+			patternLen := len(t.pattern)
+			if i+patternLen <= len(word) && word[i:i+patternLen] == t.pattern {
+				result = append(result, t.output)
+				i += patternLen
+				matched = true
+				break
+			}
+		}
+
+		if !matched {
+			// If no match, just use the character as-is
+			result = append(result, string(word[i]))
+			i++
+		}
+	}
+
+	return strings.Join(result, " + ")
 }
