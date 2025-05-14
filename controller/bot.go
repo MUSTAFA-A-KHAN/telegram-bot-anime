@@ -127,7 +127,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 		lastHintType := chatState.LastHintTypeSent
 		chatState.RUnlock()
 		// Start a new game if no word or lead expired
-		if wordEmpty || time.Since(chatState.LeadTimestamp) >= 240*time.Second {
+		if wordEmpty || time.Since(chatState.LeadTimestamp) >= 640*time.Second {
 			word, err := model.GetRandomWord()
 			if err != nil {
 				view.SendMessage(bot, chatID, "Failed to fetch a word.")
@@ -142,13 +142,13 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 			chatState.LastHintTypeSent = 0
 			chatState.Unlock()
 			button := tgbotapi.NewInlineKeyboardButtonURL("add to group", "https://t.me/Croco_rebirth_bot?startgroup=true")
-			view.SendMessageWithKeyboardButton(bot, chatID, "You can unlock full potential via adding this to a group meanwhile \n I have a word for you to guess! Ask me for a hint by tapping /hint.", button)
+			view.SendMessageWithKeyboardButton(bot, chatID, "You can unlock full potential by adding me to a group 🔓 \n Meanwhile, I have a word for you to guess! Need a clue? Just tap \n 👉 /hint.", button)
 			return
 		}
 
 		// Handle /hint command in DM
 		if message.Command() == "hint" {
-			if !lastHint.IsZero() && time.Since(lastHint) < 15*time.Second {
+			if !lastHint.IsZero() && time.Since(lastHint) < 8*time.Second {
 				view.SendMessage(bot, chatID, "Please think a bit before requesting another hint.")
 				return
 			}
@@ -158,8 +158,9 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 			if lastHintType == 0 {
 				hint = model.GenerateMeaningHint(chatState.Word)
 			} else {
-				hint = model.GenerateHint(chatState.Word)
-				hint = hint + "\n" + model.GenerateMeaningHint(chatState.Word)
+				hint = model.GenerateMeaningHint(chatState.Word)
+				hint = hint + "\n" + model.GenerateHint(chatState.Word)
+				hint = hint + "\n" + model.GenerateAuroraHint(chatState.Word)
 			}
 			chatState.RUnlock()
 
@@ -174,7 +175,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 
 		// Handle /reveal command in DM
 		if message.Command() == "reveal" {
-			if time.Since(chatState.LeadTimestamp) >= 18*time.Second {
+			if time.Since(chatState.LeadTimestamp) >= 6*time.Second {
 				view.SendMessage(bot, chatID, fmt.Sprintf("The word was: %s", chatState.Word))
 				chatState.reset()
 			} else {
@@ -196,8 +197,13 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 
 			chatState.reset()
 			return
+		}
+		if message.Command() == "report" {
+			msgstr, _ := MessageToJSONString(message)
+			view.SendMessage(bot, adminID, msgstr)
+			view.SendMessage(bot, chatID, "Your report has been submitted. Thank you!")
 		} else {
-			view.SendMessage(bot, chatID, "Try again or ask for a hint by typing /hint.")
+			view.SendMessage(bot, chatID, "Try again or Need a clue? Just tap \n 👉 /hint. \n Or , you can reveal the word by tapping \n 👉 /reveal.")
 			return
 		}
 	}
