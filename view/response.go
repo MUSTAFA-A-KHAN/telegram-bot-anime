@@ -1,6 +1,12 @@
 package view
 
 import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"net/http"
+
+	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/model"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
@@ -41,4 +47,36 @@ func SendSticker(bot *tgbotapi.BotAPI, chatID int64, stickerFileID string) error
 	sticker := tgbotapi.NewStickerShare(chatID, stickerFileID)
 	_, err := bot.Send(sticker)
 	return err
+}
+func ReactToMessage(botToken string, chatID int64, messageID int, emoji string, isBig bool) error {
+	url := fmt.Sprintf("https://api.telegram.org/bot%s/setMessageReaction", botToken)
+
+	reqBody := model.ReactionRequest{
+		ChatID:    chatID,
+		MessageID: messageID,
+		Reaction: []model.Reaction{
+			{
+				Type:  "emoji",
+				Emoji: emoji,
+			},
+		},
+		IsBig: isBig,
+	}
+
+	jsonData, err := json.Marshal(reqBody)
+	if err != nil {
+		return fmt.Errorf("failed to marshal request: %w", err)
+	}
+
+	resp, err := http.Post(url, "application/json", bytes.NewBuffer(jsonData))
+	if err != nil {
+		return fmt.Errorf("failed to send request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("Telegram API responded with status: %s", resp.Status)
+	}
+
+	return nil
 }
