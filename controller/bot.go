@@ -191,7 +191,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 
 		if service.NormalizeAndCompare(message.Text, word) && message.From.ID == chatState.User {
 			view.SendMessage(bot, chatID, fmt.Sprintf("Congratulations! You guessed the word %s correctly.", word))
-
+			view.ReactToMessage(bot.Token, chatID, message.MessageID, "🔥", true)
 			client := repository.DbManager()
 			repository.InsertDoc(message.From.ID, message.From.FirstName, chatID, client, "CrocEn")
 
