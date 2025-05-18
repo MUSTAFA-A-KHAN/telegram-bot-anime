@@ -118,7 +118,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 			view.SendMessage(bot, chatID, result)
 		}
 		if message.Command() == "install-AI" {
-			 installOllama.Install()
+			installOllama.Install()
 		}
 		if message.Command() == "leaderstats" {
 			result := service.LeaderBoardList("CrocEnLeader")
@@ -346,7 +346,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery)
 	case "explain":
 		chatState.Lock()
 		if chatState.User != callback.From.ID && chatState.User != 0 && time.Since(chatState.LeadTimestamp) < 120*time.Second {
-			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("%s is already explaining the word. %s", chatState.User, callback.From.UserName)))
+			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("%s is already explaining the word. %s", chatState.Leader, callback.From.UserName)))
 			chatState.Unlock()
 			return
 		}
@@ -384,7 +384,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery)
 	case "next":
 		chatState.Lock()
 		if chatState.User != callback.From.ID && chatState.User != 0 {
-			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("%s is already explaining the word. %s", chatState.User, callback.From.UserName)))
+			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("%s is already explaining the word. %s", chatState.Leader, callback.From.UserName)))
 			chatState.Unlock()
 			return
 		}
