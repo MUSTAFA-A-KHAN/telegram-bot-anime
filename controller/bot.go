@@ -34,6 +34,28 @@ var (
 	// stateMutex ensures safe access to the chatStates map.
 	stateMutex = &sync.RWMutex{}
 )
+var telegramReactions = []string{
+	"👍",  // Thumbs Up
+	"👎",  // Thumbs Down
+	"❤️", // Red Heart
+	"😂",  // Face with Tears of Joy
+	"😮",  // Surprised Face
+	"😢",  // Crying Face
+	"😡",  // Angry Face
+	"🎉",  // Party Popper
+	"🙌",  // Raising Hands
+	"🤔",  // Thinking Face
+	"🥰",  // Smiling Face with Hearts
+	"🤯",  // Exploding Head
+	"🤬",  // Face with Symbols on Mouth
+	"👏",  // Clapping Hands
+	"🤩",  // Star-Struck
+	"😎",  // Smiling Face with Sunglasses
+	"💯",  // 100 Points
+	"🔥",  // Fire
+	"🥳",  // Partying Face
+	"⚡",  // Thunder
+}
 
 // getOrCreateChatState safely retrieves or creates a ChatState for a chatID.
 func getOrCreateChatState(chatID int64) *ChatState {
@@ -260,6 +282,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 		if service.NormalizeAndCompare(message.Text, word) && message.From.ID == chatState.User {
 			view.SendMessage(bot, chatID, fmt.Sprintf("Congratulations! You guessed the word %s correctly.", word))
 			view.ReactToMessage(bot.Token, chatID, message.MessageID, "🔥", true)
+			view.ReactToMessage(bot.Token, chatID, message.MessageID, "⚡", true)
 			client := repository.DbManager()
 			repository.InsertDoc(message.From.ID, message.From.FirstName, chatID, client, "CrocEn")
 
