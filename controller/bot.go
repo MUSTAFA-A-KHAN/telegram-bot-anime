@@ -127,12 +127,20 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 			view.SendMessage(bot, chatID, logsText+"\nLogs:\n")
 		}
 		if message.Command() == "executeAI" {
-			result, err := installOllama.RunOllama("Hey There")
+			userPrompt := strings.TrimSpace(message.CommandArguments())
+			if userPrompt == "" {
+				view.SendMessage(bot, chatID,
+					"Please add a prompt, e.g.  /executeAI Explain Newton’s third law")
+				return
+			}
+
+			result, err := installOllama.RunOllama(userPrompt)
 			if err != nil {
-				view.SendMessage(bot, chatID, err.Error())
+				view.SendMessage(bot, chatID, "Error:"+err.Error())
+				return
 			}
 			view.SendMessage(bot, chatID, result)
-
+			return
 		}
 
 		if message.Command() == "leaderstats" {
