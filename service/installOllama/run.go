@@ -11,7 +11,7 @@ func RunOllama(prompt string) (string, error) {
 
 	// Create a buffer to hold the input (the prompt)
 	var stdin bytes.Buffer
-	stdin.WriteString(prompt)
+	stdin.WriteString("The user prompt is " + "'" + prompt + "'" + "please respond in not more than three lines")
 
 	// Connect stdin of the command to the buffer
 	cmd.Stdin = &stdin

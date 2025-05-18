@@ -69,8 +69,8 @@ func Install() ([]string, error) {
 	logs = append(logs, "✅ Ollama is ready!")
 
 	// Step 6: Pull the llama3 model
-	logs = append(logs, "📥 Pulling model (llama3)...")
-	pull := exec.Command("ollama", "pull", "llama3")
+	logs = append(logs, "📥 Pulling model (tinyllama)...")
+	pull := exec.Command("ollama", "pull", "tinyllama")
 	pull.Stdout = os.Stdout
 	pull.Stderr = os.Stderr
 	err = pull.Run()

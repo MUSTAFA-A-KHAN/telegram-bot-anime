@@ -112,19 +112,27 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 
 	// New DM scenario: if chat is private, bot gives hint and user guesses
 	if message.Chat.IsPrivate() {
-
+		fmt.Println("------------------------------------------" + message.Command() + "------------------------------------------")
 		if message.Command() == "stats" {
 			result := service.LeaderBoardList("CrocEn")
 			view.SendMessage(bot, chatID, result)
 		}
 
-		if message.Command() == "install-AI" {
+		if message.Command() == "installAI" {
 			logs, err := installOllama.Install()
 			logsText := strings.Join(logs, "\n")
-			view.SendMessage(bot, chatID, logsText+"\nLogs:\n"+err.Error())
+			if err != nil {
+				view.SendMessage(bot, chatID, logsText+"\nLogs:\n"+err.Error())
+			}
+			view.SendMessage(bot, chatID, logsText+"\nLogs:\n")
 		}
-		if message.Command() == "execute-AI" {
-			installOllama.RunOllama("Hey There")
+		if message.Command() == "executeAI" {
+			result, err := installOllama.RunOllama("Hey There")
+			if err != nil {
+				view.SendMessage(bot, chatID, err.Error())
+			}
+			view.SendMessage(bot, chatID, result)
+
 		}
 
 		if message.Command() == "leaderstats" {
