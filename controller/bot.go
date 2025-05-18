@@ -101,6 +101,9 @@ func StartBot(token string) error {
 	return nil
 }
 
+var aiModeUsers = make(map[int64]bool)
+var aiModeMutex = &sync.Mutex{}
+
 // handleMessage processes incoming messages and handles commands and guesses.
 func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 	chatID := message.Chat.ID
@@ -113,6 +116,37 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 	// New DM scenario: if chat is private, bot gives hint and user guesses
 	if message.Chat.IsPrivate() {
 		fmt.Println("------------------------------------------" + message.Command() + "------------------------------------------")
+		text := message.Text
+		switch message.Command() {
+		case "ai_on":
+			aiModeMutex.Lock()
+			aiModeUsers[chatID] = true
+			aiModeMutex.Unlock()
+			view.SendMessage(bot, chatID, "AI mode enabled!")
+			return
+		case "ai_off":
+			aiModeMutex.Lock()
+			delete(aiModeUsers, chatID)
+			aiModeMutex.Unlock()
+			view.SendMessage(bot, chatID, "AI mode disabled.")
+			return
+		}
+
+		aiModeMutex.Lock()
+		aiOn := aiModeUsers[chatID]
+		aiModeMutex.Unlock()
+
+		if aiOn {
+			// AI processing here
+			result, err := installOllama.RunOllama(text)
+			if err != nil {
+				view.SendMessage(bot, chatID, "Error: "+err.Error())
+				return
+			}
+			view.SendMessage(bot, chatID, result)
+			return
+		}
+
 		if message.Command() == "stats" {
 			result := service.LeaderBoardList("CrocEn")
 			view.SendMessage(bot, chatID, result)
@@ -125,6 +159,14 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 				view.SendMessage(bot, chatID, logsText+"\nLogs:\n"+err.Error())
 			}
 			view.SendMessage(bot, chatID, logsText+"\nLogs:\n")
+		}
+		if message.Command() == "buildModel" {
+			// Prepare the command
+			output, err := installOllama.BuildOllamaModel()
+			if err != nil {
+				view.SendMessage(bot, chatID, "Build fail Error:"+err.Error())
+			}
+			view.SendMessage(bot, chatID, "\nLogs:\n"+output)
 		}
 		if message.Command() == "executeAI" {
 			userPrompt := strings.TrimSpace(message.CommandArguments())

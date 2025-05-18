@@ -6,8 +6,8 @@ import (
 )
 
 func RunOllama(prompt string) (string, error) {
-	// Prepare the command
-	cmd := exec.Command("ollama", "run", "tinyllama")
+
+	cmd := exec.Command("ollama", "run", "super-mario-llama")
 
 	// Create a buffer to hold the input (the prompt)
 	var stdin bytes.Buffer
@@ -27,6 +27,23 @@ func RunOllama(prompt string) (string, error) {
 	}
 
 	// Return the output as string
+	return out.String(), nil
+}
+
+func BuildOllamaModel() (string, error) {
+	// Command to build the model from Modelfile
+	cmd := exec.Command("ollama", "create", "super-mario-llama", "-f", "Modelfile")
+
+	var out bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = &out
+
+	// Run the command
+	err := cmd.Run()
+	if err != nil {
+		return "", err
+	}
+
 	return out.String(), nil
 }
 
