@@ -3,31 +3,56 @@ package service
 import (
 	"bytes"
 	"os/exec"
+	"strings"
 )
 
-func RunOllama(prompt string) (string, error) {
+func RunOllama(prompt string) (<-chan string, <-chan error) {
+	lineChannel := make(chan string)
+	errChannel := make(chan error, 1)
 
 	cmd := exec.Command("ollama", "run", "super-mario-llama")
 
-	// Create a buffer to hold the input (the prompt)
-	var stdin bytes.Buffer
-	stdin.WriteString(prompt)
-
-	// Connect stdin of the command to the buffer
-	cmd.Stdin = &stdin
+	// Set up input
+	cmd.Stdin = bytes.NewBufferString(prompt)
 
 	// Capture the output
-	var out bytes.Buffer
-	cmd.Stdout = &out
-
-	// Run the command
-	err := cmd.Run()
+	stdoutPipe, err := cmd.StdoutPipe()
 	if err != nil {
-		return "", err
+		errChannel <- err
+		close(lineChannel)
+		close(errChannel)
+		return lineChannel, errChannel
 	}
 
-	// Return the output as string
-	return out.String(), nil
+	// Start the command
+	go func() {
+		defer close(lineChannel)
+		defer close(errChannel)
+
+		if err := cmd.Start(); err != nil {
+			errChannel <- err
+			return
+		}
+
+		buf := make([]byte, 1024)
+		for {
+			n, err := stdoutPipe.Read(buf)
+			if err != nil {
+				errChannel <- err
+				break
+			}
+			// Split the buffer into lines and send them
+			for _, line := range strings.Split(string(buf[:n]), "\n") {
+				// Filter out empty lines if necessary
+				if strings.TrimSpace(line) != "" {
+					lineChannel <- line
+				}
+			}
+		}
+		cmd.Wait()
+	}()
+
+	return lineChannel, errChannel
 }
 
 func BuildOllamaModel() (string, error) {

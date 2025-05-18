@@ -160,13 +160,43 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 
 		if aiOn {
 			// AI processing here
-			result, err := installOllama.RunOllama(text)
+			wordChannel, errChannel := installOllama.RunOllama(text)
+
+			// Send the initial message (could be an empty string or placeholder)
+			initialMsg := tgbotapi.NewMessage(chatID, "Hello")
+			initialMessage, err := bot.Send(initialMsg)
 			if err != nil {
-				view.SendMessage(bot, chatID, "Error: "+err.Error())
+				log.Println("Failed to send initial message:", err)
 				return
 			}
-			view.SendMessage(bot, chatID, result)
-			return
+
+			// Start a variable to accumulate the text as we receive each word
+			var accumulatedText string
+
+			// Process words as they arrive
+			for word := range wordChannel {
+				// Accumulate the word and append it to the message content
+				accumulatedText += word + " "
+
+				// Update the same message with the accumulated text
+				editedMsg := tgbotapi.NewEditMessageText(chatID, initialMessage.MessageID, strings.TrimSpace(accumulatedText))
+				_, err := bot.Send(editedMsg)
+				if err != nil {
+					log.Println("Failed to update message:", err)
+				}
+			}
+
+			// If an error occurs during execution, send it to the user
+			if err := <-errChannel; err != nil {
+				// Send an error message if something goes wrong
+				errorMsg := tgbotapi.NewMessage(chatID, err.Error())
+				_, err := bot.Send(errorMsg)
+				if err != nil {
+					log.Println("Failed to send error message:", err)
+				}
+				return
+			}
+			//
 		}
 
 		if message.Command() == "stats" {
@@ -190,22 +220,22 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 			}
 			view.SendMessage(bot, chatID, "\nLogs:\n"+output)
 		}
-		if message.Command() == "executeAI" {
-			userPrompt := strings.TrimSpace(message.CommandArguments())
-			if userPrompt == "" {
-				view.SendMessage(bot, chatID,
-					"Please add a prompt, e.g.  /executeAI Explain Newton’s third law")
-				return
-			}
+		// if message.Command() == "executeAI" {
+		// 	userPrompt := strings.TrimSpace(message.CommandArguments())
+		// 	if userPrompt == "" {
+		// 		view.SendMessage(bot, chatID,
+		// 			"Please add a prompt, e.g.  /executeAI Explain Newton’s third law")
+		// 		return
+		// 	}
 
-			result, err := installOllama.RunOllama(userPrompt)
-			if err != nil {
-				view.SendMessage(bot, chatID, "Error:"+err.Error())
-				return
-			}
-			view.SendMessage(bot, chatID, result)
-			return
-		}
+		// 	result, err := installOllama.RunOllama(userPrompt)
+		// 	if err != nil {
+		// 		view.SendMessage(bot, chatID, "Error:"+err.Error())
+		// 		return
+		// 	}
+		// 	view.SendMessage(bot, chatID, result)
+		// 	return
+		// }
 
 		if message.Command() == "leaderstats" {
 			result := service.LeaderBoardList("CrocEnLeader")
