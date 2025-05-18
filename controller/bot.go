@@ -117,9 +117,16 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 			result := service.LeaderBoardList("CrocEn")
 			view.SendMessage(bot, chatID, result)
 		}
+
 		if message.Command() == "install-AI" {
-			installOllama.Install()
+			logs, err := installOllama.Install()
+			logsText := strings.Join(logs, "\n")
+			view.SendMessage(bot, chatID, logsText+"\nLogs:\n"+err.Error())
 		}
+		if message.Command() == "execute-AI" {
+			installOllama.RunOllama("Hey There")
+		}
+
 		if message.Command() == "leaderstats" {
 			result := service.LeaderBoardList("CrocEnLeader")
 			view.SendMessage(bot, chatID, result)
