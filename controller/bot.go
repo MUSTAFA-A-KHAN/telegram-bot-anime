@@ -12,6 +12,7 @@ import (
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/model"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/repository"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/service"
+	installOllama "github.com/MUSTAFA-A-KHAN/telegram-bot-anime/service/installOllama"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/view"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
@@ -33,6 +34,28 @@ var (
 	// stateMutex ensures safe access to the chatStates map.
 	stateMutex = &sync.RWMutex{}
 )
+var telegramReactions = []string{
+	"👍",  // Thumbs Up
+	"👎",  // Thumbs Down
+	"❤️", // Red Heart
+	"😂",  // Face with Tears of Joy
+	"😮",  // Surprised Face
+	"😢",  // Crying Face
+	"😡",  // Angry Face
+	"🎉",  // Party Popper
+	"🙌",  // Raising Hands
+	"🤔",  // Thinking Face
+	"🥰",  // Smiling Face with Hearts
+	"🤯",  // Exploding Head
+	"🤬",  // Face with Symbols on Mouth
+	"👏",  // Clapping Hands
+	"🤩",  // Star-Struck
+	"😎",  // Smiling Face with Sunglasses
+	"💯",  // 100 Points
+	"🔥",  // Fire
+	"🥳",  // Partying Face
+	"⚡",  // Thunder
+}
 
 // getOrCreateChatState safely retrieves or creates a ChatState for a chatID.
 func getOrCreateChatState(chatID int64) *ChatState {
@@ -100,6 +123,9 @@ func StartBot(token string) error {
 	return nil
 }
 
+var aiModeUsers = make(map[int64]bool)
+var aiModeMutex = &sync.Mutex{}
+
 // handleMessage processes incoming messages and handles commands and guesses.
 func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 	chatID := message.Chat.ID
@@ -111,11 +137,105 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 
 	// New DM scenario: if chat is private, bot gives hint and user guesses
 	if message.Chat.IsPrivate() {
+		fmt.Println("------------------------------------------" + message.Command() + "------------------------------------------")
+		text := message.Text
+		switch message.Command() {
+		case "ai_on":
+			aiModeMutex.Lock()
+			aiModeUsers[chatID] = true
+			aiModeMutex.Unlock()
+			view.SendMessage(bot, chatID, "AI mode enabled!")
+			return
+		case "ai_off":
+			aiModeMutex.Lock()
+			delete(aiModeUsers, chatID)
+			aiModeMutex.Unlock()
+			view.SendMessage(bot, chatID, "AI mode disabled.")
+			return
+		}
+
+		aiModeMutex.Lock()
+		aiOn := aiModeUsers[chatID]
+		aiModeMutex.Unlock()
+
+		if aiOn {
+			// AI processing here
+			wordChannel, errChannel := installOllama.RunOllama(text)
+
+			// Send the initial message (could be an empty string or placeholder)
+			initialMsg := tgbotapi.NewMessage(chatID, "Hello")
+			initialMessage, err := bot.Send(initialMsg)
+			if err != nil {
+				log.Println("Failed to send initial message:", err)
+				return
+			}
+
+			// Start a variable to accumulate the text as we receive each word
+			var accumulatedText string
+
+			// Process words as they arrive
+			for word := range wordChannel {
+				// Accumulate the word and append it to the message content
+				accumulatedText += word + " "
+
+				// Update the same message with the accumulated text
+				editedMsg := tgbotapi.NewEditMessageText(chatID, initialMessage.MessageID, strings.TrimSpace(accumulatedText))
+				_, err := bot.Send(editedMsg)
+				if err != nil {
+					log.Println("Failed to update message:", err)
+				}
+			}
+
+			// If an error occurs during execution, send it to the user
+			if err := <-errChannel; err != nil {
+				// Send an error message if something goes wrong
+				errorMsg := tgbotapi.NewMessage(chatID, err.Error())
+				_, err := bot.Send(errorMsg)
+				if err != nil {
+					log.Println("Failed to send error message:", err)
+				}
+				return
+			}
+			//
+		}
 
 		if message.Command() == "stats" {
 			result := service.LeaderBoardList("CrocEn")
 			view.SendMessage(bot, chatID, result)
 		}
+
+		if message.Command() == "installAI" {
+			logs, err := installOllama.Install()
+			logsText := strings.Join(logs, "\n")
+			if err != nil {
+				view.SendMessage(bot, chatID, logsText+"\nLogs:\n"+err.Error())
+			}
+			view.SendMessage(bot, chatID, logsText+"\nLogs:\n")
+		}
+		if message.Command() == "buildModel" {
+			// Prepare the command
+			output, err := installOllama.BuildOllamaModel()
+			if err != nil {
+				view.SendMessage(bot, chatID, "Build fail Error:"+err.Error())
+			}
+			view.SendMessage(bot, chatID, "\nLogs:\n"+output)
+		}
+		// if message.Command() == "executeAI" {
+		// 	userPrompt := strings.TrimSpace(message.CommandArguments())
+		// 	if userPrompt == "" {
+		// 		view.SendMessage(bot, chatID,
+		// 			"Please add a prompt, e.g.  /executeAI Explain Newton’s third law")
+		// 		return
+		// 	}
+
+		// 	result, err := installOllama.RunOllama(userPrompt)
+		// 	if err != nil {
+		// 		view.SendMessage(bot, chatID, "Error:"+err.Error())
+		// 		return
+		// 	}
+		// 	view.SendMessage(bot, chatID, result)
+		// 	return
+		// }
 
 		if message.Command() == "leaderstats" {
 			result := service.LeaderBoardList("CrocEnLeader")
@@ -192,6 +312,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 		if service.NormalizeAndCompare(message.Text, word) && message.From.ID == chatState.User {
 			view.SendMessage(bot, chatID, fmt.Sprintf("Congratulations! You guessed the word %s correctly.", word))
 			view.ReactToMessage(bot.Token, chatID, message.MessageID, "🔥", true)
+			view.ReactToMessage(bot.Token, chatID, message.MessageID, "⚡", true)
 			client := repository.DbManager()
 			repository.InsertDoc(message.From.ID, message.From.FirstName, chatID, client, "CrocEn")
 
@@ -343,7 +464,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery)
 	case "explain":
 		chatState.Lock()
 		if chatState.User != callback.From.ID && chatState.User != 0 && time.Since(chatState.LeadTimestamp) < 120*time.Second {
-			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("%s is already explaining the word. %s", chatState.User, callback.From.UserName)))
+			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("%s is already explaining the word. %s", chatState.Leader, callback.From.UserName)))
 			chatState.Unlock()
 			return
 		}
@@ -381,7 +502,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery)
 	case "next":
 		chatState.Lock()
 		if chatState.User != callback.From.ID && chatState.User != 0 {
-			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("%s is already explaining the word. %s", chatState.User, callback.From.UserName)))
+			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("%s is already explaining the word. %s", chatState.Leader, callback.From.UserName)))
 			chatState.Unlock()
 			return
 		}
