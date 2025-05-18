@@ -12,6 +12,7 @@ import (
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/model"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/repository"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/service"
+	installOllama "github.com/MUSTAFA-A-KHAN/telegram-bot-anime/service/installOllama"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/view"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
@@ -116,7 +117,9 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 			result := service.LeaderBoardList("CrocEn")
 			view.SendMessage(bot, chatID, result)
 		}
-
+		if message.Command() == "install-AI" {
+			 installOllama.Install()
+		}
 		if message.Command() == "leaderstats" {
 			result := service.LeaderBoardList("CrocEnLeader")
 			view.SendMessage(bot, chatID, result)
