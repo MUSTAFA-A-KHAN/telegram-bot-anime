@@ -364,6 +364,9 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 	case "stats":
 		result := service.LeaderBoardList("CrocEn")
 		view.SendMessage(bot, message.Chat.ID, result)
+	case "mystats":
+		result := service.GetUserStatsByID(message.From.ID)
+		view.SendMessage(bot, chatID, result)
 	case "leaderstats":
 		result := service.LeaderBoardList("CrocEnLeader")
 		view.SendMessage(bot, message.Chat.ID, result)
