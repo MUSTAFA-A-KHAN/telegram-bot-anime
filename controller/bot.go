@@ -202,7 +202,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 
 		if message.Command() == "stats" {
 			result := service.LeaderBoardList("CrocEn")
-			view.SendMessage(bot, chatID, result)
+			view.SendMessagehtml(bot, chatID, result)
 		}
 		if message.Command() == "mystats" {
 			// args := strings.Fields(message.CommandArguments())
@@ -214,7 +214,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 			ID := strconv.Itoa(message.From.ID)
 			userID, err := strconv.Atoi(ID)
 			if err != nil {
-			view.SendMessage(bot, chatID, "Invalid user ID. Please enter a valid numeric user ID.")
+				view.SendMessage(bot, chatID, "Invalid user ID. Please enter a valid numeric user ID.")
 				return
 			}
 			result := service.GetUserStatsByID(userID)
@@ -267,7 +267,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 		if wordEmpty || time.Since(chatState.LeadTimestamp) >= 640*time.Second {
 			word, err := model.GetRandomWord()
 			if err != nil {
-			view.SendMessage(bot, chatID, "Oops! Unable to fetch a word right now. Please try again later.")
+				view.SendMessage(bot, chatID, "Oops! Unable to fetch a word right now. Please try again later.")
 				return
 			}
 			chatState.Lock()
@@ -363,7 +363,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 		view.SendMessage(bot, message.Chat.ID, "Welcome! Type /word to start a new game.")
 	case "stats":
 		result := service.LeaderBoardList("CrocEn")
-		view.SendMessage(bot, message.Chat.ID, result)
+		view.SendMessagehtml(bot, message.Chat.ID, result)
 	case "mystats":
 		result := service.GetUserStatsByID(message.From.ID)
 		view.SendMessage(bot, chatID, result)
@@ -405,7 +405,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 			view.SendSticker(bot, chatID, "CAACAgUAAxkBAAEwCnNnYW-OkgV7Odt9osVwoBSzLC6vsAACMhMAAj45CFdCstMoIYiPfjYE")
 			view.SendMessageWithButtons(bot, message.Chat.ID, "The word is ready! Click 'Explain' to start explaining it.", buttons)
 		} else {
-		view.SendMessage(bot, message.Chat.ID, "A game is currently in progress.")
+			view.SendMessage(bot, message.Chat.ID, "A game is currently in progress.")
 		}
 	case "hint":
 		chatState.RLock()
@@ -482,13 +482,13 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery)
 	chatState := getOrCreateChatState(chatID)
 
 	switch callback.Data {
-		case "explain":
-			chatState.Lock()
-			if chatState.User != callback.From.ID && chatState.User != 0 && time.Since(chatState.LeadTimestamp) < 120*time.Second {
-				bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("%s is already explaining the word. Please wait your turn, %s.", chatState.Leader, callback.From.UserName)))
-				chatState.Unlock()
-				return
-			}
+	case "explain":
+		chatState.Lock()
+		if chatState.User != callback.From.ID && chatState.User != 0 && time.Since(chatState.LeadTimestamp) < 120*time.Second {
+			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("%s is already explaining the word. Please wait your turn, %s.", chatState.Leader, callback.From.UserName)))
+			chatState.Unlock()
+			return
+		}
 		if chatState.User == callback.From.ID {
 			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, chatState.Word))
 			chatState.Unlock()

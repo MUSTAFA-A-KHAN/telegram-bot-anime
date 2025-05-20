@@ -11,6 +11,12 @@ import (
 )
 
 // SendMessage sends a simple text message to the user
+func SendMessagehtml(bot *tgbotapi.BotAPI, chatID int64, text string) error {
+	msg := tgbotapi.NewMessage(chatID, text)
+	msg.ParseMode = tgbotapi.ModeHTML
+	_, err := bot.Send(msg)
+	return err
+}
 func SendMessage(bot *tgbotapi.BotAPI, chatID int64, text string) error {
 	msg := tgbotapi.NewMessage(chatID, text)
 	_, err := bot.Send(msg)
