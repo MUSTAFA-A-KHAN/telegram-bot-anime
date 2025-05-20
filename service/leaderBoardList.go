@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/repository"
 )
@@ -16,16 +17,27 @@ func LeaderBoardList(collection string) string {
 		log.Fatal(err)
 	}
 
-	// Create header for leaderboard
-	leaderboard := "⭐ Leaderboard ⭐\n\n"
-
-	// Iterate over ID counts and format each entry
-	for i, count := range idCounts {
-		leaderboard += fmt.Sprintf("%d. %v – %v\n", i+1, count["Name"], count["count"])
+	// Limit to top 10 players
+	limit := 10
+	if len(idCounts) < limit {
+		limit = len(idCounts)
 	}
 
-	// Add footer message
-	leaderboard += "\n✨ Keep it up and aim for the top! \u2728"
+	// Create header for leaderboard with emojis and formatting
+	leaderboard := "🏆 *Top 10 Players Leaderboard* 🏆\n\n"
+	leaderboard += fmt.Sprintf("%-4s %-20s %s\n", "Rank", "Player", "Score")
+	leaderboard += strings.Repeat("─", 32) + "\n"
+
+	// Iterate over top players and format each entry
+	for i := 0; i < limit; i++ {
+		count := idCounts[i]
+		name := fmt.Sprintf("%v", count["Name"])
+		score := fmt.Sprintf("%v", count["count"])
+		leaderboard += fmt.Sprintf("%-4d %-20s %s\n", i+1, name, score)
+	}
+
+	// Add footer message with emoji
+	leaderboard += "\n✨ Keep it up and aim for the top! ✨"
 
 	// Close the MongoDB client connection
 	err = client.Disconnect(context.TODO())
