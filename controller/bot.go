@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -201,6 +202,22 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 
 		if message.Command() == "stats" {
 			result := service.LeaderBoardList("CrocEn")
+			view.SendMessage(bot, chatID, result)
+		}
+		if message.Command() == "mystats" {
+			// args := strings.Fields(message.CommandArguments())
+			// if len(args) < 1 {
+			// 	view.SendMessage(bot, chatID, "Please provide a user ID. Usage: /userstats <userID>")
+			// 	return
+			// }
+			// userIDStr := args[0]
+			ID := strconv.Itoa(message.From.ID)
+			userID, err := strconv.Atoi(ID)
+			if err != nil {
+				view.SendMessage(bot, chatID, "Invalid user ID. Please provide a numeric user ID.")
+				return
+			}
+			result := service.GetUserStatsByID(userID)
 			view.SendMessage(bot, chatID, result)
 		}
 
@@ -445,7 +462,8 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 		if user != 0 && service.NormalizeAndCompare(message.Text, word) && message.From.ID != user {
 			buttons := createSingleButtonKeyboard("🌟 Claim Leadership 🙋", "explain")
 			view.SendMessageWithButtons(bot, message.Chat.ID, fmt.Sprintf("Congratulations! %s guessed the word %s.\n /word", message.From.FirstName, word), buttons)
-
+			view.ReactToMessage(bot.Token, chatID, message.MessageID, "🔥", true)
+			view.ReactToMessage(bot.Token, chatID, message.MessageID, "⚡", true)
 			client := repository.DbManager()
 			repository.InsertDoc(message.From.ID, message.From.FirstName, message.Chat.ID, client, "CrocEn")
 			repository.InsertDoc(user, chatState.Leader, message.Chat.ID, client, "CrocEnLeader")
