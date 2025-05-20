@@ -462,7 +462,8 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 		if user != 0 && service.NormalizeAndCompare(message.Text, word) && message.From.ID != user {
 			buttons := createSingleButtonKeyboard("🌟 Claim Leadership 🙋", "explain")
 			view.SendMessageWithButtons(bot, message.Chat.ID, fmt.Sprintf("Congratulations! %s guessed the word %s.\n /word", message.From.FirstName, word), buttons)
-
+			view.ReactToMessage(bot.Token, chatID, message.MessageID, "🔥", true)
+			view.ReactToMessage(bot.Token, chatID, message.MessageID, "⚡", true)
 			client := repository.DbManager()
 			repository.InsertDoc(message.From.ID, message.From.FirstName, message.Chat.ID, client, "CrocEn")
 			repository.InsertDoc(user, chatState.Leader, message.Chat.ID, client, "CrocEnLeader")
@@ -573,5 +574,5 @@ func startHTTPServer() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Bot is running!")
 	})
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	log.Fatal(http.ListenAndServe(":8081", nil))
 }
