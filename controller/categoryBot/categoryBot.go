@@ -83,9 +83,9 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 	log.Printf("[%s] %s", message.From.UserName, message.Text)
 
 	switch message.Command() {
-	case "start":
-		// Send a welcome message with instructions to start the game.
-		view.SendMessage(bot, message.Chat.ID, "Welcome! Use /word to start a game.")
+		case "start":
+			// Send a welcome message with instructions to start the game.
+			view.SendMessage(bot, message.Chat.ID, "Welcome! Type /word to start a new game.")
 	case "getButton":
 		Announcement := strings.Split(message.Text, "  ")
 		if len(Announcement) > 1 {
@@ -114,7 +114,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 			adminMessage := fmt.Sprintf("Report from @%s (%d):\n%s", message.From.UserName, message.From.ID, reportMessage)
 			// Send the report to the admin
 			view.SendMessage(bot, adminID, adminMessage)
-			view.SendMessage(bot, chatID, "Your report has been submitted. Thank you!")
+			view.SendMessage(bot, chatID, "Thank you! Your report has been submitted.")
 		} else {
 			view.SendMessage(bot, chatID, "Please provide a message with your report. Usage: /report [your message]")
 		}
@@ -122,7 +122,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 		// Fetch a random word from the model.
 		word, err := model.GetRandomWord()
 		if err != nil {
-			view.SendMessage(bot, message.Chat.ID, "Failed to fetch a word.")
+			view.SendMessage(bot, message.Chat.ID, "Oops! Couldn't fetch a word. Please try again later.")
 			return
 		}
 

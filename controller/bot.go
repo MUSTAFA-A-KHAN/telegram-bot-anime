@@ -145,13 +145,13 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 			aiModeMutex.Lock()
 			aiModeUsers[chatID] = true
 			aiModeMutex.Unlock()
-			view.SendMessage(bot, chatID, "AI mode enabled!")
+			view.SendMessage(bot, chatID, "AI mode is now enabled! Enjoy the smart responses.")
 			return
 		case "ai_off":
 			aiModeMutex.Lock()
 			delete(aiModeUsers, chatID)
 			aiModeMutex.Unlock()
-			view.SendMessage(bot, chatID, "AI mode disabled.")
+			view.SendMessage(bot, chatID, "AI mode has been disabled.")
 			return
 		}
 
@@ -202,7 +202,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 
 		if message.Command() == "stats" {
 			result := service.LeaderBoardList("CrocEn")
-			view.SendMessage(bot, chatID, result)
+			view.SendMessagehtml(bot, chatID, result)
 		}
 		if message.Command() == "mystats" {
 			// args := strings.Fields(message.CommandArguments())
@@ -214,7 +214,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 			ID := strconv.Itoa(message.From.ID)
 			userID, err := strconv.Atoi(ID)
 			if err != nil {
-				view.SendMessage(bot, chatID, "Invalid user ID. Please provide a numeric user ID.")
+				view.SendMessage(bot, chatID, "Invalid user ID. Please enter a valid numeric user ID.")
 				return
 			}
 			result := service.GetUserStatsByID(userID)
@@ -267,7 +267,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 		if wordEmpty || time.Since(chatState.LeadTimestamp) >= 640*time.Second {
 			word, err := model.GetRandomWord()
 			if err != nil {
-				view.SendMessage(bot, chatID, "Failed to fetch a word.")
+				view.SendMessage(bot, chatID, "Oops! Unable to fetch a word right now. Please try again later.")
 				return
 			}
 			chatState.Lock()
@@ -279,14 +279,14 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 			chatState.LastHintTypeSent = 0
 			chatState.Unlock()
 			button := tgbotapi.NewInlineKeyboardButtonURL("add to group", "https://t.me/Croco_rebirth_bot?startgroup=true")
-			view.SendMessageWithKeyboardButton(bot, chatID, "You can unlock full potential by adding me to a group 🔓 \n Meanwhile, I have a word for you to guess! Need a clue? Just tap \n 👉 /hint.", button)
+			view.SendMessageWithKeyboardButton(bot, chatID, "Unlock my full potential by adding me to a group chat! 🔓\nMeanwhile, here's a word for you to guess. Need a hint? Just type 👉 /hint.", button)
 			return
 		}
 
 		// Handle /hint command in DM
 		if message.Command() == "hint" {
 			if !lastHint.IsZero() && time.Since(lastHint) < 8*time.Second {
-				view.SendMessage(bot, chatID, "Please think a bit before requesting another hint.")
+				view.SendMessage(bot, chatID, "Please take a moment to think before asking for another hint.")
 				return
 			}
 
@@ -316,7 +316,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 				view.SendMessage(bot, chatID, fmt.Sprintf("The word was: %s", chatState.Word))
 				chatState.reset()
 			} else {
-				view.SendMessage(bot, chatID, "Atleast read the hint before revealing the word.")
+				view.SendMessage(bot, chatID, "Please try to read the hint before revealing the word.")
 			}
 			return
 		}
@@ -327,7 +327,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 		chatState.RUnlock()
 
 		if service.NormalizeAndCompare(message.Text, word) && message.From.ID == chatState.User {
-			view.SendMessage(bot, chatID, fmt.Sprintf("Congratulations! You guessed the word %s correctly.", word))
+			view.SendMessage(bot, chatID, fmt.Sprintf("🎉 Congratulations! You guessed the word '%s' correctly!", word))
 			view.ReactToMessage(bot.Token, chatID, message.MessageID, "🔥", true)
 			view.ReactToMessage(bot.Token, chatID, message.MessageID, "⚡", true)
 			client := repository.DbManager()
@@ -339,9 +339,9 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 		if message.Command() == "report" {
 			msgstr, _ := MessageToJSONString(message)
 			view.SendMessage(bot, adminID, msgstr)
-			view.SendMessage(bot, chatID, "Your report has been submitted. Thank you!")
+			view.SendMessage(bot, chatID, "Thank you! Your report has been successfully submitted.")
 		} else {
-			view.SendMessage(bot, chatID, "Try again or Need a clue? Just tap \n 👉 /hint. \n Or , you can reveal the word by tapping \n 👉 /reveal.")
+			view.SendMessage(bot, chatID, "Try again! Need a clue? Type 👉 /hint.\nOr reveal the word by typing 👉 /reveal.")
 			return
 		}
 	}
@@ -360,10 +360,10 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 			}
 		}
 	case "start":
-		view.SendMessage(bot, message.Chat.ID, "Welcome! Use /word to start a game.")
+		view.SendMessage(bot, message.Chat.ID, "Welcome! Type /word to start a new game.")
 	case "stats":
 		result := service.LeaderBoardList("CrocEn")
-		view.SendMessage(bot, message.Chat.ID, result)
+		view.SendMessagehtml(bot, message.Chat.ID, result)
 	case "mystats":
 		result := service.GetUserStatsByID(message.From.ID)
 		view.SendMessage(bot, chatID, result)
@@ -403,9 +403,9 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 			chatState.Unlock()
 
 			view.SendSticker(bot, chatID, "CAACAgUAAxkBAAEwCnNnYW-OkgV7Odt9osVwoBSzLC6vsAACMhMAAj45CFdCstMoIYiPfjYE")
-			view.SendMessageWithButtons(bot, message.Chat.ID, "The word is ready! Click 'Explain' to explain the word.", buttons)
+			view.SendMessageWithButtons(bot, message.Chat.ID, "The word is ready! Click 'Explain' to start explaining it.", buttons)
 		} else {
-			view.SendMessage(bot, message.Chat.ID, "A game is on.")
+			view.SendMessage(bot, message.Chat.ID, "A game is currently in progress.")
 		}
 	case "hint":
 		chatState.RLock()
@@ -416,12 +416,12 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 
 		if wordEmpty {
 			buttons := createSingleButtonKeyboard(" 🗣️ Explain ", "explain")
-			view.SendMessageWithButtons(bot, message.Chat.ID, "No active game. Click below to start a game first.", buttons)
+			view.SendMessageWithButtons(bot, message.Chat.ID, "No active game right now. Click below to start one!", buttons)
 			return
 		}
 
 		if !lastHint.IsZero() && time.Since(lastHint) < 1*time.Minute {
-			view.SendMessage(bot, message.Chat.ID, "Please a min before requesting another hint.")
+			view.SendMessage(bot, message.Chat.ID, "Please wait a minute before requesting another hint.")
 			return
 		}
 
@@ -450,11 +450,11 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 
 		if time.Since(leadTime) >= 600*time.Second {
 			buttons := createSingleButtonKeyboard(" 🗣️ Explain ", "explain")
-			view.SendMessageWithButtons(bot, message.Chat.ID, fmt.Sprintf("The word was:%s", word), buttons)
+			view.SendMessageWithButtons(bot, message.Chat.ID, fmt.Sprintf("The word was: %s", word), buttons)
 
 			chatState.reset()
 		} else {
-			view.SendMessage(bot, message.Chat.ID, "Wait for ten minutes")
+			view.SendMessage(bot, message.Chat.ID, "Please wait for 10 minutes before revealing the word.")
 		}
 	default:
 		chatState.RLock()
@@ -485,7 +485,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery)
 	case "explain":
 		chatState.Lock()
 		if chatState.User != callback.From.ID && chatState.User != 0 && time.Since(chatState.LeadTimestamp) < 120*time.Second {
-			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("%s is already explaining the word. %s", chatState.Leader, callback.From.UserName)))
+			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("%s is already explaining the word. Please wait your turn, %s.", chatState.Leader, callback.From.UserName)))
 			chatState.Unlock()
 			return
 		}
@@ -541,7 +541,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery)
 	case "droplead":
 		chatState.Lock()
 		if chatState.User != callback.From.ID {
-			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, "You are not the leader, so you cannot drop the lead!"))
+			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, "You are not the current leader, so you cannot drop the lead!"))
 			chatState.Unlock()
 			return
 		}
