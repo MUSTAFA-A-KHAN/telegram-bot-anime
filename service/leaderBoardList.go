@@ -54,5 +54,5 @@ func GetUserStatsByID(userID int) string {
 	name, _ := result["Name"].(string)
 	count, _ := result["count"].(int32) // MongoDB returns int32 for count
 
-	return fmt.Sprintf("Stats for user %s (ID: %d):\nCount: %d", name, userID, count)
+	return fmt.Sprintf("You  %s have successfully guessed for :\n %d Times", name, count)
 }
