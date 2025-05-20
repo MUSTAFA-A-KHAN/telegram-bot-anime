@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -201,6 +202,22 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 
 		if message.Command() == "stats" {
 			result := service.LeaderBoardList("CrocEn")
+			view.SendMessage(bot, chatID, result)
+		}
+		if message.Command() == "mystats" {
+			// args := strings.Fields(message.CommandArguments())
+			// if len(args) < 1 {
+			// 	view.SendMessage(bot, chatID, "Please provide a user ID. Usage: /userstats <userID>")
+			// 	return
+			// }
+			// userIDStr := args[0]
+			ID := strconv.Itoa(message.From.ID)
+			userID, err := strconv.Atoi(ID)
+			if err != nil {
+				view.SendMessage(bot, chatID, "Invalid user ID. Please provide a numeric user ID.")
+				return
+			}
+			result := service.GetUserStatsByID(userID)
 			view.SendMessage(bot, chatID, result)
 		}
 

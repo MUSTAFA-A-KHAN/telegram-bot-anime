@@ -137,3 +137,35 @@ func InsertUserInfo(userInfo model.UserInfo, client *mongo.Client) {
 	commentCollection := database.Collection("UserInfo")
 	commentCollection.InsertOne(context.TODO(), userInfo)
 }
+
+// GetUserStatsByID returns the count and name for a specific user ID from the given collection
+func GetUserStatsByID(client *mongo.Client, collection string, userID int) (map[string]interface{}, error) {
+	database := client.Database("Telegram")
+	commentCollection := database.Collection(collection)
+
+	// Aggregation pipeline to match the userID and count occurrences
+	pipeline := mongo.Pipeline{
+		{{"$match", bson.D{{Key: "ID", Value: userID}}}},
+		{{"$group", bson.D{
+			{Key: "_id", Value: "$ID"},
+			{Key: "count", Value: bson.D{{Key: "$sum", Value: 1}}},
+			{Key: "Name", Value: bson.D{{Key: "$first", Value: "$Name"}}},
+		}}},
+	}
+
+	cursor, err := commentCollection.Aggregate(context.TODO(), pipeline)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(context.TODO())
+
+	if cursor.Next(context.TODO()) {
+		var result map[string]interface{}
+		if err := cursor.Decode(&result); err != nil {
+			return nil, err
+		}
+		return result, nil
+	}
+
+	return nil, fmt.Errorf("no stats found for user ID %d", userID)
+}
