@@ -256,7 +256,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 
 		if message.Command() == "leaderstats" {
 			result := service.LeaderBoardList("CrocEnLeader")
-			view.SendMessage(bot, chatID, result)
+			view.SendMessagehtml(bot, chatID, result)
 		}
 		chatState.RLock()
 		wordEmpty := chatState.Word == ""
