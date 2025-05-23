@@ -24,7 +24,7 @@ jobs:
     - name: Build
       run: |
             go build -v ./...
-            ll || ls
+            ll || ls -lh
       
 
     # - name: Test
