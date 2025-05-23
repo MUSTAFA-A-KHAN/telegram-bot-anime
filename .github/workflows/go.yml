@@ -31,6 +31,22 @@ jobs:
         with:
           name: telegram-bot-anime
           path: telegram-bot-anime
+
+  deploy:
+    runs-on: self-hosted
+    needs: build
+
+    steps:
+      - name: Download binary
+        uses: actions/download-artifact@v3
+        with:
+          name: telegram-bot-anime
+
+      - name: Run binary
+        run: |
+          chmod +x telegram-bot-anime
+          echo "🚀 Starting application..."
+          ./telegram-bot-anime
           
 
     # - name: Test
