@@ -38,16 +38,32 @@ jobs:
 
     steps:
       - name: Download binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: telegram-bot-anime
+
+      - name: Check available memory
+        id: memcheck
+        run: |
+          # Minimum free memory required (MiB)
+          MIN_MEM_MB=200
+
+          # Fetch available memory in KiB → convert to MiB
+          AVAIL_KIB=$(grep MemAvailable /proc/meminfo | awk '{print $2}')
+          AVAIL_MB=$(( AVAIL_KIB / 1024 ))
+
+          echo "Available memory: ${AVAIL_MB} MiB (required: ${MIN_MEM_MB} MiB)"
+
+          if [ "$AVAIL_MB" -lt "$MIN_MEM_MB" ]; then
+            echo "::error::Not enough free memory to start telegram-bot-anime."
+            exit 1
+          fi
 
       - name: Run binary
         run: |
           chmod +x telegram-bot-anime
           echo "🚀 Starting application..."
           ./telegram-bot-anime
-          
 
     # - name: Test
     #   run: go test -v ./...
