@@ -1,0 +1,49 @@
+stages:
+  - build
+  - deploy
+
+variables:
+  GO_VERSION: "1.22.3"
+
+# Build stage
+build:
+  stage: build
+  image: golang:${GO_VERSION}
+  script:
+    - go mod tidy
+    - go build -o telegram-bot-anime ./
+    - echo "Executable built:"
+    - ls -lh telegram-bot-anime
+  artifacts:
+    paths:
+      - telegram-bot-anime
+    expire_in: 1 hour
+  only:
+    - main
+  except:
+    - merge_requests
+
+# Deploy stage (manual trigger only)
+deploy:
+  stage: deploy
+  script:
+    - echo "Checking available memory..."
+    - free -m
+    - >
+      AVAILABLE_MEM=$(free -m | awk '/^Mem:/{print $7}')
+      && echo "Available memory (MB): $AVAILABLE_MEM"
+      && MIN_MEM=500
+      && if [ "$AVAILABLE_MEM" -lt "$MIN_MEM" ]; then
+           echo "Not enough memory to deploy. Need at least $MIN_MEM MB.";
+           exit 1;
+         fi
+    - chmod +x telegram-bot-anime
+    - echo "🚀 Starting telegram-bot-anime..."
+    - ./telegram-bot-anime
+  dependencies:
+    - build
+  when: manual
+  only:
+    - main
+  tags:
+    - gitlabrunneruser  # Runner tag used to run the deploy job
