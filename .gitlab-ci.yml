@@ -1,7 +1,7 @@
 stages:
   - build
+  - stop
   - deploy
-
 variables:
   GO_VERSION: "1.22.3"
 
