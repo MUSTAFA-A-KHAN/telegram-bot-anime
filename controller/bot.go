@@ -405,7 +405,17 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 			view.SendSticker(bot, chatID, "CAACAgUAAxkBAAEwCnNnYW-OkgV7Odt9osVwoBSzLC6vsAACMhMAAj45CFdCstMoIYiPfjYE")
 			view.SendMessageWithButtons(bot, message.Chat.ID, "The word is ready! Click 'Explain' to start explaining it.", buttons)
 		} else {
-			view.SendMessage(bot, message.Chat.ID, "A game is currently in progress.")
+			sentMsg, err := view.SendMessage(bot, message.Chat.ID, "A game is currently in progress.")
+			if err == nil {
+				time.Sleep(1 * time.Second)
+				deleteMsg := tgbotapi.NewDeleteMessage(message.Chat.ID, sentMsg.MessageID)
+				_, err := bot.DeleteMessage(deleteMsg)
+				if err != nil {
+					log.Printf("Failed to delete message: %v", err)
+				}
+			} else {
+				log.Printf("Failed to send message: %v", err)
+			}
 		}
 	case "hint":
 		chatState.RLock()
