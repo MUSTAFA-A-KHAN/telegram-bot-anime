@@ -17,10 +17,10 @@ func SendMessagehtml(bot *tgbotapi.BotAPI, chatID int64, text string) error {
 	_, err := bot.Send(msg)
 	return err
 }
-func SendMessage(bot *tgbotapi.BotAPI, chatID int64, text string) error {
+func SendMessage(bot *tgbotapi.BotAPI, chatID int64, text string) (tgbotapi.Message, error) {
 	msg := tgbotapi.NewMessage(chatID, text)
-	_, err := bot.Send(msg)
-	return err
+	res, err := bot.Send(msg)
+	return res, err
 }
 
 // SendMessageWithButtons sends a message with inline keyboard buttons to the user
