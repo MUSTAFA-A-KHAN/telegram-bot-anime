@@ -29,11 +29,15 @@ stop:
   script:
     - |
       grep -a 'telegram-bot-anime' /proc/*/cmdline 2>/dev/null
-      PIDS=$(grep -a 'telegram-bot-anime' /proc/*/cmdline 2>/dev/null | grep -oP '^/proc/\K[0-9]+')
+      echo "🔍 Looking for 'telegram-bot-anime' processes..."
+      PIDS=$(grep -a 'telegram-bot-anime' /proc/*/cmdline 2>/dev/null | grep -oP '^/proc/\K[0-9]+(?=/cmdline:)')
+      
       if [ -n "$PIDS" ]; then
-        echo "$PIDS" | xargs kill && echo "🛑 telegram-bot-anime stopped (PIDs: $PIDS)"
+        echo "Found running PIDs: $PIDS"
+        echo "$PIDS" | xargs kill
+        echo "🛑 telegram-bot-anime stopped"
       else
-        echo "No running process found for telegram-bot-anime"
+        echo "⚠️ No running process found for telegram-bot-anime"
       fi
   when: manual
   only:
