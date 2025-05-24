@@ -39,7 +39,7 @@ deploy:
          fi
     - chmod +x telegram-bot-anime
     - ll || ls
-    - echo "Current directory: $(pwd)"
+    - pwd || echo "error"
     - echo "Files:"
     - ls -lh
     - echo "🚀 Starting telegram-bot-anime..."
