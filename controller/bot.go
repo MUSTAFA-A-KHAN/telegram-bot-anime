@@ -35,6 +35,8 @@ var (
 	// stateMutex ensures safe access to the chatStates map.
 	stateMutex = &sync.RWMutex{}
 )
+
+// telegramReactions is a map that holds the reactions for each chat, identified by chat ID.
 var telegramReactions = []string{
 	"👍",  // Thumbs Up
 	"👎",  // Thumbs Down
@@ -66,6 +68,20 @@ func getOrCreateChatState(chatID int64) *ChatState {
 		chatStates[chatID] = &ChatState{}
 	}
 	return chatStates[chatID]
+}
+
+// deleteWarningMessage deletes a warning message from the chat state.
+func deleteWarningMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, sentMsg tgbotapi.Message, err error) {
+	if err == nil {
+		time.Sleep(1 * time.Second)
+		deleteMsg := tgbotapi.NewDeleteMessage(message.Chat.ID, sentMsg.MessageID)
+		_, err := bot.DeleteMessage(deleteMsg)
+		if err != nil {
+			log.Printf("Failed to delete message: %v", err)
+		}
+	} else {
+		log.Printf("Failed to send message: %v", err)
+	}
 }
 
 // createSingleButtonKeyboard creates an inline keyboard markup with a single button.
@@ -214,7 +230,8 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 			ID := strconv.Itoa(message.From.ID)
 			userID, err := strconv.Atoi(ID)
 			if err != nil {
-				view.SendMessage(bot, chatID, "Invalid user ID. Please enter a valid numeric user ID.")
+				sentMsg, err := view.SendMessage(bot, chatID, "Invalid user ID. Please enter a valid numeric user ID.")
+				deleteWarningMessage(bot, message, sentMsg, err)
 				return
 			}
 			result := service.GetUserStatsByID(userID)
@@ -286,7 +303,8 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 		// Handle /hint command in DM
 		if message.Command() == "hint" {
 			if !lastHint.IsZero() && time.Since(lastHint) < 8*time.Second {
-				view.SendMessage(bot, chatID, "Please take a moment to think before asking for another hint.")
+				sentMsg, err := view.SendMessage(bot, chatID, "Please take a moment to think before asking for another hint.")
+				deleteWarningMessage(bot, message, sentMsg, err)
 				return
 			}
 
@@ -316,7 +334,8 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 				view.SendMessage(bot, chatID, fmt.Sprintf("The word was: %s", chatState.Word))
 				chatState.reset()
 			} else {
-				view.SendMessage(bot, chatID, "Please try to read the hint before revealing the word.")
+				sentMsg, err := view.SendMessage(bot, chatID, "Please try to read the hint before revealing the word.")
+				deleteWarningMessage(bot, message, sentMsg, err)
 			}
 			return
 		}
@@ -328,7 +347,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 
 		if service.NormalizeAndCompare(message.Text, word) && message.From.ID == chatState.User {
 			view.SendMessage(bot, chatID, fmt.Sprintf("🎉 Congratulations! You guessed the word '%s' correctly!", word))
-			view.ReactToMessage(bot.Token, chatID, message.MessageID, "🔥", true)
+			view.ReactToMessage(bot.Token, chatID, message.MessageID, telegramReactions[17], true)
 			view.ReactToMessage(bot.Token, chatID, message.MessageID, "⚡", true)
 			client := repository.DbManager()
 			repository.InsertDoc(message.From.ID, message.From.FirstName, chatID, client, "CrocEn")
@@ -406,16 +425,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 			view.SendMessageWithButtons(bot, message.Chat.ID, "The word is ready! Click 'Explain' to start explaining it.", buttons)
 		} else {
 			sentMsg, err := view.SendMessage(bot, message.Chat.ID, "A game is currently in progress.")
-			if err == nil {
-				time.Sleep(1 * time.Second)
-				deleteMsg := tgbotapi.NewDeleteMessage(message.Chat.ID, sentMsg.MessageID)
-				_, err := bot.DeleteMessage(deleteMsg)
-				if err != nil {
-					log.Printf("Failed to delete message: %v", err)
-				}
-			} else {
-				log.Printf("Failed to send message: %v", err)
-			}
+			deleteWarningMessage(bot, message, sentMsg, err)
 		}
 	case "hint":
 		chatState.RLock()
@@ -431,7 +441,8 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 		}
 
 		if !lastHint.IsZero() && time.Since(lastHint) < 1*time.Minute {
-			view.SendMessage(bot, message.Chat.ID, "Please wait a minute before requesting another hint.")
+			sentMsg, err := view.SendMessage(bot, message.Chat.ID, "Please wait a minute before requesting another hint.")
+			deleteWarningMessage(bot, message, sentMsg, err)
 			return
 		}
 
@@ -464,7 +475,8 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 
 			chatState.reset()
 		} else {
-			view.SendMessage(bot, message.Chat.ID, "Please wait for 10 minutes before revealing the word.")
+			sentMsg, err := view.SendMessage(bot, message.Chat.ID, "Please wait for 10 minutes before revealing the word.")
+			deleteWarningMessage(bot, message, sentMsg, err)
 		}
 	default:
 		chatState.RLock()
