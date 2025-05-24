@@ -11,7 +11,7 @@ build:
   image: golang:${GO_VERSION}
   script:
     - go mod tidy
-    - go build -o telegram-bot-anime ./
+    - GOOS=linux GOARCH=arm64 go build -o telegram-bot-anime ./
     - echo "Executable built:"
     - ls -lh telegram-bot-anime
   artifacts:
