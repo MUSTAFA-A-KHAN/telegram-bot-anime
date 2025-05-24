@@ -28,11 +28,11 @@ stop:
   stage: stop
   script:
     - |
-      PID=$(lsof -ti:8080)
+      PID=$(grep -a 'telegram-bot-anime' /proc/*/cmdline 2>/dev/null | grep -oP '/proc/\K[0-9]+(?=/cmdline)')
       if [ -n "$PID" ]; then
-        kill $PID && echo "🛑 Process on port 8080 stopped";
+        kill $PID && echo "🛑 telegram-bot-anime stopped (PID: $PID)";
       else
-        echo "No process found running on port 8080";
+        echo "No running process found for telegram-bot-anime";
       fi
   when: manual
   only:
