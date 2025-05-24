@@ -30,14 +30,17 @@ stop:
     - |
       grep -a 'telegram-bot-anime' /proc/*/cmdline 2>/dev/null
       echo "🔍 Looking for 'telegram-bot-anime' processes..."
-      PIDS=$(grep -a 'telegram-bot-anime' /proc/*/cmdline 2>/dev/null | grep -oP '^/proc/\K[0-9]+(?=/cmdline:)')
-      
+      PIDS=$(grep -a 'telegram-bot-anime' /proc/*/cmdline 2>/dev/null | awk -F'/' '/\/proc\/[0-9]+\/cmdline/ {print $3}' | grep -E '^[0-9]+$' | sort -u)
       if [ -n "$PIDS" ]; then
-        echo "Found running PIDs: $PIDS"
-        echo "$PIDS" | xargs kill
-        echo "🛑 telegram-bot-anime stopped"
+        for pid in $PIDS; do
+          if kill "$pid" 2>/dev/null; then
+            echo "🛑 telegram-bot-anime stopped (PID: $pid)"
+          else
+            echo "❌ Failed to stop telegram-bot-anime (PID: $pid)"
+          fi
+        done
       else
-        echo "⚠️ No running process found for telegram-bot-anime"
+        echo "✅ No running process found for telegram-bot-anime"
       fi
   when: manual
   only:
