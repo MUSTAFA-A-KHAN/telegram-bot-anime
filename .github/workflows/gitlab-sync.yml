@@ -1,0 +1,20 @@
+name: Sync to GitLab
+
+on:
+  push:
+    branches:
+      - main  # Change to your GitHub branch name if different
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout GitHub code
+        uses: actions/checkout@v3
+
+      - name: Push to GitLab
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "action@github.com"
+          git remote add gitlab ${{ secrets.GITLAB_REPO }}
+          git push gitlab HEAD:main --force
