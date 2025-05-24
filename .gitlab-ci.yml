@@ -39,6 +39,9 @@ deploy:
          fi
     - chmod +x telegram-bot-anime
     - ll || ls
+    - echo "Current directory: $(pwd)"
+    - echo "Files:"
+    - ls -lh
     - echo "🚀 Starting telegram-bot-anime..."
     - ./telegram-bot-anime
   dependencies:
