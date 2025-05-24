@@ -38,6 +38,7 @@ deploy:
            exit 1;
          fi
     - chmod +x telegram-bot-anime
+    - ll || ls
     - echo "🚀 Starting telegram-bot-anime..."
     - ./telegram-bot-anime
   dependencies:
