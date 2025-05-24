@@ -388,7 +388,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 		view.SendMessage(bot, chatID, result)
 	case "leaderstats":
 		result := service.LeaderBoardList("CrocEnLeader")
-		view.SendMessage(bot, message.Chat.ID, result)
+		view.SendMessagehtml(bot, message.Chat.ID, result)
 	case "report":
 		// if len(message.Text) > 7 {
 		// reportMessage := message.Text[7:]
