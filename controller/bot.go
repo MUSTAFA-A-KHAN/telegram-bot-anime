@@ -506,7 +506,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery)
 	switch callback.Data {
 	case "explain":
 		chatState.Lock()
-		if chatState.User != callback.From.ID && chatState.User != 0 && time.Since(chatState.LeadTimestamp) < 120*time.Second {
+		if chatState.User != callback.From.ID && chatState.User != 0 && time.Since(chatState.LeadTimestamp) < 600*time.Second {
 			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("%s is already explaining the word. Please wait your turn, %s.", chatState.Leader, callback.From.UserName)))
 			chatState.Unlock()
 			return
@@ -516,7 +516,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery)
 			chatState.Unlock()
 			return
 		}
-		if chatState.User == 0 || (time.Since(chatState.LeadTimestamp) >= 120*time.Second && chatState.User != callback.From.ID) {
+		if chatState.User == 0 || (time.Since(chatState.LeadTimestamp) >= 600*time.Second && chatState.User != callback.From.ID) {
 			word, err := model.GetRandomWord()
 			if err != nil {
 				chatState.Unlock()
