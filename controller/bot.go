@@ -169,6 +169,27 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 			aiModeMutex.Unlock()
 			view.SendMessage(bot, chatID, "AI mode has been disabled.")
 			return
+		case "rules":
+			rulesText := "*🎮 Game Rules 🎮*\n\n" +
+				"*Players:*\n" +
+				"1. Guess the word by typing your answer.\n" +
+				"2. Use /hint to get clues about the word, but wait at least a minute between hints.\n" +
+				"3. Use /reveal to reveal the word if you give up, but only after 10 minutes of gameplay.\n\n" +
+				"*Leaders:*\n" +
+				"1. Claim leadership by clicking 'Explain' or using the appropriate command.\n" +
+				"2. Explain the word to other players without directly saying it.\n" +
+				"3. You can get a new word or drop leadership using the provided buttons.\n\n" +
+				"*General:*\n" +
+				"1. Be respectful and fair to other players.\n" +
+				"2. Have fun and enjoy the game!\n\n" +
+				"Type /word to start a new game or /rules to see these rules again."
+			msg := tgbotapi.NewMessage(chatID, rulesText)
+			msg.ParseMode = "Markdown"
+			_, err := bot.Send(msg)
+			if err != nil {
+				log.Printf("Failed to send rules message: %v", err)
+			}
+			return
 		}
 
 		aiModeMutex.Lock()
@@ -389,6 +410,27 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 	case "leaderstats":
 		result := service.LeaderBoardList("CrocEnLeader")
 		view.SendMessagehtml(bot, message.Chat.ID, result)
+	case "rules":
+		rulesText := "*🎮 Game Rules 🎮*\n\n" +
+			"*Players:*\n" +
+			"1. Guess the word by typing your answer.\n" +
+			"2. Use /hint to get clues about the word, but wait at least a minute between hints.\n" +
+			"3. Use /reveal to reveal the word if you give up, but only after 10 minutes of gameplay.\n\n" +
+			"*Leaders:*\n" +
+			"1. Claim leadership by clicking 'Explain' or using the appropriate command.\n" +
+			"2. Explain the word to other players without directly saying it.\n" +
+			"3. You can get a new word or drop leadership using the provided buttons.\n\n" +
+			"*General:*\n" +
+			"1. Be respectful and fair to other players.\n" +
+			"2. Have fun and enjoy the game!\n\n" +
+			"Type /word to start a new game or /rules to see these rules again."
+		msg := tgbotapi.NewMessage(chatID, rulesText)
+		msg.ParseMode = "Markdown"
+		_, err := bot.Send(msg)
+		if err != nil {
+			log.Printf("Failed to send rules message: %v", err)
+		}
+		return
 	case "report":
 		// if len(message.Text) > 7 {
 		// reportMessage := message.Text[7:]
