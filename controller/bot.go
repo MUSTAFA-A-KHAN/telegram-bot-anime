@@ -38,26 +38,26 @@ var (
 
 // telegramReactions is a map that holds the reactions for each chat, identified by chat ID.
 var telegramReactions = []string{
-	"👍",  // Thumbs Up
-	"👎",  // Thumbs Down
-	"❤️", // Red Heart
-	"😂",  // Face with Tears of Joy
-	"😮",  // Surprised Face
-	"😢",  // Crying Face
-	"😡",  // Angry Face
-	"🎉",  // Party Popper
-	"🙌",  // Raising Hands
-	"🤔",  // Thinking Face
-	"🥰",  // Smiling Face with Hearts
-	"🤯",  // Exploding Head
-	"🤬",  // Face with Symbols on Mouth
-	"👏",  // Clapping Hands
-	"🤩",  // Star-Struck
-	"😎",  // Smiling Face with Sunglasses
-	"💯",  // 100 Points
-	"🔥",  // Fire
-	"🥳",  // Partying Face
-	"⚡",  // Thunder
+	"👍",  // Thumbs Up 0
+	"👎",  // Thumbs Down 1
+	"❤️", // Red Heart 2
+	"😂",  // Face with Tears of Joy 3
+	"😮",  // Surprised Face 4
+	"😢",  // Crying Face 5
+	"😡",  // Angry Face 6
+	"🎉",  // Party Popper 7
+	"🙌",  // Raising Hands 8
+	"🤔",  // Thinking Face 9
+	"🥰",  // Smiling Face with Hearts 10
+	"🤯",  // Exploding Head 11
+	"🤬",  // Face with Symbols on Mouth 12
+	"👏",  // Clapping Hands 13
+	"🤩",  // Star-Struck 14
+	"😎",  // Smiling Face with Sunglasses 15
+	"💯",  // 100 Points 16
+	"🔥",  // Fire 17
+	"🥳",  // Partying Face 18
+	"⚡",  // Thunder 19
 }
 
 // getOrCreateChatState safely retrieves or creates a ChatState for a chatID.
@@ -346,7 +346,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 		chatState.RUnlock()
 
 		if service.NormalizeAndCompare(message.Text, word) && message.From.ID == chatState.User {
-			view.SendMessage(bot, chatID, fmt.Sprintf("🎉 Congratulations! You guessed the word '%s' correctly!", word))
+			view.SendMessage(bot, chatID, fmt.Sprintf("%s ! You guessed the word '%s' correctly!", telegramReactions[7], word))
 			view.ReactToMessage(bot.Token, chatID, message.MessageID, telegramReactions[17], true)
 			view.ReactToMessage(bot.Token, chatID, message.MessageID, "⚡", true)
 			client := repository.DbManager()
@@ -482,18 +482,19 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 		chatState.RLock()
 		word := chatState.Word
 		user := chatState.User
+		leader := chatState.Leader
 		chatState.RUnlock()
 
 		if user != 0 && service.NormalizeAndCompare(message.Text, word) && message.From.ID != user {
-			buttons := createSingleButtonKeyboard("🌟 Claim Leadership 🙋", "explain")
-			view.SendMessageWithButtons(bot, message.Chat.ID, fmt.Sprintf("Congratulations! %s guessed the word %s.\n /word", message.From.FirstName, word), buttons)
-			view.ReactToMessage(bot.Token, chatID, message.MessageID, "🔥", true)
-			view.ReactToMessage(bot.Token, chatID, message.MessageID, "⚡", true)
-			client := repository.DbManager()
-			repository.InsertDoc(message.From.ID, message.From.FirstName, message.Chat.ID, client, "CrocEn")
-			repository.InsertDoc(user, chatState.Leader, message.Chat.ID, client, "CrocEnLeader")
-
 			chatState.reset()
+			buttons := createSingleButtonKeyboard("🌟 Claim Leadership 🙋", "explain")
+			view.SendMessageWithButtons(bot, message.Chat.ID, fmt.Sprintf("%s! %s guessed the word %s.\n /word", telegramReactions[7], message.From.FirstName, word), buttons)
+			go view.ReactToMessage(bot.Token, chatID, message.MessageID, "🔥", true)
+			go view.ReactToMessage(bot.Token, chatID, message.MessageID, "⚡", true)
+			client := repository.DbManager()
+			go repository.InsertDoc(message.From.ID, message.From.FirstName, message.Chat.ID, client, "CrocEn")
+			go repository.InsertDoc(user, leader, message.Chat.ID, client, "CrocEnLeader")
+
 		}
 	}
 }
@@ -507,7 +508,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery)
 	case "explain":
 		chatState.Lock()
 		if chatState.User != callback.From.ID && chatState.User != 0 && time.Since(chatState.LeadTimestamp) < 600*time.Second {
-			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("%s is already explaining the word. Please wait your turn, %s.", chatState.Leader, callback.From.UserName)))
+			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("%s is already explaining the word. Please wait for your turn, %s.", chatState.Leader, callback.From.UserName)))
 			chatState.Unlock()
 			return
 		}
@@ -517,6 +518,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery)
 			return
 		}
 		if chatState.User == 0 || (time.Since(chatState.LeadTimestamp) >= 600*time.Second && chatState.User != callback.From.ID) {
+			chatState.User = callback.From.ID
 			word, err := model.GetRandomWord()
 			if err != nil {
 				chatState.Unlock()
@@ -536,7 +538,6 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery)
 			chatState.Word = word
 			view.SendMessageWithButtons(bot, callback.Message.Chat.ID, fmt.Sprintf(" [%s](tg://user?id=%d) is explaining the word!", callback.From.FirstName, callback.From.ID), buttons)
 		}
-		chatState.User = callback.From.ID
 		chatState.Leader = callback.From.FirstName
 		chatState.LeadTimestamp = time.Now()
 		chatState.Unlock()
@@ -578,7 +579,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery)
 		chatState.RUnlock()
 		if service.NormalizeAndCompare(callback.Message.Text, word) {
 			buttons := createSingleButtonKeyboard("🌟 Claim Leadership 🙋", "explain")
-			view.SendMessageWithButtons(bot, callback.Message.Chat.ID, fmt.Sprintf("Congratulations! %s guessed the word correctly.", callback.From.FirstName), buttons)
+			view.SendMessageWithButtons(bot, callback.Message.Chat.ID, fmt.Sprintf("%s! %s guessed the word correctly.", telegramReactions[0], callback.From.FirstName), buttons)
 			chatState.Lock()
 			chatState.reset()
 			chatState.Unlock()
