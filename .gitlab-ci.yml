@@ -71,7 +71,10 @@ deploy:
     - echo "🚀 Bot started in background with PID $(cat bot.pid)"
   dependencies:
     - build
-  when: manual
+  needs:
+    - job: stop
+      optional: false
+  when: on_success
   only:
     - main
   tags:
