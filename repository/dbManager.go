@@ -21,7 +21,7 @@ func DbManager() *mongo.Client {
 	// Connect to MongoDB
 	client, err := mongo.Connect(context.TODO(), clientOptions)
 	if err != nil {
-		log.Fatal(err)
+		log.Print(err)
 	}
 
 	// Ensure connection is established
@@ -33,6 +33,17 @@ func DbManager() *mongo.Client {
 	return client
 }
 func InsertDoc(ID int, Name string, chatID int64, client *mongo.Client, collection string) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("Recovered from panic in InsertDoc: %v", r)
+		}
+	}()
+
+	if client == nil {
+		log.Println("MongoDB client is nil in InsertDoc, skipping insert")
+		return
+	}
+
 	// Select the database and collections
 	database := client.Database("Telegram")
 	// movieCollection := database.Collection("CrocEn")
@@ -58,7 +69,8 @@ func InsertDoc(ID int, Name string, chatID int64, client *mongo.Client, collecti
 	// Insert the comment into the NewCollection
 	insertResult, err := commentCollection.InsertOne(context.TODO(), comment)
 	if err != nil {
-		log.Fatal(err)
+		log.Println("Error inserting document in InsertDoc:", err)
+		return
 	}
 	fmt.Println("Inserted comment with ID:", insertResult.InsertedID)
 }
@@ -69,14 +81,14 @@ func ReadAllDoc(client *mongo.Client) []bson.M {
 	// Optionally, print all comments from the collection
 	cursor, err := commentCollection.Find(context.TODO(), bson.D{})
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 	defer cursor.Close(context.TODO())
 	var results []bson.M
 	for cursor.Next(context.TODO()) {
 		var result bson.M
 		if err := cursor.Decode(&result); err != nil {
-			log.Fatal(err)
+			log.Print(err)
 		}
 		fmt.Println(result)
 	}
@@ -84,7 +96,7 @@ func ReadAllDoc(client *mongo.Client) []bson.M {
 	// Close the MongoDB client connection
 	err = client.Disconnect(context.TODO())
 	if err != nil {
-		log.Fatal(err)
+		log.Print(err)
 	}
 	return results
 

@@ -16,6 +16,7 @@ import (
 	installOllama "github.com/MUSTAFA-A-KHAN/telegram-bot-anime/service/installOllama"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/view"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // ChatState holds the state for a specific chat, including the current word and user explaining it.
@@ -121,6 +122,12 @@ func StartBot(token string) error {
 	bot.Debug = true
 	log.Printf("Authorized on account %s", bot.Self.UserName)
 
+	// Create a single MongoDB client instance once
+	client := repository.DbManager()
+	if client == nil {
+		return fmt.Errorf("failed to connect to MongoDB")
+	}
+
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
 
@@ -129,11 +136,12 @@ func StartBot(token string) error {
 		return err
 	}
 
+	// Pass the client instance to handleMessage and handleCallbackQuery via closure
 	for update := range updates {
 		if update.Message != nil {
-			go handleMessage(bot, update.Message)
+			go handleMessage(bot, update.Message, client)
 		} else if update.CallbackQuery != nil {
-			go handleCallbackQuery(bot, update.CallbackQuery)
+			go handleCallbackQuery(bot, update.CallbackQuery, client)
 		}
 	}
 
@@ -144,7 +152,7 @@ var aiModeUsers = make(map[int64]bool)
 var aiModeMutex = &sync.Mutex{}
 
 // handleMessage processes incoming messages and handles commands and guesses.
-func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
+func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.Client) {
 	chatID := message.Chat.ID
 	adminID := int64(1006461736)
 
@@ -370,8 +378,14 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 			view.SendMessage(bot, chatID, fmt.Sprintf("%s ! You guessed the word '%s' correctly!", telegramReactions[7], word))
 			view.ReactToMessage(bot.Token, chatID, message.MessageID, telegramReactions[17], true)
 			view.ReactToMessage(bot.Token, chatID, message.MessageID, "⚡", true)
-			client := repository.DbManager()
-			repository.InsertDoc(message.From.ID, message.From.FirstName, chatID, client, "CrocEn")
+			go func() {
+				defer func() {
+					if r := recover(); r != nil {
+						log.Printf("Recovered from panic in InsertDoc goroutine: %v", r)
+					}
+				}()
+				repository.InsertDoc(message.From.ID, message.From.FirstName, chatID, client, "CrocEn")
+			}()
 
 			chatState.reset()
 			return
@@ -533,7 +547,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 			view.SendMessageWithButtons(bot, message.Chat.ID, fmt.Sprintf("%s! %s guessed the word %s.\n /word", telegramReactions[7], message.From.FirstName, word), buttons)
 			go view.ReactToMessage(bot.Token, chatID, message.MessageID, "🔥", true)
 			go view.ReactToMessage(bot.Token, chatID, message.MessageID, "⚡", true)
-			client := repository.DbManager()
+			// client := repository.DbManager()
 			go repository.InsertDoc(message.From.ID, message.From.FirstName, message.Chat.ID, client, "CrocEn")
 			go repository.InsertDoc(user, leader, message.Chat.ID, client, "CrocEnLeader")
 
@@ -542,7 +556,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 }
 
 // handleCallbackQuery processes incoming callback queries and handles the "explain" action.
-func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery) {
+func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery, client *mongo.Client) {
 	chatID := callback.Message.Chat.ID
 	chatState := getOrCreateChatState(chatID)
 
