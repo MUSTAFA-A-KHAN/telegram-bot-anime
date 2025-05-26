@@ -72,8 +72,8 @@ deploy:
   dependencies:
     - build
   needs:
+    - job: build
     - job: stop
-      optional: false
   when: on_success
   only:
     - main
