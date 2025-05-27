@@ -268,7 +268,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		}
 
 		if message.Command() == "installAI" {
-			logs, err := installOllama.Install()
+			logs, err := installOllama.Install(true)
 			logsText := strings.Join(logs, "\n")
 			if err != nil {
 				view.SendMessage(bot, chatID, logsText+"\nLogs:\n"+err.Error())
