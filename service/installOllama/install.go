@@ -9,8 +9,8 @@ import (
 	"os/exec"
 	"time"
 )
-
-func Install() ([]string, error) {
+//will skip model pull if passed true 
+func Install(skipModelPull bool) ([]string, error) {
 	var logs []string
 
 	logs = append(logs, "🌟 Starting Ollama full setup...")
@@ -68,14 +68,18 @@ func Install() ([]string, error) {
 	}
 	logs = append(logs, "✅ Ollama is ready!")
 
-	// Step 6: Pull the llama3 model
-	logs = append(logs, "📥 Pulling model (tinyllama)...")
-	pull := exec.Command("ollama", "pull", "tinyllama")
-	pull.Stdout = os.Stdout
-	pull.Stderr = os.Stderr
-	err = pull.Run()
-	if err != nil {
-		return logs, fmt.Errorf("❌ Model pull failed: %v", err)
+	if !skipModelPull {
+		// Step 6: Pull the llama3 model
+		logs = append(logs, "📥 Pulling model (tinyllama)...")
+		pull := exec.Command("ollama", "pull", "tinyllama")
+		pull.Stdout = os.Stdout
+		pull.Stderr = os.Stderr
+		err = pull.Run()
+		if err != nil {
+			return logs, fmt.Errorf("❌ Model pull failed: %v", err)
+		}
+	} else {
+		logs = append(logs, "⏭️ Skipping model pull as requested.")
 	}
 
 	logs = append(logs, "🎉 All done! Ollama is installed, running, and ready to answer your questions.")
