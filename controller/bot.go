@@ -512,7 +512,25 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		}
 		chatState.RUnlock()
 
-		view.SendMessage(bot, message.Chat.ID, hint)
+		// Send chat action "typing" before sending hint
+		// chatAction := tgbotapi.NewChatAction(message.Chat.ID, tgbotapi.ChatTyping)
+		// bot.Send(chatAction)
+
+		// Send chat action "typing" before sending hint
+		chatAction := tgbotapi.NewChatAction(chatID, tgbotapi.ChatTyping)
+		bot.Send(chatAction)
+
+		// Escape MarkdownV2 special characters in hint text
+		escapedHint := escapeMarkdownV2(hint)
+
+		// Wrap escaped hint text in spoiler formatting for Telegram MarkdownV2
+		spoilerHint := "||" + escapedHint + "||"
+		msg := tgbotapi.NewMessage(chatID, spoilerHint)
+		msg.ParseMode = "MarkdownV2"
+		_, err := bot.Send(msg)
+		if err != nil {
+			log.Printf("Failed to send hint message with spoiler formatting: %v", err)
+		}
 
 		chatState.Lock()
 		chatState.LastHintTimestamp = time.Now()
@@ -593,6 +611,13 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 			)
 			chatState.Word = word
 			view.SendMessageWithButtons(bot, callback.Message.Chat.ID, fmt.Sprintf(" [%s](tg://user?id=%d) is explaining the word!", callback.From.FirstName, callback.From.ID), buttons)
+
+			// Delete the "claim leadership" button message to remove it when someone starts leading
+			deleteMsg := tgbotapi.NewDeleteMessage(callback.Message.Chat.ID, callback.Message.MessageID)
+			_, err = bot.DeleteMessage(deleteMsg)
+			if err != nil {
+				log.Printf("Failed to delete claim leadership button message: %v", err)
+			}
 		}
 		chatState.Leader = callback.From.FirstName
 		chatState.LeadTimestamp = time.Now()
@@ -624,6 +649,12 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 			chatState.Unlock()
 			return
 		}
+		// Delete the callback message when user selects "Changed my mind"
+		deleteMsg := tgbotapi.NewDeleteMessage(callback.Message.Chat.ID, callback.Message.MessageID)
+		_, err := bot.DeleteMessage(deleteMsg)
+		if err != nil {
+			log.Printf("Failed to delete message on droplead: %v", err)
+		}
 		chatState.Unlock()
 		buttons := createSingleButtonKeyboard("🌟 Claim Leadership 🙋", "explain")
 		view.SendMessageWithButtons(bot, callback.Message.Chat.ID, fmt.Sprintf("%s refused to lead -> %s \n", callback.From.FirstName, chatState.Word), buttons)
@@ -643,12 +674,23 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 	}
 	bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
 }
+
 func MessageToJSONString(message *tgbotapi.Message) (string, error) {
 	jsonBytes, err := json.MarshalIndent(message, "", "  ")
 	if err != nil {
 		return "", err
 	}
 	return string(jsonBytes), nil
+}
+
+// escapeMarkdownV2 escapes special characters for Telegram MarkdownV2 formatting
+func escapeMarkdownV2(text string) string {
+	specialChars := []string{"_", "*", "[", "]", "(", ")", "~", "`", ">", "#", "+", "-", "=", "|", "{", "}", ".", "!"}
+	escaped := text
+	for _, char := range specialChars {
+		escaped = strings.ReplaceAll(escaped, char, "\\"+char)
+	}
+	return escaped
 }
 
 // startHTTPServer starts a simple HTTP server for health checks
