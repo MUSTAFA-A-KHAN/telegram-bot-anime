@@ -8,6 +8,7 @@ import (
 
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/model"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	tgbotapiv5 "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 // SendMessage sends a simple text message to the user
@@ -21,6 +22,14 @@ func SendMessage(bot *tgbotapi.BotAPI, chatID int64, text string) (tgbotapi.Mess
 	msg := tgbotapi.NewMessage(chatID, text)
 	res, err := bot.Send(msg)
 	return res, err
+}
+
+// SendMessageWithButtons sends a message with inline keyboard buttons to the user
+func SendMessageWithMarkDown(bot *tgbotapi.BotAPI, chatID int64, text string) error {
+	msg := tgbotapi.NewMessage(chatID, text)
+	msg.ParseMode = tgbotapiv5.ModeMarkdownV2
+	_, err := bot.Send(msg)
+	return err
 }
 
 // SendMessageWithButtons sends a message with inline keyboard buttons to the user
