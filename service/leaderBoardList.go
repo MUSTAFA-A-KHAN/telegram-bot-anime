@@ -62,21 +62,23 @@ func GetUserStatsByID(userID int) string {
 	}()
 
 	result, err := repository.GetUserStatsByID(client, "CrocEn", userID)
+	stats := "something went wrong"
 	if err != nil {
-		return "No stats found"
+		stats = "No winning stats found"
+	} else {
+		name, _ := result["Name"].(string)
+		count, _ := result["count"].(int32)
+
+		stats = fmt.Sprintf("You %s have successfully guessed for:\n%d Times", name, count)
 	}
 
-	name, _ := result["Name"].(string)
-	count, _ := result["count"].(int32)
-
-	stats := fmt.Sprintf("You %s have successfully guessed for:\n%d Times", name, count)
 	result, err = repository.GetUserStatsByID(client, "CrocEnLeader", userID)
 	if err != nil {
 		return stats + "\n:)"
 	}
 
 	// name, _ = result["Name"].(string)
-	count, _ = result["count"].(int32)
+	count, _ := result["count"].(int32)
 
 	stats += fmt.Sprintf("\nAnd have leaded for:\n%d Times", count)
 	return stats

@@ -264,7 +264,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 				return
 			}
 			result := service.GetUserStatsByID(userID)
-			view.SendMessage(bot, chatID, result)
+			view.ReplyToMessage(bot, message.MessageID, chatID, result)
 		}
 
 		if message.Command() == "installAI" {
@@ -420,7 +420,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		view.SendMessagehtml(bot, message.Chat.ID, result)
 	case "mystats":
 		result := service.GetUserStatsByID(message.From.ID)
-		view.SendMessage(bot, chatID, result)
+		view.ReplyToMessage(bot, message.MessageID, chatID, result)
 	case "leaderstats":
 		result := service.LeaderBoardList("CrocEnLeader")
 		view.SendMessagehtml(bot, message.Chat.ID, result)

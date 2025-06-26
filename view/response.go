@@ -18,6 +18,12 @@ func SendMessagehtml(bot *tgbotapi.BotAPI, chatID int64, text string) error {
 	_, err := bot.Send(msg)
 	return err
 }
+func ReplyToMessage(bot *tgbotapi.BotAPI, mesgID int, chatID int64, text string) (tgbotapi.Message, error) {
+	msg := tgbotapi.NewMessage(chatID, text)
+	msg.ReplyToMessageID = mesgID
+	res, err := bot.Send(msg)
+	return res, err
+}
 func SendMessage(bot *tgbotapi.BotAPI, chatID int64, text string) (tgbotapi.Message, error) {
 	msg := tgbotapi.NewMessage(chatID, text)
 	res, err := bot.Send(msg)
