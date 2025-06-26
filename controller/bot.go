@@ -612,11 +612,11 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 			chatState.Word = word
 			view.SendMessageWithButtons(bot, callback.Message.Chat.ID, fmt.Sprintf(" [%s](tg://user?id=%d) is explaining the word!", callback.From.FirstName, callback.From.ID), buttons)
 
-			// Delete the "claim leadership" button message to remove it when someone starts leading
-			deleteMsg := tgbotapi.NewDeleteMessage(callback.Message.Chat.ID, callback.Message.MessageID)
-			_, err = bot.DeleteMessage(deleteMsg)
+			// Remove the inline keyboard (buttons) from the "claim leadership" message when someone starts leading
+			editMarkup := tgbotapi.NewEditMessageReplyMarkup(callback.Message.Chat.ID, callback.Message.MessageID, tgbotapi.InlineKeyboardMarkup{InlineKeyboard: [][]tgbotapi.InlineKeyboardButton{}})
+			_, err = bot.Send(editMarkup)
 			if err != nil {
-				log.Printf("Failed to delete claim leadership button message: %v", err)
+				log.Printf("Failed to remove inline keyboard: %v", err)
 			}
 		}
 		chatState.Leader = callback.From.FirstName
