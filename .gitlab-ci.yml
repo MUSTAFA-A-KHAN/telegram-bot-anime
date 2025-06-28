@@ -50,8 +50,7 @@ stop:
   only:
     - main
   tags:
-    - gitlabrunneruser
-    - gitlabrunneruser-GCP
+    - gitlabrunneruser-stop-pid
 deploy:
   stage: deploy
   script:
