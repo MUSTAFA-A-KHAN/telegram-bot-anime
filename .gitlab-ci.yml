@@ -78,7 +78,7 @@ deploy:
   needs:
     - job: build
     - job: stop
-  when: on_success
+  when: manual
   only:
     - main
   tags:
@@ -110,7 +110,7 @@ deploy-GCP:
   needs:
     - job: build
     - job: stop
-  when: on_success
+  when: manual
   only:
     - main
   tags:
