@@ -12,11 +12,13 @@ build:
   script:
     - go mod tidy
     - GOOS=linux GOARCH=arm64 go build -o telegram-bot-anime ./
+    - GOOS=linux GOARCH=amd64 go build -o telegram-bot-anime-amd64 ./
     - echo "Executable built:"
     - ls -lh telegram-bot-anime
   artifacts:
     paths:
       - telegram-bot-anime
+      - telegram-bot-anime-amd64
     expire_in: 1 hour
   only:
     - main
@@ -24,29 +26,32 @@ build:
     - merge_requests
 
 # Deploy stage (manual trigger only)
+# Stop stage (manual trigger only)
 stop:
   stage: stop
   script:
     - |
-      grep -a 'telegram-bot-anime' /proc/*/cmdline 2>/dev/null
-      echo "🔍 Looking for 'telegram-bot-anime' processes..."
-      PIDS=$(grep -a 'telegram-bot-anime' /proc/*/cmdline 2>/dev/null | awk -F'/' '/\/proc\/[0-9]+\/cmdline/ {print $3}' | grep -E '^[0-9]+$' | sort -u)
-      if [ -n "$PIDS" ]; then
-        for pid in $PIDS; do
-          if kill "$pid" 2>/dev/null; then
-            echo "🛑 telegram-bot-anime stopped (PID: $pid)"
+      echo "🔍 Looking for telegram-bot-anime PID from file..."
+      if [ -f "bot.pid" ]; then
+        PID=$(cat bot.pid)
+        if [ -n "$PID" ]; then
+          if kill "$PID" 2>/dev/null; then
+            echo "🛑 telegram-bot-anime stopped (PID: $PID)"
           else
-            echo "❌ Failed to stop telegram-bot-anime (PID: $pid)"
+            echo "❌ Failed to stop telegram-bot-anime (PID: $PID)"
           fi
-        done
+        else
+          echo "❌ No valid PID found in bot.pid"
+        fi
       else
-        echo "✅ No running process found for telegram-bot-anime"
+        echo "❌ No bot.pid file found"
       fi
   when: manual
   only:
     - main
   tags:
     - gitlabrunneruser
+    - gitlabrunneruser-GCP
 deploy:
   stage: deploy
   script:
@@ -55,7 +60,7 @@ deploy:
     - >
       AVAILABLE_MEM=$(free -m | awk '/^Mem:/{print $7}')
       && echo "Available memory (MB): $AVAILABLE_MEM"
-      && MIN_MEM=500
+      && MIN_MEM=200
       && if [ "$AVAILABLE_MEM" -lt "$MIN_MEM" ]; then
            echo "Not enough memory to deploy. Need at least $MIN_MEM MB.";
            exit 1;
@@ -79,3 +84,35 @@ deploy:
     - main
   tags:
     - gitlabrunneruser  # Runner tag used to run the deploy job
+deploy-GCP:
+  stage: deploy
+  script:
+    - echo "Checking available memory..."
+    - free -m
+    - >
+      AVAILABLE_MEM=$(free -m | awk '/^Mem:/{print $7}')
+      && echo "Available memory (MB): $AVAILABLE_MEM"
+      && MIN_MEM=200
+      && if [ "$AVAILABLE_MEM" -lt "$MIN_MEM" ]; then
+           echo "Not enough memory to deploy. Need at least $MIN_MEM MB.";
+           exit 1;
+         fi
+    - chmod +x telegram-bot-anime-amd64
+    - ll || ls
+    - pwd || echo "error"
+    - echo "Files:"
+    - ls -lh
+    - echo "🚀 Starting telegram-bot-anime..."
+    - nohup ./telegram-bot-anime-amd64 > output.log 2>&1 &
+    - echo $! > bot.pid
+    - echo "🚀 Bot started in background with PID $(cat bot.pid)"
+  dependencies:
+    - build
+  needs:
+    - job: build
+    - job: stop
+  when: on_success
+  only:
+    - main
+  tags:
+    - gitlabrunneruser-GCP
