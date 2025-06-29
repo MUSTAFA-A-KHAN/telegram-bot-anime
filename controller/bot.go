@@ -59,6 +59,7 @@ var telegramReactions = []string{
 	"🔥",  // Fire 17
 	"🥳",  // Partying Face 18
 	"⚡",  // Thunder 19
+	"💡",  // Bulb 20
 }
 
 // getOrCreateChatState safely retrieves or creates a ChatState for a chatID.
@@ -198,6 +199,13 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 				log.Printf("Failed to send rules message: %v", err)
 			}
 			return
+		case "addBot":
+			button := tgbotapi.NewInlineKeyboardButtonURL("add to group", "https://t.me/Croco_rebirth_bot?startgroup=true")
+			view.SendMessageWithKeyboardButton(bot, chatID, "Unlock my full potential by adding me to a group chat!", button)
+		case "start":
+			buttons := tgbotapi.NewInlineKeyboardMarkup(
+				tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Get Hint"+telegramReactions[20], "hint")))
+			view.SendMessageWithButtons(bot, message.Chat.ID, "Heyyy! Got a word for ya 😏 Tap the button below if you need a lil hint 👇", buttons)
 		case "exportdata":
 			if message.From.ID != int(adminID) {
 				log.Printf("not an admin")
@@ -234,6 +242,46 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 
 			view.SendMessage(bot, chatID, "Both datasets exported and sent to admin successfully.")
 			return
+		case "stats":
+			result := service.LeaderBoardList(client, "CrocEn")
+			view.SendMessagehtml(bot, chatID, result)
+		case "mystats":
+			// args := strings.Fields(message.CommandArguments())
+			// if len(args) < 1 {
+			// 	view.SendMessage(bot, chatID, "Please provide a user ID. Usage: /userstats <userID>")
+			// 	return
+			// }
+			// userIDStr := args[0]
+			ID := strconv.Itoa(message.From.ID)
+			userID, err := strconv.Atoi(ID)
+			if err != nil {
+				sentMsg, err := view.SendMessage(bot, chatID, "Invalid user ID. Please enter a valid numeric user ID.")
+				deleteWarningMessage(bot, message, sentMsg, err)
+				return
+			}
+			result := service.GetUserStatsByID(client, userID)
+			view.ReplyToMessage(bot, message.MessageID, chatID, result)
+		case "leaderstats":
+			result := service.LeaderBoardList(client, "CrocEnLeader")
+			view.SendMessagehtml(bot, message.Chat.ID, result)
+		case "installAI":
+			logs, err := installOllama.Install(true)
+			logsText := strings.Join(logs, "\n")
+			if err != nil {
+				view.SendMessage(bot, chatID, logsText+"\nLogs:\n"+err.Error())
+			}
+			view.SendMessage(bot, chatID, logsText+"\nLogs:\n")
+		case "buildModel":
+			// Prepare the command
+			output, err := installOllama.BuildOllamaModel()
+			if err != nil {
+				view.SendMessage(bot, chatID, "Build fail Error:"+err.Error())
+			}
+			view.SendMessage(bot, chatID, "\nLogs:\n"+output)
+		case "report":
+			msgstr, _ := MessageToJSONString(message)
+			view.SendMessage(bot, adminID, msgstr)
+			view.SendMessage(bot, chatID, "Thank you! Your report has been successfully submitted.")
 		}
 
 		aiModeMutex.Lock()
@@ -281,65 +329,6 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			//
 		}
 
-		if message.Command() == "stats" {
-			result := service.LeaderBoardList(client, "CrocEn")
-			view.SendMessagehtml(bot, chatID, result)
-		}
-		if message.Command() == "mystats" {
-			// args := strings.Fields(message.CommandArguments())
-			// if len(args) < 1 {
-			// 	view.SendMessage(bot, chatID, "Please provide a user ID. Usage: /userstats <userID>")
-			// 	return
-			// }
-			// userIDStr := args[0]
-			ID := strconv.Itoa(message.From.ID)
-			userID, err := strconv.Atoi(ID)
-			if err != nil {
-				sentMsg, err := view.SendMessage(bot, chatID, "Invalid user ID. Please enter a valid numeric user ID.")
-				deleteWarningMessage(bot, message, sentMsg, err)
-				return
-			}
-			result := service.GetUserStatsByID(client, userID)
-			view.ReplyToMessage(bot, message.MessageID, chatID, result)
-		}
-
-		if message.Command() == "installAI" {
-			logs, err := installOllama.Install(true)
-			logsText := strings.Join(logs, "\n")
-			if err != nil {
-				view.SendMessage(bot, chatID, logsText+"\nLogs:\n"+err.Error())
-			}
-			view.SendMessage(bot, chatID, logsText+"\nLogs:\n")
-		}
-		if message.Command() == "buildModel" {
-			// Prepare the command
-			output, err := installOllama.BuildOllamaModel()
-			if err != nil {
-				view.SendMessage(bot, chatID, "Build fail Error:"+err.Error())
-			}
-			view.SendMessage(bot, chatID, "\nLogs:\n"+output)
-		}
-		// if message.Command() == "executeAI" {
-		// 	userPrompt := strings.TrimSpace(message.CommandArguments())
-		// 	if userPrompt == "" {
-		// 		view.SendMessage(bot, chatID,
-		// 			"Please add a prompt, e.g.  /executeAI Explain Newton’s third law")
-		// 		return
-		// 	}
-
-		// 	result, err := installOllama.RunOllama(userPrompt)
-		// 	if err != nil {
-		// 		view.SendMessage(bot, chatID, "Error:"+err.Error())
-		// 		return
-		// 	}
-		// 	view.SendMessage(bot, chatID, result)
-		// 	return
-		// }
-
-		if message.Command() == "leaderstats" {
-			result := service.LeaderBoardList(client, "CrocEnLeader")
-			view.SendMessagehtml(bot, chatID, result)
-		}
 		chatState.RLock()
 		wordEmpty := chatState.Word == ""
 		lastHint := chatState.LastHintTimestamp
@@ -360,8 +349,6 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			chatState.LastHintTimestamp = time.Time{}
 			chatState.LastHintTypeSent = 0
 			chatState.Unlock()
-			button := tgbotapi.NewInlineKeyboardButtonURL("add to group", "https://t.me/Croco_rebirth_bot?startgroup=true")
-			view.SendMessageWithKeyboardButton(bot, chatID, "Unlock my full potential by adding me to a group chat! 🔓\nMeanwhile, here's a word for you to guess. Need a hint? Just type 👉 /hint.", button)
 			return
 		}
 
@@ -424,14 +411,6 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			}()
 
 			chatState.reset()
-			return
-		}
-		if message.Command() == "report" {
-			msgstr, _ := MessageToJSONString(message)
-			view.SendMessage(bot, adminID, msgstr)
-			view.SendMessage(bot, chatID, "Thank you! Your report has been successfully submitted.")
-		} else {
-			view.SendMessage(bot, chatID, "Try again! Need a clue? Type 👉 /hint.\nOr reveal the word by typing 👉 /reveal.")
 			return
 		}
 	}
@@ -573,7 +552,6 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		chatState.LastHintTimestamp = time.Now()
 		chatState.LastHintTypeSent = 1 - lastHintType
 		chatState.Unlock()
-
 	case "reveal":
 		chatState.RLock()
 		word := chatState.Word
@@ -696,6 +674,57 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		view.SendMessageWithButtons(bot, callback.Message.Chat.ID, fmt.Sprintf("%s refused to lead -> %s \n", callback.From.FirstName, chatState.Word), buttons)
 		chatState.reset()
 
+	case "hint":
+		chatState.RLock()
+		wordEmpty := chatState.Word == ""
+		lastHint := chatState.LastHintTimestamp
+		lastHintType := chatState.LastHintTypeSent
+		chatState.RUnlock()
+
+		if wordEmpty {
+			buttons := createSingleButtonKeyboard(" 🗣️ Explain ", "explain")
+			view.SendMessageWithButtons(bot, callback.Message.Chat.ID, "No active game right now. Click below to start one!", buttons)
+			bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
+			return
+		}
+
+		if !lastHint.IsZero() && time.Since(lastHint) < 1*time.Minute {
+			sentMsg, err := view.SendMessage(bot, chatID, "Please take a minute before requesting another hint.")
+			deleteWarningMessage(bot, callback.Message, sentMsg, err)
+			bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
+
+			return
+		}
+
+		chatState.RLock()
+		var hint string
+		if lastHintType == 0 {
+			hint = model.GenerateMeaningHint(chatState.Word)
+		} else {
+			hint = model.GenerateMeaningHint(chatState.Word)
+			hint = hint + "\n" + model.GenerateHint(chatState.Word)
+			hint = hint + "\n" + model.GenerateAuroraHint(chatState.Word)
+		}
+		chatState.RUnlock()
+
+		chatAction := tgbotapi.NewChatAction(callback.Message.Chat.ID, tgbotapi.ChatTyping)
+		bot.Send(chatAction)
+
+		escapedHint := escapeMarkdownV2(hint)
+		spoilerHint := "||" + escapedHint + "||"
+		msg := tgbotapi.NewMessage(callback.Message.Chat.ID, spoilerHint)
+		msg.ParseMode = "MarkdownV2"
+		_, err := bot.Send(msg)
+		if err != nil {
+			log.Printf("Failed to send hint message with spoiler formatting: %v", err)
+		}
+
+		chatState.Lock()
+		chatState.LastHintTimestamp = time.Now()
+		chatState.LastHintTypeSent = 1 - lastHintType
+		chatState.Unlock()
+
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
 	default:
 		chatState.RLock()
 		word := chatState.Word
