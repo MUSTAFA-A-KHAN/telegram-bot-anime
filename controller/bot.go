@@ -198,6 +198,42 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 				log.Printf("Failed to send rules message: %v", err)
 			}
 			return
+		case "exportdata":
+			if message.From.ID != int(adminID) {
+				log.Printf("not an admin")
+				return
+			}
+
+			// Helper function to export and send data
+			exportAndSend := func(name string, filename string) error {
+				data, err := service.ExportAllData(client, name)
+				if err != nil {
+					return fmt.Errorf("failed to export %s data: %w", name, err)
+				}
+				file := tgbotapi.FileBytes{
+					Name:  filename,
+					Bytes: data,
+				}
+				msg := tgbotapi.NewDocumentUpload(adminID, file)
+				_, err = bot.Send(msg)
+				if err != nil {
+					return fmt.Errorf("failed to send %s data file: %w", name, err)
+				}
+				return nil
+			}
+
+			// Export and send both datasets
+			if err := exportAndSend("CrocEnLeader", "croc_en_leader_data.json"); err != nil {
+				view.SendMessage(bot, chatID, err.Error())
+				return
+			}
+			if err := exportAndSend("CrocEn", "croc_en_data.json"); err != nil {
+				view.SendMessage(bot, chatID, err.Error())
+				return
+			}
+
+			view.SendMessage(bot, chatID, "Both datasets exported and sent to admin successfully.")
+			return
 		}
 
 		aiModeMutex.Lock()
@@ -246,7 +282,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		}
 
 		if message.Command() == "stats" {
-			result := service.LeaderBoardList("CrocEn")
+			result := service.LeaderBoardList(client, "CrocEn")
 			view.SendMessagehtml(bot, chatID, result)
 		}
 		if message.Command() == "mystats" {
@@ -263,7 +299,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 				deleteWarningMessage(bot, message, sentMsg, err)
 				return
 			}
-			result := service.GetUserStatsByID(userID)
+			result := service.GetUserStatsByID(client, userID)
 			view.ReplyToMessage(bot, message.MessageID, chatID, result)
 		}
 
@@ -301,7 +337,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		// }
 
 		if message.Command() == "leaderstats" {
-			result := service.LeaderBoardList("CrocEnLeader")
+			result := service.LeaderBoardList(client, "CrocEnLeader")
 			view.SendMessagehtml(bot, chatID, result)
 		}
 		chatState.RLock()
@@ -416,13 +452,13 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 	case "start":
 		view.SendMessage(bot, message.Chat.ID, "Welcome! Type /word to start a new game.")
 	case "stats":
-		result := service.LeaderBoardList("CrocEn")
+		result := service.LeaderBoardList(client, "CrocEn")
 		view.SendMessagehtml(bot, message.Chat.ID, result)
 	case "mystats":
-		result := service.GetUserStatsByID(message.From.ID)
+		result := service.GetUserStatsByID(client, message.From.ID)
 		view.ReplyToMessage(bot, message.MessageID, chatID, result)
 	case "leaderstats":
-		result := service.LeaderBoardList("CrocEnLeader")
+		result := service.LeaderBoardList(client, "CrocEnLeader")
 		view.SendMessagehtml(bot, message.Chat.ID, result)
 	case "rules":
 		rulesText := "*🎮 Game Rules 🎮*\n\n" +
@@ -566,7 +602,6 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			view.SendMessageWithButtons(bot, message.Chat.ID, fmt.Sprintf("%s! %s guessed the word %s.\n /word", telegramReactions[7], message.From.FirstName, word), buttons)
 			go view.ReactToMessage(bot.Token, chatID, message.MessageID, "🔥", true)
 			go view.ReactToMessage(bot.Token, chatID, message.MessageID, "⚡", true)
-			// client := repository.DbManager()
 			go repository.InsertDoc(message.From.ID, message.From.FirstName, message.Chat.ID, client, "CrocEn")
 			go repository.InsertDoc(user, leader, message.Chat.ID, client, "CrocEnLeader")
 

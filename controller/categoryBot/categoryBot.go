@@ -12,6 +12,7 @@ import (
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/service"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/view"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // ChatState holds the state for a specific chat, including the current word and user explaining it.
@@ -52,15 +53,19 @@ func StartBot(token string) error {
 	if err != nil {
 		return err
 	}
-
+	// Create a single MongoDB client instance once
+	client := repository.DbManager()
+	if client == nil {
+		return fmt.Errorf("failed to connect to MongoDB")
+	}
 	// Process incoming updates (messages and callback queries) in a loop.
 	for update := range updates {
 		if update.Message != nil {
 			// Handle incoming messages.
-			go handleMessage(bot, update.Message)
+			go handleMessage(client, bot, update.Message)
 		} else if update.CallbackQuery != nil {
 			// Handle incoming callback queries.
-			go handleCallbackQuery(bot, update.CallbackQuery)
+			go handleCallbackQuery(client, bot, update.CallbackQuery)
 		}
 	}
 
@@ -68,7 +73,7 @@ func StartBot(token string) error {
 }
 
 // handleMessage processes incoming messages and handles commands and guesses.
-func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
+func handleMessage(client *mongo.Client, bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 	chatID := message.Chat.ID
 	adminID := int64(1006461736)
 
@@ -83,9 +88,9 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 	log.Printf("[%s] %s", message.From.UserName, message.Text)
 
 	switch message.Command() {
-		case "start":
-			// Send a welcome message with instructions to start the game.
-			view.SendMessage(bot, message.Chat.ID, "Welcome! Type /word to start a new game.")
+	case "start":
+		// Send a welcome message with instructions to start the game.
+		view.SendMessage(bot, message.Chat.ID, "Welcome! Type /word to start a new game.")
 	case "getButton":
 		Announcement := strings.Split(message.Text, "  ")
 		if len(Announcement) > 1 {
@@ -101,11 +106,11 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 		}
 	case "stats":
 		// Send the user stats of game.
-		result := service.LeaderBoardList("CrocEn")
+		result := service.LeaderBoardList(client, "CrocEn")
 		view.SendMessage(bot, message.Chat.ID, result)
 	case "leaderstats":
 		// Send the user stats of game.
-		result := service.LeaderBoardList("CrocEnLeader")
+		result := service.LeaderBoardList(client, "CrocEnLeader")
 		view.SendMessage(bot, message.Chat.ID, result)
 	case "report":
 		// Allow users to report an issue or feedback.
@@ -161,7 +166,6 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 			)
 			view.SendMessageWithButtons(bot, message.Chat.ID, fmt.Sprintf("Congratulations! %s guessed the word %s.\n /word", message.From.FirstName, chatState.Word), buttons)
 			// Reset the chat state after a correct guess.
-			client := repository.DbManager()
 			repository.InsertDoc(message.From.ID, message.From.FirstName, message.Chat.ID, client, "CrocEn")
 			repository.InsertDoc(chatState.User, chatState.Leader, message.Chat.ID, client, "CrocEnLeader")
 			chatState.Lock()
@@ -176,7 +180,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 }
 
 // handleCallbackQuery processes incoming callback queries and handles the "explain" action.
-func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery) {
+func handleCallbackQuery(client *mongo.Client, bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery) {
 	chatID := callback.Message.Chat.ID
 
 	// Ensure the chat state exists, and initialize it if necessary.
