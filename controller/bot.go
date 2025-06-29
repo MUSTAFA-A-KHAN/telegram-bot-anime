@@ -184,7 +184,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 				"2. Use /hint to get clues about the word, but wait at least a minute between hints.\n" +
 				"3. Use /reveal to reveal the word if you give up, but only after 10 minutes of gameplay.\n\n" +
 				"*Leaders:*\n" +
-				"1. Claim leadership by clicking 'Explain' or using the appropriate command.\n" +
+				"1. Claim leadership by via button or using the /word command.\n" +
 				"2. Explain the word to other players without directly saying it.\n" +
 				"3. You can get a new word or drop leadership using the provided buttons.\n\n" +
 				"*General:*\n" +
@@ -209,7 +209,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			wordChannel, errChannel := installOllama.RunOllama(text)
 
 			// Send the initial message (could be an empty string or placeholder)
-			initialMsg := tgbotapi.NewMessage(chatID, "Hello")
+			initialMsg := tgbotapi.NewMessage(chatID, "Thinking...")
 			initialMessage, err := bot.Send(initialMsg)
 			if err != nil {
 				log.Println("Failed to send initial message:", err)
@@ -509,6 +509,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		} else {
 			hint = model.GenerateMeaningHint(chatState.Word)
 			hint = hint + "\n" + model.GenerateHint(chatState.Word)
+			hint = hint + "\n" + model.GenerateAuroraHint(chatState.Word)
 		}
 		chatState.RUnlock()
 
