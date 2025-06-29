@@ -1,16 +1,15 @@
 package service
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"strings"
 
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/repository"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func LeaderBoardList(collection string) string {
-	client := repository.DbManager()
+func LeaderBoardList(client *mongo.Client, collection string) string {
 	idCounts, err := repository.CountIDOccurrences(client, collection)
 	if err != nil {
 		log.Fatal(err)
@@ -44,22 +43,10 @@ func LeaderBoardList(collection string) string {
 	leaderboard += "</pre>"
 	leaderboard += "\n✨ <b>Keep it up and aim for the top!</b> ✨\n"
 
-	err = client.Disconnect(context.TODO())
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	return leaderboard
 }
 
-func GetUserStatsByID(userID int) string {
-	client := repository.DbManager()
-	defer func() {
-		err := client.Disconnect(context.TODO())
-		if err != nil {
-			log.Fatal(err)
-		}
-	}()
+func GetUserStatsByID(client *mongo.Client, userID int) string {
 
 	result, err := repository.GetUserStatsByID(client, "CrocEn", userID)
 	stats := "something went wrong"

@@ -74,10 +74,10 @@ func InsertDoc(ID int, Name string, chatID int64, client *mongo.Client, collecti
 	}
 	fmt.Println("Inserted comment with ID:", insertResult.InsertedID)
 }
-func ReadAllDoc(client *mongo.Client) []bson.M {
+func ReadAllDoc(client *mongo.Client, collection string) []bson.M {
 	database := client.Database("Telegram")
 	// movieCollection := database.Collection("CrocEn")
-	commentCollection := database.Collection("CrocEn")
+	commentCollection := database.Collection(collection)
 	// Optionally, print all comments from the collection
 	cursor, err := commentCollection.Find(context.TODO(), bson.D{})
 	if err != nil {
@@ -91,12 +91,7 @@ func ReadAllDoc(client *mongo.Client) []bson.M {
 			log.Print(err)
 		}
 		fmt.Println(result)
-	}
-
-	// Close the MongoDB client connection
-	err = client.Disconnect(context.TODO())
-	if err != nil {
-		log.Print(err)
+		results = append(results, result)
 	}
 	return results
 
