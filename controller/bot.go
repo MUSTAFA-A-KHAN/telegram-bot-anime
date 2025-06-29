@@ -413,6 +413,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			chatState.reset()
 			return
 		}
+		return
 	}
 
 	// Existing group chat handling
