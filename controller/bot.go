@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -282,6 +283,24 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			msgstr, _ := MessageToJSONString(message)
 			view.SendMessage(bot, adminID, msgstr)
 			view.SendMessage(bot, chatID, "Thank you! Your report has been successfully submitted.")
+		case "getlogs":
+			logFilePath := "output.log"
+			data, err := os.ReadFile(logFilePath)
+			if err != nil {
+				view.SendMessage(bot, chatID, fmt.Sprintf("Failed to read log file: %v", err))
+				return
+			}
+			file := tgbotapi.FileBytes{
+				Name:  "output.log",
+				Bytes: data,
+			}
+			msg := tgbotapi.NewDocumentUpload(adminID, file)
+			_, err = bot.Send(msg)
+			if err != nil {
+				view.SendMessage(bot, chatID, fmt.Sprintf("Failed to send log file: %v", err))
+				return
+			}
+			view.SendMessage(bot, chatID, "Log file sent to admin successfully.")
 		}
 
 		aiModeMutex.Lock()
