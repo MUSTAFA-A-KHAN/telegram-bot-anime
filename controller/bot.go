@@ -219,12 +219,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 				if err != nil {
 					return fmt.Errorf("failed to export %s data: %w", name, err)
 				}
-				file := tgbotapi.FileBytes{
-					Name:  filename,
-					Bytes: data,
-				}
-				msg := tgbotapi.NewDocumentUpload(adminID, file)
-				_, err = bot.Send(msg)
+				err = view.SendFile(bot, adminID, filename, data)
 				if err != nil {
 					return fmt.Errorf("failed to send %s data file: %w", name, err)
 				}
@@ -290,12 +285,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 				view.SendMessage(bot, chatID, fmt.Sprintf("Failed to read log file: %v", err))
 				return
 			}
-			file := tgbotapi.FileBytes{
-				Name:  "output.log",
-				Bytes: data,
-			}
-			msg := tgbotapi.NewDocumentUpload(adminID, file)
-			_, err = bot.Send(msg)
+			err = view.SendFile(bot, adminID, "output.log", data)
 			if err != nil {
 				view.SendMessage(bot, chatID, fmt.Sprintf("Failed to send log file: %v", err))
 				return
