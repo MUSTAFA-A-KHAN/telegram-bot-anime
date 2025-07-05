@@ -101,3 +101,14 @@ func ReactToMessage(botToken string, chatID int64, messageID int, emoji string, 
 
 	return nil
 }
+
+// SendFile sends a file/document to the user
+func SendFile(bot *tgbotapi.BotAPI, chatID int64, filename string, data []byte) error {
+	file := tgbotapi.FileBytes{
+		Name:  filename,
+		Bytes: data,
+	}
+	msg := tgbotapi.NewDocumentUpload(chatID, file)
+	_, err := bot.Send(msg)
+	return err
+}
