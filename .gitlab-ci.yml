@@ -32,10 +32,10 @@ stop:
   script:
     - |
       echo "🔍 Looking for telegram-bot-anime PID from file..."
-      if [ -f "bot.pid" ]; then
-        PID=$(cat bot.pid)
+      if [ -f "/var/tmp/bot.pid" ]; then
+        PID=$(cat /var/tmp/bot.pid)
         if [ -n "$PID" ]; then
-          if kill "$PID" 2>/dev/null; then
+          if kill -9 "$PID" 2>/dev/null; then
             echo "🛑 telegram-bot-anime stopped (PID: $PID)"
           else
             echo "❌ Failed to stop telegram-bot-anime (PID: $PID)"
@@ -71,7 +71,7 @@ deploy:
     - ls -lh
     - echo "🚀 Starting telegram-bot-anime..."
     - nohup ./telegram-bot-anime > output.log 2>&1 &
-    - echo $! > bot.pid
+    - echo $! | tee /var/tmp/bot.pid
     - echo "🚀 Bot started in background with PID $(cat bot.pid)"
   dependencies:
     - build
@@ -102,7 +102,7 @@ deploy-GCP:
     - ls -lh
     - echo "🚀 Starting telegram-bot-anime..."
     - nohup ./telegram-bot-anime-amd64 > output.log 2>&1 &
-    - echo $! > bot.pid
+    - echo $! | tee /var/tmp/bot.pid
     - echo "🚀 Bot started in background with PID $(cat bot.pid)"
   dependencies:
     - build
