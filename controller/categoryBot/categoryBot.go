@@ -342,6 +342,8 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			break
 		case "reveal":
 			break
+		case "":
+			break
 		default:
 			view.SendMessage(bot, chatID, "OOPS! not supported in DM.")
 		}
