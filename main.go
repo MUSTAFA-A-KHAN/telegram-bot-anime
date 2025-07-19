@@ -12,8 +12,9 @@ import (
 
 func main() {
 	variable := os.Getenv("TEST")
+	CategoryVariable := os.Getenv("CATEGORY")
 	charades := variable
-	categorycharades := "7563609270:AAFG12c-eWTKt8L2v_IN8pPF-HsmDDZGVgo"
+	categorycharades := CategoryVariable
 	instagram := "7995903003:AAEcvtxq1Swak9W_uuMwQ-Jv-YXKOp_i-pw"
 	// WaitGroup to wait for all goroutines to finish
 	var wg sync.WaitGroup
