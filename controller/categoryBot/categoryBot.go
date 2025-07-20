@@ -10,6 +10,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode"
 
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/model"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/repository"
@@ -17,6 +18,7 @@ import (
 	installOllama "github.com/MUSTAFA-A-KHAN/telegram-bot-anime/service/installOllama"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/view"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	lev "github.com/texttheater/golang-levenshtein/levenshtein"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -36,6 +38,31 @@ func escapeMarkdownV2(text string) string {
 		escaped = strings.ReplaceAll(escaped, char, "\\"+char)
 	}
 	return escaped
+}
+func cleanWord(word string) string {
+	return strings.TrimFunc(word, func(r rune) bool {
+		return unicode.IsPunct(r)
+	})
+}
+
+func replaceWord(original, word string) string {
+	maxDistance := 2 // allow 2-character fuzzy difference
+
+	words := strings.Fields(original)
+	for i, w := range words {
+		cleaned := cleanWord(w)
+		distance := lev.DistanceForStrings(
+			[]rune(strings.ToLower(cleaned)),
+			[]rune(strings.ToLower(word)),
+			lev.DefaultOptions,
+		)
+		if distance <= maxDistance {
+			replacement := strings.Repeat("_", len(cleaned))
+			words[i] = strings.Replace(w, cleaned, replacement, 1)
+		}
+	}
+
+	return strings.Join(words, " ")
 }
 
 // ChatState holds the state for a specific chat, including the current word and user explaining it.
@@ -486,6 +513,45 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			chatState.reset()
 			return
 		}
+		aiModeMutex.Lock()
+		aiOn := aiModeUsers[chatID]
+		aiModeMutex.Unlock()
+		if aiOn {
+
+			wordChannel, errChannel := installOllama.RunOllama("Give me a riddle about a ")
+
+			initialMsg := tgbotapi.NewMessage(chatID, "Thinking...")
+			initialMessage, err := bot.Send(initialMsg)
+			if err != nil {
+				log.Println("Failed to send initial message:", err)
+				return
+			}
+
+			var accumulatedText string
+			for word := range wordChannel {
+				accumulatedText += word + " "
+
+				aiResponseMutex.Lock()
+				aiLastResponse[chatID] = accumulatedText
+				aiResponseMutex.Unlock()
+
+				editedMsg := tgbotapi.NewEditMessageText(chatID, initialMessage.MessageID, strings.TrimSpace(accumulatedText))
+				_, err := bot.Send(editedMsg)
+				if err != nil {
+					log.Println("Failed to update message:", err)
+				}
+			}
+
+			if err := <-errChannel; err != nil {
+				errorMsg := tgbotapi.NewMessage(chatID, err.Error())
+				_, err := bot.Send(errorMsg)
+				if err != nil {
+					log.Println("Failed to send error message:", err)
+				}
+				return
+			}
+			return
+		}
 		return
 	}
 
@@ -774,6 +840,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 
 		var accumulatedText string
 		for word := range wordChannel {
+			word = replaceWord(word, chatState.Word)
 			accumulatedText += word + " "
 
 			aiResponseMutex.Lock()
