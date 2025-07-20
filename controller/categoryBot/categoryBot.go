@@ -756,14 +756,48 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, chatState.Word))
 	case "ai_hint":
 		aiResponseMutex.RLock()
-		lastResponse, exists := aiLastResponse[chatID]
 		aiResponseMutex.RUnlock()
-		if !exists || lastResponse == "" {
-			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, "No AI response found to provide a hint."))
+		word := chatState.Word
+		if word == "" {
+			view.SendMessage(bot, chatID, "No active word to provide a hint for.")
 			return
 		}
+
+		wordChannel, errChannel := installOllama.RunOllama("Explain \"" + word + "\"")
+
+		initialMsg := tgbotapi.NewMessage(chatID, "Thinking...")
+		initialMessage, err := bot.Send(initialMsg)
+		if err != nil {
+			log.Println("Failed to send initial message:", err)
+			return
+		}
+
+		var accumulatedText string
+		for word := range wordChannel {
+			accumulatedText += word + " "
+
+			aiResponseMutex.Lock()
+			aiLastResponse[chatID] = accumulatedText
+			aiResponseMutex.Unlock()
+
+			editedMsg := tgbotapi.NewEditMessageText(chatID, initialMessage.MessageID, strings.TrimSpace(accumulatedText))
+			_, err := bot.Send(editedMsg)
+			if err != nil {
+				log.Println("Failed to update message:", err)
+			}
+		}
+
+		if err := <-errChannel; err != nil {
+			errorMsg := tgbotapi.NewMessage(chatID, err.Error())
+			_, err := bot.Send(errorMsg)
+			if err != nil {
+				log.Println("Failed to send error message:", err)
+			}
+			return
+		}
+
 		// Generate a simple follow-up hint by truncating or modifying the last AI response
-		hint := lastResponse
+		hint := accumulatedText
 		if len(hint) > 100 {
 			hint = hint[:100] + "..."
 		}
