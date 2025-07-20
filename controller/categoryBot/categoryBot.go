@@ -54,6 +54,10 @@ var (
 	chatStates = make(map[int64]*ChatState)
 	// stateMutex ensures safe access to the chatStates map.
 	stateMutex = &sync.RWMutex{}
+
+	// aiLastResponse stores the last AI response per chat for follow-up hints
+	aiLastResponse  = make(map[int64]string)
+	aiResponseMutex = &sync.RWMutex{}
 )
 
 // telegramReactions is a map that holds the reactions for each chat, identified by chat ID.
@@ -125,6 +129,8 @@ func createCategoryBotKeyboard() tgbotapi.InlineKeyboardMarkup {
 			tgbotapi.NewInlineKeyboardButtonData("nxt⏭️", "next"),
 			tgbotapi.NewInlineKeyboardButtonData("flower❀", "flower"),
 			tgbotapi.NewInlineKeyboardButtonData("car🏎️𖦹 ׂ 𓈒", "car"),
+			tgbotapi.NewInlineKeyboardButtonData("animal🐾", "animal"),
+			tgbotapi.NewInlineKeyboardButtonData("AI Hint 💡", "ai_hint"),
 		),
 		// Third line with a single button
 		tgbotapi.NewInlineKeyboardRow(
@@ -201,7 +207,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 	// New DM scenario: if chat is private, bot gives hint and user guesses
 	if message.Chat.IsPrivate() {
 		fmt.Println("------------------------------------------" + message.Command() + "------------------------------------------")
-		text := message.Text
+		// text := message.Text
 		switch message.Command() {
 		case "ai_on":
 			aiModeMutex.Lock()
@@ -348,51 +354,6 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			view.SendMessage(bot, chatID, "OOPS! not supported in DM.")
 		}
 
-		aiModeMutex.Lock()
-		aiOn := aiModeUsers[chatID]
-		aiModeMutex.Unlock()
-
-		if aiOn {
-			// AI processing here
-			wordChannel, errChannel := installOllama.RunOllama(text)
-
-			// Send the initial message (could be an empty string or placeholder)
-			initialMsg := tgbotapi.NewMessage(chatID, "Thinking...")
-			initialMessage, err := bot.Send(initialMsg)
-			if err != nil {
-				log.Println("Failed to send initial message:", err)
-				return
-			}
-
-			// Start a variable to accumulate the text as we receive each word
-			var accumulatedText string
-
-			// Process words as they arrive
-			for word := range wordChannel {
-				// Accumulate the word and append it to the message content
-				accumulatedText += word + " "
-
-				// Update the same message with the accumulated text
-				editedMsg := tgbotapi.NewEditMessageText(chatID, initialMessage.MessageID, strings.TrimSpace(accumulatedText))
-				_, err := bot.Send(editedMsg)
-				if err != nil {
-					log.Println("Failed to update message:", err)
-				}
-			}
-
-			// If an error occurs during execution, send it to the user
-			if err := <-errChannel; err != nil {
-				// Send an error message if something goes wrong
-				errorMsg := tgbotapi.NewMessage(chatID, err.Error())
-				_, err := bot.Send(errorMsg)
-				if err != nil {
-					log.Println("Failed to send error message:", err)
-				}
-				return
-			}
-			//
-		}
-
 		chatState.RLock()
 		wordEmpty := chatState.Word == ""
 		lastHint := chatState.LastHintTimestamp
@@ -424,6 +385,54 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 				return
 			}
 
+			aiModeMutex.Lock()
+			aiOn := aiModeUsers[chatID]
+			aiModeMutex.Unlock()
+
+			if aiOn {
+				// Use AI to generate hint based on current word
+				word := chatState.Word
+				if word == "" {
+					view.SendMessage(bot, chatID, "No active word to provide a hint for.")
+					return
+				}
+
+				wordChannel, errChannel := installOllama.RunOllama("Explain the word: " + word)
+
+				initialMsg := tgbotapi.NewMessage(chatID, "Thinking...")
+				initialMessage, err := bot.Send(initialMsg)
+				if err != nil {
+					log.Println("Failed to send initial message:", err)
+					return
+				}
+
+				var accumulatedText string
+				for word := range wordChannel {
+					accumulatedText += word + " "
+
+					aiResponseMutex.Lock()
+					aiLastResponse[chatID] = accumulatedText
+					aiResponseMutex.Unlock()
+
+					editedMsg := tgbotapi.NewEditMessageText(chatID, initialMessage.MessageID, strings.TrimSpace(accumulatedText))
+					_, err := bot.Send(editedMsg)
+					if err != nil {
+						log.Println("Failed to update message:", err)
+					}
+				}
+
+				if err := <-errChannel; err != nil {
+					errorMsg := tgbotapi.NewMessage(chatID, err.Error())
+					_, err := bot.Send(errorMsg)
+					if err != nil {
+						log.Println("Failed to send error message:", err)
+					}
+					return
+				}
+				return
+			}
+
+			// Fallback to existing hint logic if AI mode is off
 			chatState.RLock()
 			var hint string
 			if lastHintType == 0 {
@@ -493,6 +502,13 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 				view.SendMessageWithKeyboardButton(bot, message.Chat.ID, Announcement[1], button)
 			}
 		}
+	case "ai_on":
+		view.SendMessage(bot, chatID, "AI mode is now enabled! Enjoy the smart responses.")
+		aiModeMutex.Lock()
+		aiModeUsers[chatID] = true
+		aiModeMutex.Unlock()
+		view.SendMessage(bot, chatID, "AI mode is now enabled! Enjoy the smart responses.")
+		return
 	case "start":
 		view.SendMessage(bot, message.Chat.ID, "Welcome! Type /word to start a new game.")
 	case "stats":
@@ -579,6 +595,52 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		if !lastHint.IsZero() && time.Since(lastHint) < 1*time.Minute {
 			sentMsg, err := view.SendMessage(bot, message.Chat.ID, "Please wait a minute before requesting another hint.")
 			deleteWarningMessage(bot, message, sentMsg, err)
+			return
+		}
+		aiModeMutex.Lock()
+		aiOn := aiModeUsers[chatID]
+		aiModeMutex.Unlock()
+
+		if aiOn {
+			// Use AI to generate hint based on current word
+			word := chatState.Word
+			if word == "" {
+				view.SendMessage(bot, chatID, "No active word to provide a hint for.")
+				return
+			}
+
+			wordChannel, errChannel := installOllama.RunOllama("Give me a riddle about a " + word)
+
+			initialMsg := tgbotapi.NewMessage(chatID, "Thinking...")
+			initialMessage, err := bot.Send(initialMsg)
+			if err != nil {
+				log.Println("Failed to send initial message:", err)
+				return
+			}
+
+			var accumulatedText string
+			for word := range wordChannel {
+				accumulatedText += word + " "
+
+				aiResponseMutex.Lock()
+				aiLastResponse[chatID] = accumulatedText
+				aiResponseMutex.Unlock()
+
+				editedMsg := tgbotapi.NewEditMessageText(chatID, initialMessage.MessageID, strings.TrimSpace(accumulatedText))
+				_, err := bot.Send(editedMsg)
+				if err != nil {
+					log.Println("Failed to update message:", err)
+				}
+			}
+
+			if err := <-errChannel; err != nil {
+				errorMsg := tgbotapi.NewMessage(chatID, err.Error())
+				_, err := bot.Send(errorMsg)
+				if err != nil {
+					log.Println("Failed to send error message:", err)
+				}
+				return
+			}
 			return
 		}
 
@@ -691,6 +753,42 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		chatState.Leader = callback.From.FirstName
 		chatState.LeadTimestamp = time.Now()
 		chatState.Unlock()
+		bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, chatState.Word))
+	case "ai_hint":
+		aiResponseMutex.RLock()
+		lastResponse, exists := aiLastResponse[chatID]
+		aiResponseMutex.RUnlock()
+		if !exists || lastResponse == "" {
+			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, "No AI response found to provide a hint."))
+			return
+		}
+		// Generate a simple follow-up hint by truncating or modifying the last AI response
+		hint := lastResponse
+		if len(hint) > 100 {
+			hint = hint[:100] + "..."
+		}
+		view.SendMessage(bot, chatID, "💡 AI Hint: "+hint)
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
+	case "animal":
+		chatState.Lock()
+		if chatState.User != callback.From.ID && chatState.User != 0 {
+			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("someone is already explaining the word. %s", callback.From.UserName)))
+			chatState.Unlock()
+			return
+		}
+		if chatState.User == 0 {
+			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("%s Please click on see word/claim Leadership", callback.From.FirstName)))
+			chatState.Unlock()
+			return
+		}
+		chatState.User = callback.From.ID
+		chatState.Unlock()
+		word, err := model.GetRandomAnimal()
+		if err != nil {
+			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, "Failed to get an animal word. Please try again later."))
+			return
+		}
+		chatState.Word = word
 		bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, chatState.Word))
 
 	case "next":
