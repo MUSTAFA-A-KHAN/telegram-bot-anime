@@ -234,7 +234,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 	// New DM scenario: if chat is private, bot gives hint and user guesses
 	if message.Chat.IsPrivate() {
 		fmt.Println("------------------------------------------" + message.Command() + "------------------------------------------")
-		// text := message.Text
+		text := message.Text
 		switch message.Command() {
 		case "ai_on":
 			aiModeMutex.Lock()
@@ -516,10 +516,11 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		aiModeMutex.Lock()
 		aiOn := aiModeUsers[chatID]
 		aiModeMutex.Unlock()
-		if aiOn {
+		if aiOn && strings.Contains(text, "Jarvis") {
+			// AI processing here
+			wordChannel, errChannel := installOllama.RunOllama(text)
 
-			wordChannel, errChannel := installOllama.RunOllama("Give me a riddle about a ")
-
+			// Send the initial message (could be an empty string or placeholder)
 			initialMsg := tgbotapi.NewMessage(chatID, "Thinking...")
 			initialMessage, err := bot.Send(initialMsg)
 			if err != nil {
@@ -527,14 +528,15 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 				return
 			}
 
+			// Start a variable to accumulate the text as we receive each word
 			var accumulatedText string
+
+			// Process words as they arrive
 			for word := range wordChannel {
+				// Accumulate the word and append it to the message content
 				accumulatedText += word + " "
 
-				aiResponseMutex.Lock()
-				aiLastResponse[chatID] = accumulatedText
-				aiResponseMutex.Unlock()
-
+				// Update the same message with the accumulated text
 				editedMsg := tgbotapi.NewEditMessageText(chatID, initialMessage.MessageID, strings.TrimSpace(accumulatedText))
 				_, err := bot.Send(editedMsg)
 				if err != nil {
@@ -542,7 +544,9 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 				}
 			}
 
+			// If an error occurs during execution, send it to the user
 			if err := <-errChannel; err != nil {
+				// Send an error message if something goes wrong
 				errorMsg := tgbotapi.NewMessage(chatID, err.Error())
 				_, err := bot.Send(errorMsg)
 				if err != nil {
@@ -550,8 +554,9 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 				}
 				return
 			}
-			return
+			//
 		}
+		fmt.Print(text, "escaped jarvis-----------------------------------------")
 		return
 	}
 
