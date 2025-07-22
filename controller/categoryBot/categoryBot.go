@@ -154,9 +154,9 @@ func createCategoryBotKeyboard() tgbotapi.InlineKeyboardMarkup {
 		// Second line with multiple buttons
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("nxt⏭️", "next"),
-			tgbotapi.NewInlineKeyboardButtonData("flower❀", "flower"),
+			// tgbotapi.NewInlineKeyboardButtonData("flower❀", "flower"),
 			tgbotapi.NewInlineKeyboardButtonData("car🏎️𖦹 ׂ 𓈒", "car"),
-			tgbotapi.NewInlineKeyboardButtonData("animal🐾", "animal"),
+			// tgbotapi.NewInlineKeyboardButtonData("animal🐾", "animal"),
 			tgbotapi.NewInlineKeyboardButtonData("AI Hint 💡", "ai_hint"),
 		),
 		// Third line with a single button
@@ -561,6 +561,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 	}
 
 	// Existing group chat handling
+	text := message.Text
 	switch message.Command() {
 	case "getButton":
 		Announcement := strings.Split(message.Text, "  ")
@@ -782,6 +783,51 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			go repository.InsertDoc(user, leader, message.Chat.ID, client, "CrocEnLeader")
 
 		}
+		aiModeMutex.Lock()
+		aiOn := aiModeUsers[chatID]
+		aiModeMutex.Unlock()
+		if aiOn && strings.Contains(text, "Jarvis") {
+			// AI processing here
+			wordChannel, errChannel := installOllama.RunOllama(text)
+
+			// Send the initial message (could be an empty string or placeholder)
+			initialMsg := tgbotapi.NewMessage(chatID, "Thinking...")
+			initialMessage, err := bot.Send(initialMsg)
+			if err != nil {
+				log.Println("Failed to send initial message:", err)
+				return
+			}
+
+			// Start a variable to accumulate the text as we receive each word
+			var accumulatedText string
+
+			// Process words as they arrive
+			for word := range wordChannel {
+				// Accumulate the word and append it to the message content
+				accumulatedText += word + " "
+
+				// Update the same message with the accumulated text
+				editedMsg := tgbotapi.NewEditMessageText(chatID, initialMessage.MessageID, strings.TrimSpace(accumulatedText))
+				_, err := bot.Send(editedMsg)
+				if err != nil {
+					log.Println("Failed to update message:", err)
+				}
+			}
+
+			// If an error occurs during execution, send it to the user
+			if err := <-errChannel; err != nil {
+				// Send an error message if something goes wrong
+				errorMsg := tgbotapi.NewMessage(chatID, err.Error())
+				_, err := bot.Send(errorMsg)
+				if err != nil {
+					log.Println("Failed to send error message:", err)
+				}
+				return
+			}
+			//
+		}
+		fmt.Print(text, "escaped jarvis-----------------------------------------")
+		return
 	}
 }
 
