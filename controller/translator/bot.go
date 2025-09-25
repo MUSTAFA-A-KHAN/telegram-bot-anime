@@ -3,6 +3,7 @@ package translator
 import (
 	"fmt"
 	"log"
+	"os"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -37,6 +38,31 @@ func Bot() {
 			switch message.Command() {
 			case "start":
 				startHandler(bot, update)
+			case "say":
+				// Get the text from the message being replied to
+				text := message.ReplyToMessage.Text
+
+				// Call ReadItLoud to convert the text to speech (assuming it returns an Audio struct)
+				Voice := translator.ReadItLoud(text)
+				tgbotapi.NewMessage(chatID, Voice)
+
+				// Example 1: Send a local file
+				file, err := os.Open("output.mp3")
+				if err != nil {
+					log.Fatal(err)
+				}
+				defer file.Close()
+
+				doc := tgbotapi.NewDocument(chatID, tgbotapi.FileReader{
+					Name:   "output.mp3",
+					Reader: file,
+				})
+
+				_, err = bot.Send(doc)
+				if err != nil {
+					log.Fatal(err)
+				}
+
 			case "translate":
 				// Translate to English
 				text = message.ReplyToMessage.Text

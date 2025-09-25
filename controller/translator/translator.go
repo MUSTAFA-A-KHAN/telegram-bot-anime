@@ -5,13 +5,28 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
+	"os"
 )
 
 type Audio struct {
 	Data        []byte
 	ContentType string
 	Filename    string
+}
+type Response struct {
+	AudioFile string `json:"audioFile"`
+}
+
+// Implement the io.Reader interface for Audio
+func (a *Audio) Read(p []byte) (n int, err error) {
+	// Copy the audio data into the provided slice and return the number of bytes read
+	n = copy(p, a.Data)
+	if n < len(a.Data) {
+		return n, io.ErrShortBuffer
+	}
+	return n, nil
 }
 
 type TextTranslator struct{}
@@ -20,30 +35,74 @@ func NewTextTranslator() *TextTranslator {
 	return &TextTranslator{}
 }
 
-func (t *TextTranslator) ReadItLoud(text string) Audio {
-	// Using Google Text-to-Speech API
-	url := fmt.Sprintf("https://translate.google.com/translate_tts?ie=UTF-8&tl=en&client=tw-ob&q=%s", text)
+func (t *TextTranslator) ReadItLoud(text string) string {
+	client := &http.Client{}
 
-	resp, err := http.Get(url)
+	// Build JSON properly
+	reqBody := map[string]interface{}{
+		"text":    text,
+		"voiceId": "en-US-natalie",
+		"pronunciationDictionary": map[string]map[string]string{
+			"2010": {
+				"pronunciation": "two thousand and ten",
+				"type":          "SAY_AS",
+			},
+			"live": {
+				"pronunciation": "laɪv",
+				"type":          "IPA",
+			},
+		},
+	}
+
+	jsonData, err := json.Marshal(reqBody)
 	if err != nil {
-		return Audio{Data: []byte(fmt.Sprintf("TTS Error: %v", err)), ContentType: "text/plain", Filename: "error.txt"}
+		log.Fatal(err)
+	}
+
+	req, err := http.NewRequest("POST", "https://api.murf.ai/v1/speech/generate", bytes.NewReader(jsonData))
+	if err != nil {
+		log.Fatal(err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("api-key", "ap2_23dcac5c-ad9f-4435-877e-4706abf4a9e3")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Fatal(err)
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != 200 {
-		return Audio{Data: []byte(fmt.Sprintf("TTS API Error: %d", resp.StatusCode)), ContentType: "text/plain", Filename: "error.txt"}
-	}
-
-	audioData, err := io.ReadAll(resp.Body)
+	bodyText, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return Audio{Data: []byte(fmt.Sprintf("Error reading audio: %v", err)), ContentType: "text/plain", Filename: "error.txt"}
+		log.Fatal(err)
 	}
 
-	return Audio{
-		Data:        audioData,
-		ContentType: "audio/mpeg",
-		Filename:    "speech.mp3",
+	var result Response
+	if err := json.Unmarshal(bodyText, &result); err != nil {
+		log.Fatal(err)
 	}
+	if err := downloadFile("output.mp3", result.AudioFile); err != nil {
+		log.Fatal(err)
+	}
+
+	return result.AudioFile
+}
+
+func downloadFile(filepath string, url string) error {
+	resp, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	out, err := os.Create(filepath)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	_, err = io.Copy(out, resp.Body)
+	return err
 }
 
 func (t *TextTranslator) WriteITDown(audioData []byte, contentType string) string {
