@@ -35,7 +35,169 @@ func NewTextTranslator() *TextTranslator {
 	return &TextTranslator{}
 }
 
+func (t *TextTranslator) ReadItLoudUK(text string) string {
+	client := &http.Client{}
+
+	// Build JSON properly
+	reqBody := map[string]interface{}{
+		"text":              text,
+		"voice_id":          "en-AU-leyton",
+		"multiNativeLocale": "en-UK",
+		"style":             "Angry",
+		"pronunciationDictionary": map[string]map[string]string{
+			"2010": {
+				"pronunciation": "two thousand and ten",
+				"type":          "SAY_AS",
+			},
+			"live": {
+				"pronunciation": "laɪv",
+				"type":          "IPA",
+			},
+		},
+	}
+
+	jsonData, err := json.Marshal(reqBody)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	req, err := http.NewRequest("POST", "https://api.murf.ai/v1/speech/generate", bytes.NewReader(jsonData))
+	if err != nil {
+		log.Fatal(err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("api-key", "ap2_23dcac5c-ad9f-4435-877e-4706abf4a9e3")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	bodyText, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var result Response
+	if err := json.Unmarshal(bodyText, &result); err != nil {
+		log.Fatal(err)
+	}
+	if err := downloadFile("outputUK.mp3", result.AudioFile); err != nil {
+		log.Fatal(err)
+	}
+
+	return result.AudioFile
+}
+
+func (t *TextTranslator) ReadItLoudUKFemale(text string) string {
+	client := &http.Client{}
+
+	// Build JSON properly
+	reqBody := map[string]interface{}{
+		"text":              text,
+		"voice_id":          "en-US-samantha",
+		"style":             "Luxury",
+		"multiNativeLocale": "en-UK",
+		"pronunciationDictionary": map[string]map[string]string{
+			"2010": {
+				"pronunciation": "two thousand and ten",
+				"type":          "SAY_AS",
+			},
+			"live": {
+				"pronunciation": "laɪv",
+				"type":          "IPA",
+			},
+		},
+	}
+
+	jsonData, err := json.Marshal(reqBody)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	req, err := http.NewRequest("POST", "https://api.murf.ai/v1/speech/generate", bytes.NewReader(jsonData))
+	if err != nil {
+		log.Fatal(err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("api-key", "ap2_23dcac5c-ad9f-4435-877e-4706abf4a9e3")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	bodyText, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var result Response
+	if err := json.Unmarshal(bodyText, &result); err != nil {
+		log.Fatal(err)
+	}
+	if err := downloadFile("outputUKFemale.mp3", result.AudioFile); err != nil {
+		log.Fatal(err)
+	}
+
+	return result.AudioFile
+}
+
 func (t *TextTranslator) ReadItLoud(text string) string {
+	client := &http.Client{}
+
+	// Build JSON properly
+	reqBody := map[string]interface{}{
+		"text":    text,
+		"voiceId": "en-US-charles",
+		"pronunciationDictionary": map[string]map[string]string{
+			"2010": {
+				"pronunciation": "two thousand and ten",
+				"type":          "SAY_AS",
+			},
+			"live": {
+				"pronunciation": "laɪv",
+				"type":          "IPA",
+			},
+		},
+	}
+
+	jsonData, err := json.Marshal(reqBody)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	req, err := http.NewRequest("POST", "https://api.murf.ai/v1/speech/generate", bytes.NewReader(jsonData))
+	if err != nil {
+		log.Fatal(err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("api-key", "ap2_23dcac5c-ad9f-4435-877e-4706abf4a9e3")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	bodyText, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var result Response
+	if err := json.Unmarshal(bodyText, &result); err != nil {
+		log.Fatal(err)
+	}
+	if err := downloadFile("output.mp3", result.AudioFile); err != nil {
+		log.Fatal(err)
+	}
+
+	return result.AudioFile
+}
+func (t *TextTranslator) ReadItLoudFemale(text string) string {
 	client := &http.Client{}
 
 	// Build JSON properly
@@ -81,7 +243,7 @@ func (t *TextTranslator) ReadItLoud(text string) string {
 	if err := json.Unmarshal(bodyText, &result); err != nil {
 		log.Fatal(err)
 	}
-	if err := downloadFile("output.mp3", result.AudioFile); err != nil {
+	if err := downloadFile("outputFemale.mp3", result.AudioFile); err != nil {
 		log.Fatal(err)
 	}
 
@@ -330,6 +492,128 @@ func (t *TextTranslator) TranslateToEnglish(text string) string {
 	return "Translation failed"
 }
 
+func (t *TextTranslator) TranslateToRussian(text string) string {
+	if OpenAIKey == "" {
+		return "OpenAI API key not configured"
+	}
+
+	url := "https://glama.ai/api/gateway/openai/v1/chat/completions"
+
+	payload := map[string]interface{}{
+		"model": "openai/gpt-4o",
+		"messages": []map[string]string{
+			{"role": "user", "content": fmt.Sprintf("Translate the following text to Russian and just reply with the translated text: %s", text)},
+		},
+	}
+
+	jsonData, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Sprintf("Error: %v", err)
+	}
+
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return fmt.Sprintf("Error: %v", err)
+	}
+
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", OpenAIKey))
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Sprintf("Error: %v", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Sprintf("Error: %v", err)
+	}
+
+	if resp.StatusCode != 200 {
+		return fmt.Sprintf("API Error: %d - %s", resp.StatusCode, string(body))
+	}
+
+	var response map[string]interface{}
+	if err := json.Unmarshal(body, &response); err != nil {
+		return fmt.Sprintf("Parse error: %v", err)
+	}
+
+	if choices, ok := response["choices"].([]interface{}); ok && len(choices) > 0 {
+		if choice, ok := choices[0].(map[string]interface{}); ok {
+			if message, ok := choice["message"].(map[string]interface{}); ok {
+				if content, ok := message["content"].(string); ok {
+					return content
+				}
+			}
+		}
+	}
+
+	return "Translation failed"
+}
+
+func (t *TextTranslator) TranslateToFrench(text string) string {
+	if OpenAIKey == "" {
+		return "OpenAI API key not configured"
+	}
+
+	url := "https://glama.ai/api/gateway/openai/v1/chat/completions"
+
+	payload := map[string]interface{}{
+		"model": "openai/gpt-4o",
+		"messages": []map[string]string{
+			{"role": "user", "content": fmt.Sprintf("Translate the following text to French and just reply with the translated text: %s", text)},
+		},
+	}
+
+	jsonData, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Sprintf("Error: %v", err)
+	}
+
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return fmt.Sprintf("Error: %v", err)
+	}
+
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", OpenAIKey))
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Sprintf("Error: %v", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Sprintf("Error: %v", err)
+	}
+
+	if resp.StatusCode != 200 {
+		return fmt.Sprintf("API Error: %d - %s", resp.StatusCode, string(body))
+	}
+
+	var response map[string]interface{}
+	if err := json.Unmarshal(body, &response); err != nil {
+		return fmt.Sprintf("Parse error: %v", err)
+	}
+
+	if choices, ok := response["choices"].([]interface{}); ok && len(choices) > 0 {
+		if choice, ok := choices[0].(map[string]interface{}); ok {
+			if message, ok := choice["message"].(map[string]interface{}); ok {
+				if content, ok := message["content"].(string); ok {
+					return content
+				}
+			}
+		}
+	}
+
+	return "Translation failed"
+}
+
 func (t *TextTranslator) TranslateToArabic(text string) string {
 	if OpenAIKey == "" {
 		return "OpenAI API key not configured"
@@ -341,6 +625,189 @@ func (t *TextTranslator) TranslateToArabic(text string) string {
 		"model": "openai/gpt-4o",
 		"messages": []map[string]string{
 			{"role": "user", "content": fmt.Sprintf("Translate the following text to Arabic and just reply with the translated text: %s", text)},
+		},
+	}
+
+	jsonData, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Sprintf("Error: %v", err)
+	}
+
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return fmt.Sprintf("Error: %v", err)
+	}
+
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", OpenAIKey))
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Sprintf("Error: %v", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Sprintf("Error: %v", err)
+	}
+
+	if resp.StatusCode != 200 {
+		return fmt.Sprintf("API Error: %d - %s", resp.StatusCode, string(body))
+	}
+
+	var response map[string]interface{}
+	if err := json.Unmarshal(body, &response); err != nil {
+		return fmt.Sprintf("Parse error: %v", err)
+	}
+
+	if choices, ok := response["choices"].([]interface{}); ok && len(choices) > 0 {
+		if choice, ok := choices[0].(map[string]interface{}); ok {
+			if message, ok := choice["message"].(map[string]interface{}); ok {
+				if content, ok := message["content"].(string); ok {
+					return content
+				}
+			}
+		}
+	}
+
+	return "Translation failed"
+}
+
+func (t *TextTranslator) GetSynonyms(text string) string {
+	if OpenAIKey == "" {
+		return "OpenAI API key not configured"
+	}
+
+	url := "https://glama.ai/api/gateway/openai/v1/chat/completions"
+
+	payload := map[string]interface{}{
+		"model": "openai/gpt-4o",
+		"messages": []map[string]string{
+			{"role": "user", "content": fmt.Sprintf("Give me synonyms for the word and please just give me synonyms nothing else it has to be atleast 30 synonyms of the word: %s", text)},
+		},
+	}
+
+	jsonData, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Sprintf("Error: %v", err)
+	}
+
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return fmt.Sprintf("Error: %v", err)
+	}
+
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", OpenAIKey))
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Sprintf("Error: %v", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Sprintf("Error: %v", err)
+	}
+
+	if resp.StatusCode != 200 {
+		return fmt.Sprintf("API Error: %d - %s", resp.StatusCode, string(body))
+	}
+
+	var response map[string]interface{}
+	if err := json.Unmarshal(body, &response); err != nil {
+		return fmt.Sprintf("Parse error: %v", err)
+	}
+
+	if choices, ok := response["choices"].([]interface{}); ok && len(choices) > 0 {
+		if choice, ok := choices[0].(map[string]interface{}); ok {
+			if message, ok := choice["message"].(map[string]interface{}); ok {
+				if content, ok := message["content"].(string); ok {
+					return content
+				}
+			}
+		}
+	}
+
+	return "Translation failed"
+}
+
+func (t *TextTranslator) GetAntonyms(text string) string {
+	if OpenAIKey == "" {
+		return "OpenAI API key not configured"
+	}
+
+	url := "https://glama.ai/api/gateway/openai/v1/chat/completions"
+
+	payload := map[string]interface{}{
+		"model": "openai/gpt-4o",
+		"messages": []map[string]string{
+			{"role": "user", "content": fmt.Sprintf("Give me synonyms for the word and please just give me antonyms nothing else it has to be atleast 30 antonyms of the word: %s", text)},
+		},
+	}
+
+	jsonData, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Sprintf("Error: %v", err)
+	}
+
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return fmt.Sprintf("Error: %v", err)
+	}
+
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", OpenAIKey))
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Sprintf("Error: %v", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Sprintf("Error: %v", err)
+	}
+
+	if resp.StatusCode != 200 {
+		return fmt.Sprintf("API Error: %d - %s", resp.StatusCode, string(body))
+	}
+
+	var response map[string]interface{}
+	if err := json.Unmarshal(body, &response); err != nil {
+		return fmt.Sprintf("Parse error: %v", err)
+	}
+
+	if choices, ok := response["choices"].([]interface{}); ok && len(choices) > 0 {
+		if choice, ok := choices[0].(map[string]interface{}); ok {
+			if message, ok := choice["message"].(map[string]interface{}); ok {
+				if content, ok := message["content"].(string); ok {
+					return content
+				}
+			}
+		}
+	}
+
+	return "Translation failed"
+}
+
+func (t *TextTranslator) GetDefinition(text string) string {
+	if OpenAIKey == "" {
+		return "OpenAI API key not configured"
+	}
+
+	url := "https://glama.ai/api/gateway/openai/v1/chat/completions"
+
+	payload := map[string]interface{}{
+		"model": "openai/gpt-4o",
+		"messages": []map[string]string{
+			{"role": "user", "content": fmt.Sprintf("Provide a clear and concise definition of the word/phrase/idiom %s. Include its meaning, common usage, and any variations or related terms", text)},
 		},
 	}
 
