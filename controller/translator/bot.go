@@ -214,8 +214,15 @@ func Bot() {
 				if err != nil {
 					log.Printf("Error sending translation: %v", err)
 				}
-			case "edge":
-				msg := tgbotapi.NewMessage(chatID, "what ever you are gonna write here will be reposnded ")
+			case "abb":
+				text = message.ReplyToMessage.Text
+
+				// Get the abbreviation
+				abbreviation := translator.GetAbbreviation(text)
+
+				response := fmt.Sprintf("%s: \n:%s", text, abbreviation)
+
+				msg := tgbotapi.NewMessage(chatID, response)
 				_, err := bot.Send(msg)
 				if err != nil {
 					log.Printf("Error sending translation: %v", err)

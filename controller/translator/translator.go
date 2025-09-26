@@ -857,3 +857,64 @@ func (t *TextTranslator) GetDefinition(text string) string {
 
 	return "Translation failed"
 }
+
+func (t *TextTranslator) GetAbbreviation(text string) string {
+	if OpenAIKey == "" {
+		return "OpenAI API key not configured"
+	}
+
+	url := "https://glama.ai/api/gateway/openai/v1/chat/completions"
+
+	payload := map[string]interface{}{
+		"model": "openai/gpt-4o",
+		"messages": []map[string]string{
+			{"role": "user", "content": fmt.Sprintf("Convert the word/phrase %s into its commonly used abbreviation or acronym. If multiple abbreviations exist, provide the most widely accepted ones.", text)},
+		},
+	}
+
+	jsonData, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Sprintf("Error: %v", err)
+	}
+
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return fmt.Sprintf("Error: %v", err)
+	}
+
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", OpenAIKey))
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Sprintf("Error: %v", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Sprintf("Error: %v", err)
+	}
+
+	if resp.StatusCode != 200 {
+		return fmt.Sprintf("API Error: %d - %s", resp.StatusCode, string(body))
+	}
+
+	var response map[string]interface{}
+	if err := json.Unmarshal(body, &response); err != nil {
+		return fmt.Sprintf("Parse error: %v", err)
+	}
+
+	if choices, ok := response["choices"].([]interface{}); ok && len(choices) > 0 {
+		if choice, ok := choices[0].(map[string]interface{}); ok {
+			if message, ok := choice["message"].(map[string]interface{}); ok {
+				if content, ok := message["content"].(string); ok {
+					return content
+				}
+			}
+		}
+	}
+
+	return "Translation failed"
+}
