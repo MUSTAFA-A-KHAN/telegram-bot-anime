@@ -930,7 +930,7 @@ func (t *TextTranslator) WriteImage(text string, imagePath string) string {
 				"content": []interface{}{
 					map[string]interface{}{
 						"type": "text",
-						"text": "Do the OCR for this and give in MD format",
+						"text": "Please extract the text, fix common OCR errors (e.g., letter misreads or extra spaces), and format it cleanly for Telegram. Use basic formatting like bold for headers, italics for emphasis, and bullet points where appropriate. Make sure the text is easy to read and correctly structured.",
 					},
 					map[string]interface{}{
 						"type": "image_url",

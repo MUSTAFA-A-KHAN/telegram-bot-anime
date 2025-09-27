@@ -43,8 +43,19 @@ func Bot() {
 			case "start":
 				startHandler(bot, update)
 			case "sayUK":
-				// Get the text from the message being replied to
-				text := message.ReplyToMessage.Text
+				text := ""
+				if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
+
+					photo := message.ReplyToMessage.Photo
+					if len(photo) == 0 {
+						log.Printf("Error: No photo found in reply")
+						break
+					}
+					text = writeImage(chatID, bot, photo)
+				} else {
+					// Get the text from the message being replied to
+					text = message.ReplyToMessage.Text
+				}
 
 				// Call ReadItLoud to convert the text to speech (assuming it returns an Audio struct)
 				Voice := translator.ReadItLoudUK(text)
@@ -67,8 +78,19 @@ func Bot() {
 					log.Fatal(err)
 				}
 			case "sayUKFemale":
-				// Get the text from the message being replied to
-				text := message.ReplyToMessage.Text
+				text := ""
+				if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
+
+					photo := message.ReplyToMessage.Photo
+					if len(photo) == 0 {
+						log.Printf("Error: No photo found in reply")
+						break
+					}
+					text = writeImage(chatID, bot, photo)
+				} else {
+					// Get the text from the message being replied to
+					text = message.ReplyToMessage.Text
+				}
 
 				// Call ReadItLoud to convert the text to speech (assuming it returns an Audio struct)
 				Voice := translator.ReadItLoudUKFemale(text)
@@ -91,8 +113,19 @@ func Bot() {
 					log.Fatal(err)
 				}
 			case "say":
-				// Get the text from the message being replied to
-				text := message.ReplyToMessage.Text
+				text := ""
+				if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
+
+					photo := message.ReplyToMessage.Photo
+					if len(photo) == 0 {
+						log.Printf("Error: No photo found in reply")
+						break
+					}
+					text = writeImage(chatID, bot, photo)
+				} else {
+					// Get the text from the message being replied to
+					text = message.ReplyToMessage.Text
+				}
 
 				// Call ReadItLoud to convert the text to speech (assuming it returns an Audio struct)
 				Voice := translator.ReadItLoud(text)
@@ -115,8 +148,19 @@ func Bot() {
 					log.Fatal(err)
 				}
 			case "sayMale":
-				// Get the text from the message being replied to
-				text := message.ReplyToMessage.Text
+				text := ""
+				if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
+
+					photo := message.ReplyToMessage.Photo
+					if len(photo) == 0 {
+						log.Printf("Error: No photo found in reply")
+						break
+					}
+					text = writeImage(chatID, bot, photo)
+				} else {
+					// Get the text from the message being replied to
+					text = message.ReplyToMessage.Text
+				}
 
 				// Call ReadItLoud to convert the text to speech (assuming it returns an Audio struct)
 				Voice := translator.ReadItLoud(text)
@@ -139,8 +183,18 @@ func Bot() {
 					log.Fatal(err)
 				}
 			case "sayFemale":
-				// Get the text from the message being replied to
-				text := message.ReplyToMessage.Text
+				text := ""
+				if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
+
+					photo := message.ReplyToMessage.Photo
+					if len(photo) == 0 {
+						log.Printf("Error: No photo found in reply")
+						break
+					}
+					text = writeImage(chatID, bot, photo)
+				} else {
+					text = message.ReplyToMessage.Text
+				}
 
 				// Call ReadItLoud to convert the text to speech (assuming it returns an Audio struct)
 				Voice := translator.ReadItLoudFemale(text)
@@ -162,6 +216,7 @@ func Bot() {
 				if err != nil {
 					log.Fatal(err)
 				}
+
 			case "ar":
 				if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
 					photo := message.ReplyToMessage.Photo
@@ -169,26 +224,9 @@ func Bot() {
 						log.Printf("Error: No photo found in reply")
 						break
 					}
-
-					chatAction := tgbotapi.NewChatAction(chatID, tgbotapi.ChatTyping)
-					bot.Send(chatAction)
-
-					fmt.Println("-------------------------------", photo)
-					// Save the image and extract the image path
-					imagePath, err := utilities.SaveImage(bot, chatID, photo[len(photo)-1])
-					if err != nil {
-						log.Printf("Error saving image: %v", err)
-						break
-					}
-
-					// Use WriteImage function to process the image and get the extracted text
-					extractedText := translator.WriteImage("", imagePath)
-					if extractedText == "" {
-						log.Printf("No text found in image")
-						break
-					}
+					extractedText := writeImage(chatID, bot, photo)
 					// Translate the extracted text to Arabic
-					arabicTranslation := translator.TranslateToRussian(extractedText)
+					arabicTranslation := translator.TranslateToArabic(extractedText)
 
 					response := fmt.Sprintf("\n\nArabic Translation: %s", arabicTranslation)
 
@@ -219,24 +257,7 @@ func Bot() {
 						log.Printf("Error: No photo found in reply")
 						break
 					}
-
-					chatAction := tgbotapi.NewChatAction(chatID, tgbotapi.ChatTyping)
-					bot.Send(chatAction)
-
-					fmt.Println("-------------------------------", photo)
-					// Save the image and extract the image path
-					imagePath, err := utilities.SaveImage(bot, chatID, photo[len(photo)-1])
-					if err != nil {
-						log.Printf("Error saving image: %v", err)
-						break
-					}
-
-					// Use WriteImage function to process the image and get the extracted text
-					extractedText := translator.WriteImage("", imagePath)
-					if extractedText == "" {
-						log.Printf("No text found in image")
-						break
-					}
+					extractedText := writeImage(chatID, bot, photo)
 					// Translate the extracted text to Arabic
 					arabicTranslation := translator.TranslateToEnglish(extractedText)
 
@@ -268,24 +289,7 @@ func Bot() {
 						log.Printf("Error: No photo found in reply")
 						break
 					}
-
-					chatAction := tgbotapi.NewChatAction(chatID, tgbotapi.ChatTyping)
-					bot.Send(chatAction)
-
-					fmt.Println("-------------------------------", photo)
-					// Save the image and extract the image path
-					imagePath, err := utilities.SaveImage(bot, chatID, photo[len(photo)-1])
-					if err != nil {
-						log.Printf("Error saving image: %v", err)
-						break
-					}
-
-					// Use WriteImage function to process the image and get the extracted text
-					extractedText := translator.WriteImage("", imagePath)
-					if extractedText == "" {
-						log.Printf("No text found in image")
-						break
-					}
+					extractedText := writeImage(chatID, bot, photo)
 					// Translate the extracted text to Arabic
 					arabicTranslation := translator.TranslateToRussian(extractedText)
 
@@ -317,28 +321,12 @@ func Bot() {
 						log.Printf("Error: No photo found in reply")
 						break
 					}
-
-					chatAction := tgbotapi.NewChatAction(chatID, tgbotapi.ChatTyping)
-					bot.Send(chatAction)
-
-					// Save the image and extract text from it
-					imagePath, err := utilities.SaveImage(bot, chatID, photo[len(photo)-1])
-					if err != nil {
-						log.Printf("Error saving image: %v", err)
-						break
-					}
-
-					// Use OCR (ImageToText) to extract text from the image
-					imgToText := utilities.ImageToText(imagePath, APINinjas)
-					if imgToText == "" {
-						log.Printf("No text found in image")
-						break
-					}
+					extractedText := writeImage(chatID, bot, photo)
 
 					// Translate the extracted text to Arabic
-					arabicTranslation := translator.TranslateToFrench(imgToText)
+					arabicTranslation := translator.TranslateToFrench(extractedText)
 
-					response := fmt.Sprintf("Extracted Text: %s\n\nArabic Translation: %s", imgToText, arabicTranslation)
+					response := fmt.Sprintf("\n\nArabic Translation: %s", arabicTranslation)
 
 					msg := tgbotapi.NewMessage(chatID, response)
 					_, err = bot.Send(msg)
@@ -426,34 +414,25 @@ func Bot() {
 				if err != nil {
 					log.Printf("Error sending translation: %v", err)
 				}
-			case "test":
-				photo := message.ReplyToMessage.Photo
-				if len(photo) == 0 {
-					log.Printf("Error: No photo found in message")
-					break
-				}
-				chatAction := tgbotapi.NewChatAction(chatID, tgbotapi.ChatTyping)
-				bot.Send(chatAction)
-
-				fmt.Println("-------------------------------", photo)
-				imagePath, err := utilities.SaveImage(bot, chatID, photo[len(photo)-1])
-				if err != nil {
-					log.Printf("Error saving image: %v", err)
-					break
-				}
-
-				// Translate to English
-				definition := translator.WriteImage(text, imagePath)
-
-				response := fmt.Sprintf(" %s \n:%s", text, definition)
-
-				msg := tgbotapi.NewMessage(chatID, response)
-				msg.ParseMode = tgbotapi.ModeMarkdown
-				_, err2 := bot.Send(msg)
-				if err2 != nil {
-					log.Printf("Error sending translation: %v", err)
-				}
 			case "write":
+				if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
+					photo := message.ReplyToMessage.Photo
+					if len(photo) == 0 {
+						log.Printf("Error: No photo found in reply")
+						break
+					}
+					extractedText := writeImage(chatID, bot, photo)
+
+					response := extractedText
+
+					msg := tgbotapi.NewMessage(chatID, response)
+					msg.ParseMode = tgbotapi.ModeMarkdown
+					_, err2 := bot.Send(msg)
+					if err2 != nil {
+						log.Printf("Error sending translation: %v", err)
+					}
+				}
+			case "test":
 				// Prepare image file for upload
 				photo := message.ReplyToMessage.Photo
 				fmt.Println("-------------------------------", photo)
@@ -486,4 +465,25 @@ func Bot() {
 
 		}
 	}
+}
+
+func writeImage(chatID int64, bot *tgbotapi.BotAPI, photo []tgbotapi.PhotoSize) string {
+
+	chatAction := tgbotapi.NewChatAction(chatID, tgbotapi.ChatTyping)
+	bot.Send(chatAction)
+
+	// Save the image and extract the image path
+	imagePath, err := utilities.SaveImage(bot, chatID, photo[len(photo)-1])
+	if err != nil {
+		log.Printf("Error saving image: %v", err)
+		return "Something went wrong :("
+	}
+
+	// Use WriteImage function to process the image and get the extracted text
+	extractedText := translator.WriteImage("", imagePath)
+	if extractedText == "" {
+		log.Printf("No text found in image")
+		return "No text found in image"
+	}
+	return extractedText
 }
