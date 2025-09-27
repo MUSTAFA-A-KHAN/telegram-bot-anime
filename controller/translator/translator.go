@@ -2,12 +2,15 @@ package translator
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
+
+	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/translator/utilities"
 )
 
 type Audio struct {
@@ -83,7 +86,7 @@ func (t *TextTranslator) ReadItLoudUK(text string) string {
 	if err := json.Unmarshal(bodyText, &result); err != nil {
 		log.Fatal(err)
 	}
-	if err := downloadFile("outputUK.mp3", result.AudioFile); err != nil {
+	if err := utilities.DownloadFile("outputUK.mp3", result.AudioFile); err != nil {
 		log.Fatal(err)
 	}
 
@@ -138,7 +141,7 @@ func (t *TextTranslator) ReadItLoudUKFemale(text string) string {
 	if err := json.Unmarshal(bodyText, &result); err != nil {
 		log.Fatal(err)
 	}
-	if err := downloadFile("outputUKFemale.mp3", result.AudioFile); err != nil {
+	if err := utilities.DownloadFile("outputUKFemale.mp3", result.AudioFile); err != nil {
 		log.Fatal(err)
 	}
 
@@ -191,7 +194,7 @@ func (t *TextTranslator) ReadItLoud(text string) string {
 	if err := json.Unmarshal(bodyText, &result); err != nil {
 		log.Fatal(err)
 	}
-	if err := downloadFile("output.mp3", result.AudioFile); err != nil {
+	if err := utilities.DownloadFile("output.mp3", result.AudioFile); err != nil {
 		log.Fatal(err)
 	}
 
@@ -243,28 +246,11 @@ func (t *TextTranslator) ReadItLoudFemale(text string) string {
 	if err := json.Unmarshal(bodyText, &result); err != nil {
 		log.Fatal(err)
 	}
-	if err := downloadFile("outputFemale.mp3", result.AudioFile); err != nil {
+	if err := utilities.DownloadFile("outputFemale.mp3", result.AudioFile); err != nil {
 		log.Fatal(err)
 	}
 
 	return result.AudioFile
-}
-
-func downloadFile(filepath string, url string) error {
-	resp, err := http.Get(url)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	out, err := os.Create(filepath)
-	if err != nil {
-		return err
-	}
-	defer out.Close()
-
-	_, err = io.Copy(out, resp.Body)
-	return err
 }
 
 func (t *TextTranslator) WriteITDown(audioData []byte, contentType string) string {
@@ -872,6 +858,90 @@ func (t *TextTranslator) GetAbbreviation(text string) string {
 		},
 	}
 
+	jsonData, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Sprintf("Error: %v", err)
+	}
+
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return fmt.Sprintf("Error: %v", err)
+	}
+
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", OpenAIKey))
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Sprintf("Error: %v", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Sprintf("Error: %v", err)
+	}
+
+	if resp.StatusCode != 200 {
+		return fmt.Sprintf("API Error: %d - %s", resp.StatusCode, string(body))
+	}
+
+	var response map[string]interface{}
+	if err := json.Unmarshal(body, &response); err != nil {
+		return fmt.Sprintf("Parse error: %v", err)
+	}
+
+	if choices, ok := response["choices"].([]interface{}); ok && len(choices) > 0 {
+		if choice, ok := choices[0].(map[string]interface{}); ok {
+			if message, ok := choice["message"].(map[string]interface{}); ok {
+				if content, ok := message["content"].(string); ok {
+					return content
+				}
+			}
+		}
+	}
+
+	return "Translation failed"
+}
+
+func (t *TextTranslator) WriteImage(text string, imagePath string) string {
+
+	// Read the image file
+	imgData, err := ioutil.ReadFile(imagePath)
+	if err != nil {
+		log.Fatalf("Error reading image file: %v", err)
+	}
+
+	// Encode the image data to Base64
+	encoded := base64.StdEncoding.EncodeToString(imgData)
+
+	if OpenAIKey == "" {
+		return "OpenAI API key not configured"
+	}
+
+	url := "https://glama.ai/api/gateway/openai/v1/chat/completions"
+
+	payload := map[string]interface{}{
+		"model": "openai/gpt-4o",
+		"messages": []map[string]interface{}{
+			{
+				"role": "user",
+				"content": []interface{}{
+					map[string]interface{}{
+						"type": "text",
+						"text": "Do the OCR for this and give in MD format",
+					},
+					map[string]interface{}{
+						"type": "image_url",
+						"image_url": map[string]string{
+							"url": fmt.Sprintf("data:image/jpeg;base64,%s", encoded),
+						},
+					},
+				},
+			},
+		},
+	}
 	jsonData, err := json.Marshal(payload)
 	if err != nil {
 		return fmt.Sprintf("Error: %v", err)

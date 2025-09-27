@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/translator/utilities"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
@@ -162,57 +163,201 @@ func Bot() {
 					log.Fatal(err)
 				}
 			case "ar":
-				// Translate to English
-				text = message.ReplyToMessage.Text
+				if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
+					photo := message.ReplyToMessage.Photo
+					if len(photo) == 0 {
+						log.Printf("Error: No photo found in reply")
+						break
+					}
 
-				// Translate to Arabic
-				arabicTranslation := translator.TranslateToArabic(text)
+					chatAction := tgbotapi.NewChatAction(chatID, tgbotapi.ChatTyping)
+					bot.Send(chatAction)
 
-				response := fmt.Sprintf(" %s\n", arabicTranslation)
+					fmt.Println("-------------------------------", photo)
+					// Save the image and extract the image path
+					imagePath, err := utilities.SaveImage(bot, chatID, photo[len(photo)-1])
+					if err != nil {
+						log.Printf("Error saving image: %v", err)
+						break
+					}
 
-				msg := tgbotapi.NewMessage(chatID, response)
-				_, err := bot.Send(msg)
-				if err != nil {
-					log.Printf("Error sending translation: %v", err)
+					// Use WriteImage function to process the image and get the extracted text
+					extractedText := translator.WriteImage("", imagePath)
+					if extractedText == "" {
+						log.Printf("No text found in image")
+						break
+					}
+					// Translate the extracted text to Arabic
+					arabicTranslation := translator.TranslateToRussian(extractedText)
+
+					response := fmt.Sprintf("\n\nArabic Translation: %s", arabicTranslation)
+
+					msg := tgbotapi.NewMessage(chatID, response)
+					_, err = bot.Send(msg)
+					if err != nil {
+						log.Printf("Error sending translation: %v", err)
+					}
+				} else {
+					// Translate to English
+					text = message.ReplyToMessage.Text
+
+					// Translate to Arabic
+					arabicTranslation := translator.TranslateToArabic(text)
+
+					response := fmt.Sprintf(" %s\n", arabicTranslation)
+
+					msg := tgbotapi.NewMessage(chatID, response)
+					_, err := bot.Send(msg)
+					if err != nil {
+						log.Printf("Error sending translation: %v", err)
+					}
 				}
 			case "en":
-				text = message.ReplyToMessage.Text
+				if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
+					photo := message.ReplyToMessage.Photo
+					if len(photo) == 0 {
+						log.Printf("Error: No photo found in reply")
+						break
+					}
 
-				// Translate to English
-				englishTranslation := translator.TranslateToEnglish(text)
+					chatAction := tgbotapi.NewChatAction(chatID, tgbotapi.ChatTyping)
+					bot.Send(chatAction)
 
-				response := fmt.Sprintf("English: %s\n", englishTranslation)
+					fmt.Println("-------------------------------", photo)
+					// Save the image and extract the image path
+					imagePath, err := utilities.SaveImage(bot, chatID, photo[len(photo)-1])
+					if err != nil {
+						log.Printf("Error saving image: %v", err)
+						break
+					}
 
-				msg := tgbotapi.NewMessage(chatID, response)
-				_, err := bot.Send(msg)
-				if err != nil {
-					log.Printf("Error sending translation: %v", err)
+					// Use WriteImage function to process the image and get the extracted text
+					extractedText := translator.WriteImage("", imagePath)
+					if extractedText == "" {
+						log.Printf("No text found in image")
+						break
+					}
+					// Translate the extracted text to Arabic
+					arabicTranslation := translator.TranslateToEnglish(extractedText)
+
+					response := fmt.Sprintf("\n\nArabic Translation: %s", arabicTranslation)
+
+					msg := tgbotapi.NewMessage(chatID, response)
+					_, err = bot.Send(msg)
+					if err != nil {
+						log.Printf("Error sending translation: %v", err)
+					}
+				} else {
+					text = message.ReplyToMessage.Text
+
+					// Translate to English
+					englishTranslation := translator.TranslateToEnglish(text)
+
+					response := fmt.Sprintf("English: %s\n", englishTranslation)
+
+					msg := tgbotapi.NewMessage(chatID, response)
+					_, err := bot.Send(msg)
+					if err != nil {
+						log.Printf("Error sending translation: %v", err)
+					}
 				}
 			case "ru":
-				text = message.ReplyToMessage.Text
+				if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
+					photo := message.ReplyToMessage.Photo
+					if len(photo) == 0 {
+						log.Printf("Error: No photo found in reply")
+						break
+					}
 
-				// Translate to English
-				russianTranslation := translator.TranslateToRussian(text)
+					chatAction := tgbotapi.NewChatAction(chatID, tgbotapi.ChatTyping)
+					bot.Send(chatAction)
 
-				response := fmt.Sprintf("Russian: %s\n", russianTranslation)
+					fmt.Println("-------------------------------", photo)
+					// Save the image and extract the image path
+					imagePath, err := utilities.SaveImage(bot, chatID, photo[len(photo)-1])
+					if err != nil {
+						log.Printf("Error saving image: %v", err)
+						break
+					}
 
-				msg := tgbotapi.NewMessage(chatID, response)
-				_, err := bot.Send(msg)
-				if err != nil {
-					log.Printf("Error sending translation: %v", err)
+					// Use WriteImage function to process the image and get the extracted text
+					extractedText := translator.WriteImage("", imagePath)
+					if extractedText == "" {
+						log.Printf("No text found in image")
+						break
+					}
+					// Translate the extracted text to Arabic
+					arabicTranslation := translator.TranslateToRussian(extractedText)
+
+					response := fmt.Sprintf("\n\n Russian Translation: %s", arabicTranslation)
+
+					msg := tgbotapi.NewMessage(chatID, response)
+					_, err = bot.Send(msg)
+					if err != nil {
+						log.Printf("Error sending translation: %v", err)
+					}
+				} else {
+					text = message.ReplyToMessage.Text
+
+					// Translate to English
+					russianTranslation := translator.TranslateToRussian(text)
+
+					response := fmt.Sprintf("Russian: %s\n", russianTranslation)
+
+					msg := tgbotapi.NewMessage(chatID, response)
+					_, err := bot.Send(msg)
+					if err != nil {
+						log.Printf("Error sending translation: %v", err)
+					}
 				}
 			case "fr":
-				text = message.ReplyToMessage.Text
+				if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
+					photo := message.ReplyToMessage.Photo
+					if len(photo) == 0 {
+						log.Printf("Error: No photo found in reply")
+						break
+					}
 
-				// Translate to English
-				frenchTranslation := translator.TranslateToFrench(text)
+					chatAction := tgbotapi.NewChatAction(chatID, tgbotapi.ChatTyping)
+					bot.Send(chatAction)
 
-				response := fmt.Sprintf("French: %s\n", frenchTranslation)
+					// Save the image and extract text from it
+					imagePath, err := utilities.SaveImage(bot, chatID, photo[len(photo)-1])
+					if err != nil {
+						log.Printf("Error saving image: %v", err)
+						break
+					}
 
-				msg := tgbotapi.NewMessage(chatID, response)
-				_, err := bot.Send(msg)
-				if err != nil {
-					log.Printf("Error sending translation: %v", err)
+					// Use OCR (ImageToText) to extract text from the image
+					imgToText := utilities.ImageToText(imagePath, APINinjas)
+					if imgToText == "" {
+						log.Printf("No text found in image")
+						break
+					}
+
+					// Translate the extracted text to Arabic
+					arabicTranslation := translator.TranslateToFrench(imgToText)
+
+					response := fmt.Sprintf("Extracted Text: %s\n\nArabic Translation: %s", imgToText, arabicTranslation)
+
+					msg := tgbotapi.NewMessage(chatID, response)
+					_, err = bot.Send(msg)
+					if err != nil {
+						log.Printf("Error sending translation: %v", err)
+					}
+				} else {
+					text = message.ReplyToMessage.Text
+
+					// Translate to English
+					frenchTranslation := translator.TranslateToFrench(text)
+
+					response := fmt.Sprintf("French: %s\n", frenchTranslation)
+
+					msg := tgbotapi.NewMessage(chatID, response)
+					_, err := bot.Send(msg)
+					if err != nil {
+						log.Printf("Error sending translation: %v", err)
+					}
 				}
 			case "abb":
 				text = message.ReplyToMessage.Text
@@ -281,7 +426,51 @@ func Bot() {
 				if err != nil {
 					log.Printf("Error sending translation: %v", err)
 				}
+			case "test":
+				photo := message.ReplyToMessage.Photo
+				if len(photo) == 0 {
+					log.Printf("Error: No photo found in message")
+					break
+				}
+				chatAction := tgbotapi.NewChatAction(chatID, tgbotapi.ChatTyping)
+				bot.Send(chatAction)
 
+				fmt.Println("-------------------------------", photo)
+				imagePath, err := utilities.SaveImage(bot, chatID, photo[len(photo)-1])
+				if err != nil {
+					log.Printf("Error saving image: %v", err)
+					break
+				}
+
+				// Translate to English
+				definition := translator.WriteImage(text, imagePath)
+
+				response := fmt.Sprintf(" %s \n:%s", text, definition)
+
+				msg := tgbotapi.NewMessage(chatID, response)
+				msg.ParseMode = tgbotapi.ModeMarkdown
+				_, err2 := bot.Send(msg)
+				if err2 != nil {
+					log.Printf("Error sending translation: %v", err)
+				}
+			case "write":
+				// Prepare image file for upload
+				photo := message.ReplyToMessage.Photo
+				fmt.Println("-------------------------------", photo)
+				imagePath, err := utilities.SaveImage(bot, chatID, photo[len(photo)-1])
+				if err != nil {
+					log.Printf("Error saving image: %v", err)
+					break
+				}
+				imgToTxt := utilities.ImageToText(imagePath, APINinjas)
+				fmt.Println(imgToTxt)
+				fmt.Println(imagePath)
+				msg := tgbotapi.NewMessage(chatID, imgToTxt)
+				_, err2 := bot.Send(msg)
+				if err2 != nil {
+					log.Printf("Error sending translation: %v", err)
+				}
+				// t:=message.ReplyToMessage.Photo
 			default:
 				if message.Voice != nil {
 					// Handle voice messages
