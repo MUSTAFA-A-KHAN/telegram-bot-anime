@@ -42,6 +42,111 @@ func Bot() {
 			switch message.Text {
 			case "start":
 				startHandler(bot, update)
+			case "sayaifemale":
+				text := ""
+				if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
+
+					photo := message.ReplyToMessage.Photo
+					if len(photo) == 0 {
+						log.Printf("Error: No photo found in reply")
+						break
+					}
+					text = writeImage(chatID, bot, photo)
+				} else {
+					// Get the text from the message being replied to
+					text = message.ReplyToMessage.Text
+				}
+
+				// Call ReadItLoud to convert the text to speech (assuming it returns an Audio struct)
+				Voice := translator.TextToSpeechElevenLabsFemale(text)
+				tgbotapi.NewMessage(chatID, Voice)
+
+				// Example 1: Send a local file
+				file, err := os.Open("outputElevenLabFemale.mp3")
+				if err != nil {
+					log.Fatal(err)
+				}
+				defer file.Close()
+
+				doc := tgbotapi.NewDocument(chatID, tgbotapi.FileReader{
+					Name:   "outputElevenLabFemale.mp3",
+					Reader: file,
+				})
+
+				_, err = bot.Send(doc)
+				if err != nil {
+					log.Fatal(err)
+				}
+			case "sayAI":
+				text := ""
+				if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
+
+					photo := message.ReplyToMessage.Photo
+					if len(photo) == 0 {
+						log.Printf("Error: No photo found in reply")
+						break
+					}
+					text = writeImage(chatID, bot, photo)
+				} else {
+					// Get the text from the message being replied to
+					text = message.ReplyToMessage.Text
+				}
+
+				// Call ReadItLoud to convert the text to speech (assuming it returns an Audio struct)
+				Voice := translator.TextToSpeechElevenLabs(text)
+				tgbotapi.NewMessage(chatID, Voice)
+
+				// Example 1: Send a local file
+				file, err := os.Open("outputElevenLab.mp3")
+				if err != nil {
+					log.Fatal(err)
+				}
+				defer file.Close()
+
+				doc := tgbotapi.NewDocument(chatID, tgbotapi.FileReader{
+					Name:   "outputElevenLab.mp3",
+					Reader: file,
+				})
+
+				_, err = bot.Send(doc)
+				if err != nil {
+					log.Fatal(err)
+				}
+			case "sayAIUK":
+				text := ""
+				if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
+
+					photo := message.ReplyToMessage.Photo
+					if len(photo) == 0 {
+						log.Printf("Error: No photo found in reply")
+						break
+					}
+					text = writeImage(chatID, bot, photo)
+				} else {
+					// Get the text from the message being replied to
+					text = message.ReplyToMessage.Text
+				}
+
+				// Call ReadItLoud to convert the text to speech (assuming it returns an Audio struct)
+				Voice := translator.TextToSpeechElevenLabsUK(text)
+				tgbotapi.NewMessage(chatID, Voice)
+
+				// Example 1: Send a local file
+				file, err := os.Open("outputElevenLabUK.mp3")
+				if err != nil {
+					log.Fatal(err)
+				}
+				defer file.Close()
+
+				doc := tgbotapi.NewDocument(chatID, tgbotapi.FileReader{
+					Name:   "outputElevenLabUK.mp3",
+					Reader: file,
+				})
+
+				_, err = bot.Send(doc)
+				if err != nil {
+					log.Fatal(err)
+				}
 			case "sayUK":
 				text := ""
 				if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
@@ -216,7 +321,6 @@ func Bot() {
 				if err != nil {
 					log.Fatal(err)
 				}
-
 			case "ar":
 				if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
 					photo := message.ReplyToMessage.Photo
