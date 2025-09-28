@@ -9,10 +9,15 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/translator/utilities"
 )
 
+type RequestBody struct {
+	Text    string `json:"text"`
+	ModelID string `json:"model_id"`
+}
 type Audio struct {
 	Data        []byte
 	ContentType string
@@ -987,4 +992,161 @@ func (t *TextTranslator) WriteImage(text string, imagePath string) string {
 	}
 
 	return "Translation failed"
+}
+
+func (t *TextTranslator) TextToSpeechElevenLabs(text string) string {
+	client := &http.Client{}
+	requestBody := RequestBody{
+		Text:    text,
+		ModelID: "eleven_multilingual_v2",
+	}
+
+	// Marshal the request body into JSON format
+	data, err := json.Marshal(requestBody)
+	if err != nil {
+		log.Fatal("Error marshaling JSON:", err)
+	}
+
+	// data := strings.NewReader(jsonString)
+	req, err := http.NewRequest("POST", "https://api.elevenlabs.io/v1/text-to-speech/JBFqnCBsd6RMkjVDRZzb?output_format=mp3_44100_128", bytes.NewReader(data))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Use your valid API key here
+	req.Header.Set("xi-api-key", ElevenLabs)
+	req.Header.Set("Content-Type", "application/json")
+
+	// Send the request
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	// Check if the response was successful
+	if resp.StatusCode != http.StatusOK {
+		log.Fatalf("Error: Received non-OK status code %d\n", resp.StatusCode)
+	}
+
+	// Create a new file to save the audio response
+	outFile, err := os.Create("outputElevenLab.mp3")
+	if err != nil {
+		log.Fatal("Error creating output file:", err)
+	}
+	defer outFile.Close()
+
+	// Copy the audio data from the response body to the output file
+	_, err = io.Copy(outFile, resp.Body)
+	if err != nil {
+		log.Fatal("Error saving audio:", err)
+	}
+
+	// Success message
+	return "Audio saved successfully as output.mp3"
+
+}
+func (t *TextTranslator) TextToSpeechElevenLabsFemale(text string) string {
+	client := &http.Client{}
+	requestBody := RequestBody{
+		Text:    text,
+		ModelID: "eleven_multilingual_v2",
+	}
+
+	// Marshal the request body into JSON format
+	data, err := json.Marshal(requestBody)
+	if err != nil {
+		log.Fatal("Error marshaling JSON:", err)
+	}
+
+	// data := strings.NewReader(jsonString)
+	req, err := http.NewRequest("POST", "https://api.elevenlabs.io/v1/text-to-speech/2F1KINpxsttim2WfMbVs?output_format=mp3_44100_128", bytes.NewReader(data))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Use your valid API key here
+	req.Header.Set("xi-api-key", ElevenLabs)
+	req.Header.Set("Content-Type", "application/json")
+
+	// Send the request
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	// Check if the response was successful
+	if resp.StatusCode != http.StatusOK {
+		log.Fatalf("Error: Received non-OK status code %d\n", resp.StatusCode)
+	}
+
+	// Create a new file to save the audio response
+	outFile, err := os.Create("outputElevenLabFemale.mp3")
+	if err != nil {
+		log.Fatal("Error creating output file:", err)
+	}
+	defer outFile.Close()
+
+	// Copy the audio data from the response body to the output file
+	_, err = io.Copy(outFile, resp.Body)
+	if err != nil {
+		log.Fatal("Error saving audio:", err)
+	}
+
+	// Success message
+	return "Audio saved successfully as output.mp3"
+
+}
+func (t *TextTranslator) TextToSpeechElevenLabsUK(text string) string {
+	client := &http.Client{}
+	requestBody := RequestBody{
+		Text:    text,
+		ModelID: "eleven_multilingual_v2",
+	}
+
+	// Marshal the request body into JSON format
+	data, err := json.Marshal(requestBody)
+	if err != nil {
+		log.Fatal("Error marshaling JSON:", err)
+	}
+
+	// data := strings.NewReader(jsonString)
+	req, err := http.NewRequest("POST", "https://api.elevenlabs.io/v1/text-to-speech/UlQzP061AqptrSLuYnFf?output_format=mp3_44100_128", bytes.NewReader(data))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Use your valid API key here
+	req.Header.Set("xi-api-key", ElevenLabs)
+	req.Header.Set("Content-Type", "application/json")
+
+	// Send the request
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	// Check if the response was successful
+	if resp.StatusCode != http.StatusOK {
+		log.Fatalf("Error: Received non-OK status code %d\n", resp.StatusCode)
+	}
+
+	// Create a new file to save the audio response
+	outFile, err := os.Create("outputElevenLabUK.mp3")
+	if err != nil {
+		log.Fatal("Error creating output file:", err)
+	}
+	defer outFile.Close()
+
+	// Copy the audio data from the response body to the output file
+	_, err = io.Copy(outFile, resp.Body)
+	if err != nil {
+		log.Fatal("Error saving audio:", err)
+	}
+
+	// Success message
+	return "Audio saved successfully as output.mp3"
+
 }
