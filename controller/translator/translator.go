@@ -1060,7 +1060,7 @@ func (t *TextTranslator) TextToSpeechElevenLabsFemale(text string) string {
 	}
 
 	// data := strings.NewReader(jsonString)
-	req, err := http.NewRequest("POST", "https://api.elevenlabs.io/v1/text-to-speech/2F1KINpxsttim2WfMbVs?output_format=mp3_44100_128", bytes.NewReader(data))
+	req, err := http.NewRequest("POST", "https://api.elevenlabs.io/v1/text-to-speech/klUyhXo4uwEm3x87KQBB?output_format=mp3_44100_128", bytes.NewReader(data))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -1144,6 +1144,59 @@ func (t *TextTranslator) TextToSpeechElevenLabsUK(text string) string {
 	_, err = io.Copy(outFile, resp.Body)
 	if err != nil {
 		log.Fatal("Error saving audio:", err)
+	}
+
+	// Success message
+	return "Audio saved successfully as output.mp3"
+
+}
+
+func (t *TextTranslator) ElevenLabsDyna(text string, voiceID string) string {
+	client := &http.Client{}
+	requestBody := RequestBody{
+		Text:    text,
+		ModelID: "eleven_multilingual_v2",
+	}
+
+	// Marshal the request body into JSON format
+	data, err := json.Marshal(requestBody)
+	if err != nil {
+		return ""
+	}
+
+	// data := strings.NewReader(jsonString)
+	req, err := http.NewRequest("POST", "https://api.elevenlabs.io/v1/text-to-speech/"+voiceID+"?output_format=mp3_44100_128", bytes.NewReader(data))
+	if err != nil {
+		return ""
+	}
+
+	// Use your valid API key here
+	req.Header.Set("xi-api-key", ElevenLabs)
+	req.Header.Set("Content-Type", "application/json")
+
+	// Send the request
+	resp, err := client.Do(req)
+	if err != nil {
+		return ""
+	}
+	defer resp.Body.Close()
+
+	// Check if the response was successful
+	if resp.StatusCode != http.StatusOK {
+		return ""
+	}
+
+	// Create a new file to save the audio response
+	outFile, err := os.Create(voiceID + ".mp3")
+	if err != nil {
+		log.Fatal("Error creating output file:", err)
+	}
+	defer outFile.Close()
+
+	// Copy the audio data from the response body to the output file
+	_, err = io.Copy(outFile, resp.Body)
+	if err != nil {
+		return ""
 	}
 
 	// Success message

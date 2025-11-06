@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/translator/utilities"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -38,535 +39,584 @@ func Bot() {
 			text := message.Text
 
 			log.Printf("[%s] %s", message.From.UserName, message.Text)
+			cmd := strings.TrimPrefix(message.Text, "/")
+			if message.ReplyToMessage != nil {
+				switch cmd {
+				case "start":
+					startHandler(bot, update)
+				case "sayaifemale":
+					text := ""
+					if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
 
-			switch message.Text {
-			case "start":
-				startHandler(bot, update)
-			case "sayaifemale":
-				text := ""
-				if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
-
-					photo := message.ReplyToMessage.Photo
-					if len(photo) == 0 {
-						log.Printf("Error: No photo found in reply")
-						break
+						photo := message.ReplyToMessage.Photo
+						if len(photo) == 0 {
+							log.Printf("Error: No photo found in reply")
+							break
+						}
+						text = writeImage(chatID, bot, photo)
+					} else if message.ReplyToMessage != nil {
+						// Get the text from the message being replied to
+						text = message.ReplyToMessage.Text
 					}
-					text = writeImage(chatID, bot, photo)
-				} else {
-					// Get the text from the message being replied to
-					text = message.ReplyToMessage.Text
-				}
 
-				// Call ReadItLoud to convert the text to speech (assuming it returns an Audio struct)
-				Voice := translator.TextToSpeechElevenLabsFemale(text)
-				tgbotapi.NewMessage(chatID, Voice)
+					// Call ReadItLoud to convert the text to speech (assuming it returns an Audio struct)
+					Voice := translator.TextToSpeechElevenLabsFemale(text)
+					tgbotapi.NewMessage(chatID, Voice)
 
-				// Example 1: Send a local file
-				file, err := os.Open("outputElevenLabFemale.mp3")
-				if err != nil {
-					log.Fatal(err)
-				}
-				defer file.Close()
-
-				doc := tgbotapi.NewDocument(chatID, tgbotapi.FileReader{
-					Name:   "outputElevenLabFemale.mp3",
-					Reader: file,
-				})
-
-				_, err = bot.Send(doc)
-				if err != nil {
-					log.Fatal(err)
-				}
-			case "sayAI":
-				text := ""
-				if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
-
-					photo := message.ReplyToMessage.Photo
-					if len(photo) == 0 {
-						log.Printf("Error: No photo found in reply")
-						break
-					}
-					text = writeImage(chatID, bot, photo)
-				} else {
-					// Get the text from the message being replied to
-					text = message.ReplyToMessage.Text
-				}
-
-				// Call ReadItLoud to convert the text to speech (assuming it returns an Audio struct)
-				Voice := translator.TextToSpeechElevenLabs(text)
-				tgbotapi.NewMessage(chatID, Voice)
-
-				// Example 1: Send a local file
-				file, err := os.Open("outputElevenLab.mp3")
-				if err != nil {
-					log.Fatal(err)
-				}
-				defer file.Close()
-
-				doc := tgbotapi.NewDocument(chatID, tgbotapi.FileReader{
-					Name:   "outputElevenLab.mp3",
-					Reader: file,
-				})
-
-				_, err = bot.Send(doc)
-				if err != nil {
-					log.Fatal(err)
-				}
-			case "sayAIUK":
-				text := ""
-				if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
-
-					photo := message.ReplyToMessage.Photo
-					if len(photo) == 0 {
-						log.Printf("Error: No photo found in reply")
-						break
-					}
-					text = writeImage(chatID, bot, photo)
-				} else {
-					// Get the text from the message being replied to
-					text = message.ReplyToMessage.Text
-				}
-
-				// Call ReadItLoud to convert the text to speech (assuming it returns an Audio struct)
-				Voice := translator.TextToSpeechElevenLabsUK(text)
-				tgbotapi.NewMessage(chatID, Voice)
-
-				// Example 1: Send a local file
-				file, err := os.Open("outputElevenLabUK.mp3")
-				if err != nil {
-					log.Fatal(err)
-				}
-				defer file.Close()
-
-				doc := tgbotapi.NewDocument(chatID, tgbotapi.FileReader{
-					Name:   "outputElevenLabUK.mp3",
-					Reader: file,
-				})
-
-				_, err = bot.Send(doc)
-				if err != nil {
-					log.Fatal(err)
-				}
-			case "sayUK":
-				text := ""
-				if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
-
-					photo := message.ReplyToMessage.Photo
-					if len(photo) == 0 {
-						log.Printf("Error: No photo found in reply")
-						break
-					}
-					text = writeImage(chatID, bot, photo)
-				} else {
-					// Get the text from the message being replied to
-					text = message.ReplyToMessage.Text
-				}
-
-				// Call ReadItLoud to convert the text to speech (assuming it returns an Audio struct)
-				Voice := translator.ReadItLoudUK(text)
-				tgbotapi.NewMessage(chatID, Voice)
-
-				// Example 1: Send a local file
-				file, err := os.Open("outputUK.mp3")
-				if err != nil {
-					log.Fatal(err)
-				}
-				defer file.Close()
-
-				doc := tgbotapi.NewDocument(chatID, tgbotapi.FileReader{
-					Name:   "outputUK.mp3",
-					Reader: file,
-				})
-
-				_, err = bot.Send(doc)
-				if err != nil {
-					log.Fatal(err)
-				}
-			case "sayUKFemale":
-				text := ""
-				if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
-
-					photo := message.ReplyToMessage.Photo
-					if len(photo) == 0 {
-						log.Printf("Error: No photo found in reply")
-						break
-					}
-					text = writeImage(chatID, bot, photo)
-				} else {
-					// Get the text from the message being replied to
-					text = message.ReplyToMessage.Text
-				}
-
-				// Call ReadItLoud to convert the text to speech (assuming it returns an Audio struct)
-				Voice := translator.ReadItLoudUKFemale(text)
-				tgbotapi.NewMessage(chatID, Voice)
-
-				// Example 1: Send a local file
-				file, err := os.Open("outputUKFemale.mp3")
-				if err != nil {
-					log.Fatal(err)
-				}
-				defer file.Close()
-
-				doc := tgbotapi.NewDocument(chatID, tgbotapi.FileReader{
-					Name:   "outputUKFemale.mp3",
-					Reader: file,
-				})
-
-				_, err = bot.Send(doc)
-				if err != nil {
-					log.Fatal(err)
-				}
-			case "say":
-				text := ""
-				if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
-
-					photo := message.ReplyToMessage.Photo
-					if len(photo) == 0 {
-						log.Printf("Error: No photo found in reply")
-						break
-					}
-					text = writeImage(chatID, bot, photo)
-				} else {
-					// Get the text from the message being replied to
-					text = message.ReplyToMessage.Text
-				}
-
-				// Call ReadItLoud to convert the text to speech (assuming it returns an Audio struct)
-				Voice := translator.ReadItLoud(text)
-				tgbotapi.NewMessage(chatID, Voice)
-
-				// Example 1: Send a local file
-				file, err := os.Open("output.mp3")
-				if err != nil {
-					log.Fatal(err)
-				}
-				defer file.Close()
-
-				doc := tgbotapi.NewDocument(chatID, tgbotapi.FileReader{
-					Name:   "output.mp3",
-					Reader: file,
-				})
-
-				_, err = bot.Send(doc)
-				if err != nil {
-					log.Fatal(err)
-				}
-			case "sayMale":
-				text := ""
-				if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
-
-					photo := message.ReplyToMessage.Photo
-					if len(photo) == 0 {
-						log.Printf("Error: No photo found in reply")
-						break
-					}
-					text = writeImage(chatID, bot, photo)
-				} else {
-					// Get the text from the message being replied to
-					text = message.ReplyToMessage.Text
-				}
-
-				// Call ReadItLoud to convert the text to speech (assuming it returns an Audio struct)
-				Voice := translator.ReadItLoud(text)
-				tgbotapi.NewMessage(chatID, Voice)
-
-				// Example 1: Send a local file
-				file, err := os.Open("output.mp3")
-				if err != nil {
-					log.Fatal(err)
-				}
-				defer file.Close()
-
-				doc := tgbotapi.NewDocument(chatID, tgbotapi.FileReader{
-					Name:   "output.mp3",
-					Reader: file,
-				})
-
-				_, err = bot.Send(doc)
-				if err != nil {
-					log.Fatal(err)
-				}
-			case "sayFemale":
-				text := ""
-				if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
-
-					photo := message.ReplyToMessage.Photo
-					if len(photo) == 0 {
-						log.Printf("Error: No photo found in reply")
-						break
-					}
-					text = writeImage(chatID, bot, photo)
-				} else {
-					text = message.ReplyToMessage.Text
-				}
-
-				// Call ReadItLoud to convert the text to speech (assuming it returns an Audio struct)
-				Voice := translator.ReadItLoudFemale(text)
-				tgbotapi.NewMessage(chatID, Voice)
-
-				// Example 1: Send a local file
-				file, err := os.Open("outputFemale.mp3")
-				if err != nil {
-					log.Fatal(err)
-				}
-				defer file.Close()
-
-				doc := tgbotapi.NewDocument(chatID, tgbotapi.FileReader{
-					Name:   "outputFemale.mp3",
-					Reader: file,
-				})
-
-				_, err = bot.Send(doc)
-				if err != nil {
-					log.Fatal(err)
-				}
-			case "ar":
-				if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
-					photo := message.ReplyToMessage.Photo
-					if len(photo) == 0 {
-						log.Printf("Error: No photo found in reply")
-						break
-					}
-					extractedText := writeImage(chatID, bot, photo)
-					// Translate the extracted text to Arabic
-					arabicTranslation := translator.TranslateToArabic(extractedText)
-
-					response := fmt.Sprintf("\n\nArabic Translation: %s", arabicTranslation)
-
-					msg := tgbotapi.NewMessage(chatID, response)
-					_, err = bot.Send(msg)
+					// Example 1: Send a local file
+					file, err := os.Open("outputElevenLabFemale.mp3")
 					if err != nil {
-						log.Printf("Error sending translation: %v", err)
+						log.Fatal(err)
 					}
-				} else {
+					defer file.Close()
+
+					doc := tgbotapi.NewDocument(chatID, tgbotapi.FileReader{
+						Name:   "outputElevenLabFemale.mp3",
+						Reader: file,
+					})
+
+					_, err = bot.Send(doc)
+					if err != nil {
+						log.Fatal(err)
+					}
+				case "sayAI":
+					text := ""
+					if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
+
+						photo := message.ReplyToMessage.Photo
+						if len(photo) == 0 {
+							log.Printf("Error: No photo found in reply")
+							break
+						}
+						text = writeImage(chatID, bot, photo)
+					} else {
+						// Get the text from the message being replied to
+						text = message.ReplyToMessage.Text
+					}
+
+					// Call ReadItLoud to convert the text to speech (assuming it returns an Audio struct)
+					Voice := translator.TextToSpeechElevenLabs(text)
+					tgbotapi.NewMessage(chatID, Voice)
+
+					// Example 1: Send a local file
+					file, err := os.Open("outputElevenLab.mp3")
+					if err != nil {
+						log.Fatal(err)
+					}
+					defer file.Close()
+
+					doc := tgbotapi.NewDocument(chatID, tgbotapi.FileReader{
+						Name:   "outputElevenLab.mp3",
+						Reader: file,
+					})
+
+					_, err = bot.Send(doc)
+					if err != nil {
+						log.Fatal(err)
+					}
+				case "sayAIUK":
+					text := ""
+					if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
+
+						photo := message.ReplyToMessage.Photo
+						if len(photo) == 0 {
+							log.Printf("Error: No photo found in reply")
+							break
+						}
+						text = writeImage(chatID, bot, photo)
+					} else {
+						// Get the text from the message being replied to
+						text = message.ReplyToMessage.Text
+					}
+
+					// Call ReadItLoud to convert the text to speech (assuming it returns an Audio struct)
+					Voice := translator.TextToSpeechElevenLabsUK(text)
+					tgbotapi.NewMessage(chatID, Voice)
+
+					// Example 1: Send a local file
+					file, err := os.Open("outputElevenLabUK.mp3")
+					if err != nil {
+						log.Fatal(err)
+					}
+					defer file.Close()
+
+					doc := tgbotapi.NewDocument(chatID, tgbotapi.FileReader{
+						Name:   "outputElevenLabUK.mp3",
+						Reader: file,
+					})
+
+					_, err = bot.Send(doc)
+					if err != nil {
+						log.Fatal(err)
+					}
+				case "sayUK":
+					text := ""
+					if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
+
+						photo := message.ReplyToMessage.Photo
+						if len(photo) == 0 {
+							log.Printf("Error: No photo found in reply")
+							break
+						}
+						text = writeImage(chatID, bot, photo)
+					} else {
+						// Get the text from the message being replied to
+						text = message.ReplyToMessage.Text
+					}
+
+					// Call ReadItLoud to convert the text to speech (assuming it returns an Audio struct)
+					Voice := translator.ReadItLoudUK(text)
+					tgbotapi.NewMessage(chatID, Voice)
+
+					// Example 1: Send a local file
+					file, err := os.Open("outputUK.mp3")
+					if err != nil {
+						log.Fatal(err)
+					}
+					defer file.Close()
+
+					doc := tgbotapi.NewDocument(chatID, tgbotapi.FileReader{
+						Name:   "outputUK.mp3",
+						Reader: file,
+					})
+
+					_, err = bot.Send(doc)
+					if err != nil {
+						log.Fatal(err)
+					}
+				case "sayUKFemale":
+					text := ""
+					if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
+
+						photo := message.ReplyToMessage.Photo
+						if len(photo) == 0 {
+							log.Printf("Error: No photo found in reply")
+							break
+						}
+						text = writeImage(chatID, bot, photo)
+					} else {
+						// Get the text from the message being replied to
+						text = message.ReplyToMessage.Text
+					}
+
+					// Call ReadItLoud to convert the text to speech (assuming it returns an Audio struct)
+					Voice := translator.ReadItLoudUKFemale(text)
+					tgbotapi.NewMessage(chatID, Voice)
+
+					// Example 1: Send a local file
+					file, err := os.Open("outputUKFemale.mp3")
+					if err != nil {
+						log.Fatal(err)
+					}
+					defer file.Close()
+
+					doc := tgbotapi.NewDocument(chatID, tgbotapi.FileReader{
+						Name:   "outputUKFemale.mp3",
+						Reader: file,
+					})
+
+					_, err = bot.Send(doc)
+					if err != nil {
+						log.Fatal(err)
+					}
+				case "say":
+					text := ""
+					if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
+
+						photo := message.ReplyToMessage.Photo
+						if len(photo) == 0 {
+							log.Printf("Error: No photo found in reply")
+							break
+						}
+						text = writeImage(chatID, bot, photo)
+					} else {
+						// Get the text from the message being replied to
+						text = message.ReplyToMessage.Text
+					}
+
+					// Call ReadItLoud to convert the text to speech (assuming it returns an Audio struct)
+					Voice := translator.ReadItLoud(text)
+					tgbotapi.NewMessage(chatID, Voice)
+
+					// Example 1: Send a local file
+					file, err := os.Open("output.mp3")
+					if err != nil {
+						log.Fatal(err)
+					}
+					defer file.Close()
+
+					doc := tgbotapi.NewDocument(chatID, tgbotapi.FileReader{
+						Name:   "output.mp3",
+						Reader: file,
+					})
+
+					_, err = bot.Send(doc)
+					if err != nil {
+						log.Fatal(err)
+					}
+				case "saymale":
+					text := ""
+					if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
+
+						photo := message.ReplyToMessage.Photo
+						if len(photo) == 0 {
+							log.Printf("Error: No photo found in reply")
+							break
+						}
+						text = writeImage(chatID, bot, photo)
+					} else {
+						// Get the text from the message being replied to
+						text = message.ReplyToMessage.Text
+					}
+
+					// Call ReadItLoud to convert the text to speech (assuming it returns an Audio struct)
+					Voice := translator.ReadItLoud(text)
+					tgbotapi.NewMessage(chatID, Voice)
+
+					// Example 1: Send a local file
+					file, err := os.Open("output.mp3")
+					if err != nil {
+						log.Fatal(err)
+					}
+					defer file.Close()
+
+					doc := tgbotapi.NewDocument(chatID, tgbotapi.FileReader{
+						Name:   "output.mp3",
+						Reader: file,
+					})
+
+					_, err = bot.Send(doc)
+					if err != nil {
+						log.Fatal(err)
+					}
+				case "sayfemale":
+					text := ""
+					if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
+
+						photo := message.ReplyToMessage.Photo
+						if len(photo) == 0 {
+							log.Printf("Error: No photo found in reply")
+							break
+						}
+						text = writeImage(chatID, bot, photo)
+					} else {
+						text = message.ReplyToMessage.Text
+					}
+
+					// Call ReadItLoud to convert the text to speech (assuming it returns an Audio struct)
+					Voice := translator.ReadItLoudFemale(text)
+					tgbotapi.NewMessage(chatID, Voice)
+
+					// Example 1: Send a local file
+					file, err := os.Open("outputFemale.mp3")
+					if err != nil {
+						log.Fatal(err)
+					}
+					defer file.Close()
+
+					doc := tgbotapi.NewDocument(chatID, tgbotapi.FileReader{
+						Name:   "outputFemale.mp3",
+						Reader: file,
+					})
+
+					_, err = bot.Send(doc)
+					if err != nil {
+						log.Fatal(err)
+					}
+				case "ar":
+					text := ""
+					if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
+						photo := message.ReplyToMessage.Photo
+						if len(photo) == 0 {
+							log.Printf("Error: No photo found in reply")
+							break
+						}
+						extractedText := writeImage(chatID, bot, photo)
+						// Translate the extracted text to Arabic
+						arabicTranslation := translator.TranslateToArabic(extractedText)
+
+						response := fmt.Sprintf("\n\nArabic Translation: %s", arabicTranslation)
+
+						msg := tgbotapi.NewMessage(chatID, response)
+						_, err = bot.Send(msg)
+						if err != nil {
+							log.Printf("Error sending translation: %v", err)
+						}
+					} else if message.ReplyToMessage != nil {
+						// Translate to English
+						text = message.ReplyToMessage.Text
+
+						// Translate to Arabic
+						arabicTranslation := translator.TranslateToArabic(text)
+
+						response := fmt.Sprintf(" %s\n", arabicTranslation)
+
+						msg := tgbotapi.NewMessage(chatID, response)
+						_, err := bot.Send(msg)
+						if err != nil {
+							log.Printf("Error sending translation: %v", err)
+						}
+					}
+				case "en":
+					text := ""
+					if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
+						photo := message.ReplyToMessage.Photo
+						if len(photo) == 0 {
+							log.Printf("Error: No photo found in reply")
+							break
+						}
+						extractedText := writeImage(chatID, bot, photo)
+						// Translate the extracted text to Arabic
+						arabicTranslation := translator.TranslateToEnglish(extractedText)
+
+						response := fmt.Sprintf("\n\nArabic Translation: %s", arabicTranslation)
+
+						msg := tgbotapi.NewMessage(chatID, response)
+						_, err = bot.Send(msg)
+						if err != nil {
+							log.Printf("Error sending translation: %v", err)
+						}
+					} else if message.ReplyToMessage != nil {
+						text = message.ReplyToMessage.Text
+
+						// Translate to English
+						englishTranslation := translator.TranslateToEnglish(text)
+
+						response := fmt.Sprintf("English: %s\n", englishTranslation)
+
+						msg := tgbotapi.NewMessage(chatID, response)
+						_, err := bot.Send(msg)
+						if err != nil {
+							log.Printf("Error sending translation: %v", err)
+						}
+					}
+				case "ru":
+					if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
+						photo := message.ReplyToMessage.Photo
+						if len(photo) == 0 {
+							log.Printf("Error: No photo found in reply")
+							break
+						}
+						extractedText := writeImage(chatID, bot, photo)
+						// Translate the extracted text to Arabic
+						arabicTranslation := translator.TranslateToRussian(extractedText)
+
+						response := fmt.Sprintf("\n\n Russian Translation: %s", arabicTranslation)
+
+						msg := tgbotapi.NewMessage(chatID, response)
+						_, err = bot.Send(msg)
+						if err != nil {
+							log.Printf("Error sending translation: %v", err)
+						}
+					} else if message.ReplyToMessage != nil {
+						text = message.ReplyToMessage.Text
+
+						// Translate to English
+						russianTranslation := translator.TranslateToRussian(text)
+
+						response := fmt.Sprintf("Russian: %s\n", russianTranslation)
+
+						msg := tgbotapi.NewMessage(chatID, response)
+						_, err := bot.Send(msg)
+						if err != nil {
+							log.Printf("Error sending translation: %v", err)
+						}
+					}
+				case "fr":
+					if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
+						photo := message.ReplyToMessage.Photo
+						if len(photo) == 0 {
+							log.Printf("Error: No photo found in reply")
+							break
+						}
+						extractedText := writeImage(chatID, bot, photo)
+
+						// Translate the extracted text to Arabic
+						arabicTranslation := translator.TranslateToFrench(extractedText)
+
+						response := fmt.Sprintf("\n\nArabic Translation: %s", arabicTranslation)
+
+						msg := tgbotapi.NewMessage(chatID, response)
+						_, err = bot.Send(msg)
+						if err != nil {
+							log.Printf("Error sending translation: %v", err)
+						}
+					} else if message.ReplyToMessage != nil {
+						text = message.ReplyToMessage.Text
+
+						// Translate to English
+						frenchTranslation := translator.TranslateToFrench(text)
+
+						response := fmt.Sprintf("French: %s\n", frenchTranslation)
+
+						msg := tgbotapi.NewMessage(chatID, response)
+						_, err := bot.Send(msg)
+						if err != nil {
+							log.Printf("Error sending translation: %v", err)
+						}
+					}
+				case "abb":
+					if message.ReplyToMessage != nil {
+						text = message.ReplyToMessage.Text
+
+						// Get the abbreviation
+						abbreviation := translator.GetAbbreviation(text)
+
+						response := fmt.Sprintf("%s: \n:%s", text, abbreviation)
+
+						msg := tgbotapi.NewMessage(chatID, response)
+						_, err := bot.Send(msg)
+						if err != nil {
+							log.Printf("Error sending translation: %v", err)
+						}
+					}
+				case "translate":
 					// Translate to English
 					text = message.ReplyToMessage.Text
+					englishTranslation := translator.TranslateToEnglish(text)
 
 					// Translate to Arabic
 					arabicTranslation := translator.TranslateToArabic(text)
 
-					response := fmt.Sprintf(" %s\n", arabicTranslation)
+					response := fmt.Sprintf("English: %s\n\nArabic: %s", englishTranslation, arabicTranslation)
 
 					msg := tgbotapi.NewMessage(chatID, response)
 					_, err := bot.Send(msg)
 					if err != nil {
 						log.Printf("Error sending translation: %v", err)
 					}
-				}
-			case "en":
-				if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
-					photo := message.ReplyToMessage.Photo
-					if len(photo) == 0 {
-						log.Printf("Error: No photo found in reply")
-						break
-					}
-					extractedText := writeImage(chatID, bot, photo)
-					// Translate the extracted text to Arabic
-					arabicTranslation := translator.TranslateToEnglish(extractedText)
-
-					response := fmt.Sprintf("\n\nArabic Translation: %s", arabicTranslation)
-
-					msg := tgbotapi.NewMessage(chatID, response)
-					_, err = bot.Send(msg)
-					if err != nil {
-						log.Printf("Error sending translation: %v", err)
-					}
-				} else {
+				case "syn":
 					text = message.ReplyToMessage.Text
 
 					// Translate to English
-					englishTranslation := translator.TranslateToEnglish(text)
+					synonyms := translator.GetSynonyms(text)
 
-					response := fmt.Sprintf("English: %s\n", englishTranslation)
+					response := fmt.Sprintf("Synonyms for the word %s \n:%s", text, synonyms)
 
 					msg := tgbotapi.NewMessage(chatID, response)
 					_, err := bot.Send(msg)
 					if err != nil {
 						log.Printf("Error sending translation: %v", err)
 					}
-				}
-			case "ru":
-				if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
-					photo := message.ReplyToMessage.Photo
-					if len(photo) == 0 {
-						log.Printf("Error: No photo found in reply")
-						break
-					}
-					extractedText := writeImage(chatID, bot, photo)
-					// Translate the extracted text to Arabic
-					arabicTranslation := translator.TranslateToRussian(extractedText)
-
-					response := fmt.Sprintf("\n\n Russian Translation: %s", arabicTranslation)
-
-					msg := tgbotapi.NewMessage(chatID, response)
-					_, err = bot.Send(msg)
-					if err != nil {
-						log.Printf("Error sending translation: %v", err)
-					}
-				} else {
+				case "anto":
 					text = message.ReplyToMessage.Text
 
 					// Translate to English
-					russianTranslation := translator.TranslateToRussian(text)
+					antonyms := translator.GetAntonyms(text)
 
-					response := fmt.Sprintf("Russian: %s\n", russianTranslation)
+					response := fmt.Sprintf("Antonyms for the word %s \n:%s", text, antonyms)
 
 					msg := tgbotapi.NewMessage(chatID, response)
 					_, err := bot.Send(msg)
 					if err != nil {
 						log.Printf("Error sending translation: %v", err)
 					}
-				}
-			case "fr":
-				if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
-					photo := message.ReplyToMessage.Photo
-					if len(photo) == 0 {
-						log.Printf("Error: No photo found in reply")
-						break
-					}
-					extractedText := writeImage(chatID, bot, photo)
-
-					// Translate the extracted text to Arabic
-					arabicTranslation := translator.TranslateToFrench(extractedText)
-
-					response := fmt.Sprintf("\n\nArabic Translation: %s", arabicTranslation)
-
-					msg := tgbotapi.NewMessage(chatID, response)
-					_, err = bot.Send(msg)
-					if err != nil {
-						log.Printf("Error sending translation: %v", err)
-					}
-				} else {
+				case "define":
 					text = message.ReplyToMessage.Text
 
 					// Translate to English
-					frenchTranslation := translator.TranslateToFrench(text)
+					definition := translator.GetDefinition(text)
 
-					response := fmt.Sprintf("French: %s\n", frenchTranslation)
+					response := fmt.Sprintf(" %s \n:%s", text, definition)
 
 					msg := tgbotapi.NewMessage(chatID, response)
 					_, err := bot.Send(msg)
 					if err != nil {
 						log.Printf("Error sending translation: %v", err)
 					}
-				}
-			case "abb":
-				text = message.ReplyToMessage.Text
+				case "write":
+					if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
+						photo := message.ReplyToMessage.Photo
+						if len(photo) == 0 {
+							log.Printf("Error: No photo found in reply")
+							break
+						}
+						extractedText := writeImage(chatID, bot, photo)
 
-				// Get the abbreviation
-				abbreviation := translator.GetAbbreviation(text)
+						response := extractedText
 
-				response := fmt.Sprintf("%s: \n:%s", text, abbreviation)
-
-				msg := tgbotapi.NewMessage(chatID, response)
-				_, err := bot.Send(msg)
-				if err != nil {
-					log.Printf("Error sending translation: %v", err)
-				}
-			case "translate":
-				// Translate to English
-				text = message.ReplyToMessage.Text
-				englishTranslation := translator.TranslateToEnglish(text)
-
-				// Translate to Arabic
-				arabicTranslation := translator.TranslateToArabic(text)
-
-				response := fmt.Sprintf("English: %s\n\nArabic: %s", englishTranslation, arabicTranslation)
-
-				msg := tgbotapi.NewMessage(chatID, response)
-				_, err := bot.Send(msg)
-				if err != nil {
-					log.Printf("Error sending translation: %v", err)
-				}
-			case "syn":
-				text = message.ReplyToMessage.Text
-
-				// Translate to English
-				synonyms := translator.GetSynonyms(text)
-
-				response := fmt.Sprintf("Synonyms for the word %s \n:%s", text, synonyms)
-
-				msg := tgbotapi.NewMessage(chatID, response)
-				_, err := bot.Send(msg)
-				if err != nil {
-					log.Printf("Error sending translation: %v", err)
-				}
-			case "anto":
-				text = message.ReplyToMessage.Text
-
-				// Translate to English
-				antonyms := translator.GetAntonyms(text)
-
-				response := fmt.Sprintf("Antonyms for the word %s \n:%s", text, antonyms)
-
-				msg := tgbotapi.NewMessage(chatID, response)
-				_, err := bot.Send(msg)
-				if err != nil {
-					log.Printf("Error sending translation: %v", err)
-				}
-			case "define":
-				text = message.ReplyToMessage.Text
-
-				// Translate to English
-				definition := translator.GetDefinition(text)
-
-				response := fmt.Sprintf(" %s \n:%s", text, definition)
-
-				msg := tgbotapi.NewMessage(chatID, response)
-				_, err := bot.Send(msg)
-				if err != nil {
-					log.Printf("Error sending translation: %v", err)
-				}
-			case "write":
-				if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
+						msg := tgbotapi.NewMessage(chatID, response)
+						msg.ParseMode = tgbotapi.ModeMarkdown
+						_, err2 := bot.Send(msg)
+						if err2 != nil {
+							log.Printf("Error sending translation: %v", err)
+						}
+					}
+				case "test":
+					// Prepare image file for upload
 					photo := message.ReplyToMessage.Photo
-					if len(photo) == 0 {
-						log.Printf("Error: No photo found in reply")
+					fmt.Println("-------------------------------", photo)
+					imagePath, err := utilities.SaveImage(bot, chatID, photo[len(photo)-1])
+					if err != nil {
+						log.Printf("Error saving image: %v", err)
 						break
 					}
-					extractedText := writeImage(chatID, bot, photo)
-
-					response := extractedText
-
-					msg := tgbotapi.NewMessage(chatID, response)
-					msg.ParseMode = tgbotapi.ModeMarkdown
+					imgToTxt := utilities.ImageToText(imagePath, APINinjas)
+					fmt.Println(imgToTxt)
+					fmt.Println(imagePath)
+					msg := tgbotapi.NewMessage(chatID, imgToTxt)
 					_, err2 := bot.Send(msg)
 					if err2 != nil {
 						log.Printf("Error sending translation: %v", err)
 					}
-				}
-			case "test":
-				// Prepare image file for upload
-				photo := message.ReplyToMessage.Photo
-				fmt.Println("-------------------------------", photo)
-				imagePath, err := utilities.SaveImage(bot, chatID, photo[len(photo)-1])
-				if err != nil {
-					log.Printf("Error saving image: %v", err)
-					break
-				}
-				imgToTxt := utilities.ImageToText(imagePath, APINinjas)
-				fmt.Println(imgToTxt)
-				fmt.Println(imagePath)
-				msg := tgbotapi.NewMessage(chatID, imgToTxt)
-				_, err2 := bot.Send(msg)
-				if err2 != nil {
-					log.Printf("Error sending translation: %v", err)
-				}
-				// t:=message.ReplyToMessage.Photo
-			default:
-				if message.Voice != nil {
-					// Handle voice messages
-					log.Printf("[%s] sent a voice message", message.From.UserName)
-					voiceHandler(bot, update)
-				}
-				// else if message.Text != "" {
-				// 	// Handle text messages
-				// 	log.Printf("[%s] %s", message.From.UserName, message.Text)
-				// 	textHandler(bot, update)
-				// }
-			}
+				case cmd:
+					voiceID, err := utilities.Configurator("config.json", cmd)
+					if err != nil {
+						break
+					}
+					text := ""
+					if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
 
+						photo := message.ReplyToMessage.Photo
+						if len(photo) == 0 {
+							log.Printf("Error: No photo found in reply")
+							break
+						}
+						text = writeImage(chatID, bot, photo)
+					} else {
+						// Get the text from the message being replied to
+						text = message.ReplyToMessage.Text
+					}
+
+					// Call ReadItLoud to convert the text to speech (assuming it returns an Audio struct)
+					Voice := translator.ElevenLabsDyna(text, voiceID)
+					tgbotapi.NewMessage(chatID, Voice)
+
+					// Example 1: Send a local file
+					file, err := os.Open(voiceID + ".mp3")
+					if err != nil {
+						log.Fatal(err)
+					}
+					defer file.Close()
+
+					doc := tgbotapi.NewDocument(chatID, tgbotapi.FileReader{
+						Name:   voiceID + ".mp3",
+						Reader: file,
+					})
+
+					_, err = bot.Send(doc)
+					if err != nil {
+						log.Fatal(err)
+					}
+
+					// t:=message.ReplyToMessage.Photo
+				default:
+					if message.Voice != nil {
+						// Handle voice messages
+						log.Printf("[%s] sent a voice message", message.From.UserName)
+						voiceHandler(bot, update)
+					}
+					// else if message.Text != "" {
+					// 	// Handle text messages
+					// 	log.Printf("[%s] %s", message.From.UserName, message.Text)
+					// 	textHandler(bot, update)
+					// }
+				}
+			}
+			switch cmd {
+			case "start":
+				startHandler(bot, update)
+			}
 		}
 	}
 }
