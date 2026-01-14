@@ -410,6 +410,10 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			view.SendMessage(bot, chatID, fmt.Sprintf("%s ! You guessed the word '%s' correctly!", telegramReactions[7], word))
 			view.ReactToMessage(bot.Token, chatID, message.MessageID, telegramReactions[17], true)
 			view.ReactToMessage(bot.Token, chatID, message.MessageID, "⚡", true)
+			buttons := tgbotapi.NewInlineKeyboardMarkup(
+				tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Get Hint"+telegramReactions[20], "hint")))
+			view.SendMessageWithButtons(bot, message.Chat.ID, "Get  Another Hint👇", buttons)
+
 			go func() {
 				defer func() {
 					if r := recover(); r != nil {
