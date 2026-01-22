@@ -422,8 +422,22 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 				}()
 				repository.InsertDoc(message.From.ID, message.From.FirstName, chatID, client, "CrocEn")
 			}()
-
 			chatState.reset()
+			word, err := model.GetRandomWord()
+			if err != nil {
+				view.SendMessage(bot, chatID, "Failed to load next word.")
+				chatState.reset()
+				return
+			}
+
+			chatState.Lock()
+			chatState.Word = word
+			chatState.User = message.From.ID
+			chatState.LeadTimestamp = time.Now()
+			chatState.LastHintTimestamp = time.Time{}
+			chatState.LastHintTypeSent = 0
+			chatState.Unlock()
+
 			return
 		}
 		return
@@ -696,10 +710,27 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		chatState.RUnlock()
 
 		if wordEmpty {
-			buttons := createSingleButtonKeyboard(" 🗣️ Explain ", "explain")
-			view.SendMessageWithButtons(bot, callback.Message.Chat.ID, "No active game right now. Click below to start one!", buttons)
-			bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
-			return
+			if callback.Message.Chat.IsPrivate() {
+				word, err := model.GetRandomWord()
+				if err != nil {
+					view.SendMessage(bot, chatID, "Failed to load next word.")
+					chatState.reset()
+					return
+				}
+
+				chatState.Lock()
+				chatState.Word = word
+				chatState.User = callback.From.ID
+				chatState.LeadTimestamp = time.Now()
+				chatState.LastHintTimestamp = time.Time{}
+				chatState.LastHintTypeSent = 0
+				chatState.Unlock()
+			} else {
+				buttons := createSingleButtonKeyboard(" 🗣️ Explain ", "explain")
+				view.SendMessageWithButtons(bot, callback.Message.Chat.ID, "No active game right now. Click below to start one!", buttons)
+				bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
+				return
+			}
 		}
 
 		if !lastHint.IsZero() && time.Since(lastHint) < 1*time.Minute {
