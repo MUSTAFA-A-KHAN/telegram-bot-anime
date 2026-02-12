@@ -8,6 +8,8 @@ github.com/STRockefeller/testutils v0.1.0 h1:96TrBRVgYL/lnjiBlVOZX9jYjtnjjQ8Koav
 github.com/STRockefeller/testutils v0.1.0/go.mod h1:UaarPOW6g3MshDFtp58fdRRtlD68o50xczk8MqMRswo=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
+github.com/encoredev/examples v0.0.0-20250715124804-d7a4417e0338 h1:KP54Z6zNJBBvBeI//E+KRecm6qnpPGK4eo/M/i/Wqfw=
+github.com/encoredev/examples v0.0.0-20250715124804-d7a4417e0338/go.mod h1:BYi7Lx2ZRzcx8X8bs/za9AAiQrH1+zSfx6HKwi9cchw=
 github.com/go-telegram-bot-api/telegram-bot-api v4.6.4+incompatible h1:2cauKuaELYAEARXRkq2LrJ0yDDv1rW7+wrTEdVL3uaU=
 github.com/go-telegram-bot-api/telegram-bot-api v4.6.4+incompatible/go.mod h1:qf9acutJ8cwBUhm1bqgz6Bei9/C/c93FPDljKWwsOgM=
 github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.5.1 h1:wG8n/XJQ07TmjbITcGiUaOtXxdrINDz1b0J1w0SzqDc=
@@ -16,6 +18,8 @@ github.com/golang/snappy v0.0.4 h1:yAGX7huGHXlcLOEtBnF4w7FQwA26wojNCwOYAEhLjQM=
 github.com/golang/snappy v0.0.4/go.mod h1:/XxbfmMg8lxefKM7IXC3fBNl/7bRcc72aCRzEWrmP2Q=
 github.com/google/go-cmp v0.6.0 h1:ofyhxvXcZhMsU5ulbFiLKl/XBFqE1GSq7atu8tAmTRI=
 github.com/google/go-cmp v0.6.0/go.mod h1:17dUlkBOakJ0+DkrSSNjCkIjxS6bF9zb3elmeNGIjoY=
+github.com/haguro/elevenlabs-go v0.2.4 h1:Z1a/I+b5fAtGSfrhEj97dYG1EbV9uRzSfvz5n5+ud34=
+github.com/haguro/elevenlabs-go v0.2.4/go.mod h1:j15h9w2BpgxlIGWXmCKWPPDaTo2QAO83zFy5J+pFCt8=
 github.com/klauspost/compress v1.13.6 h1:P76CopJELS0TiO2mebmnzgWaajssP/EszplttgQxcgc=
 github.com/klauspost/compress v1.13.6/go.mod h1:/3/Vjq9QcHkK5uEr5lBEmyoZ1iFhe47etQ6QUkpK6sk=
 github.com/montanaflynn/stats v0.7.1 h1:etflOAAHORrCC44V+aR6Ftzort912ZU+YLiSTuV8eaE=

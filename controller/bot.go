@@ -875,39 +875,39 @@ func handleInlineQuery(bot *tgbotapi.BotAPI, inlineQuery *tgbotapi.InlineQuery) 
 	}
 }
 
-// getStyleEmoji returns an emoji for each font style
-func getStyleEmoji(styleName string) string {
-	emojis := map[string]string{
-		"Bold":             "𝐁",
-		"Italic":           "𝑰",
-		"Bold Italic":      "𝑩𝑰",
-		"Monospace":        "𝙼",
-		"Double Struck":    "𝔻",
-		"Sans Serif":       "𝖲",
-		"Bold Sans":        "𝗕",
-		"Italic Sans":      "𝘒",
-		"Bold Italic Sans": "𝙱",
-		"Script":           "𝒮",
-		"Bold Script":      "𝓑",
-		"Fraktur":          "𝔉",
-		"Bold Fraktur":     "𝕭",
-		"Small Caps":       "ᴀ",
-		"Reversed":         "🔄",
-		"Wide":             "Ｆ",
-	}
-	if emoji, ok := emojis[styleName]; ok {
-		return emoji
-	}
-	return "📝"
-}
+// // getStyleEmoji returns an emoji for each font style
+// func getStyleEmoji(styleName string) string {
+// 	emojis := map[string]string{
+// 		"Bold":             "𝐁",
+// 		"Italic":           "𝑰",
+// 		"Bold Italic":      "𝑩𝑰",
+// 		"Monospace":        "𝙼",
+// 		"Double Struck":    "𝔻",
+// 		"Sans Serif":       "𝖲",
+// 		"Bold Sans":        "𝗕",
+// 		"Italic Sans":      "𝘒",
+// 		"Bold Italic Sans": "𝙱",
+// 		"Script":           "𝒮",
+// 		"Bold Script":      "𝓑",
+// 		"Fraktur":          "𝔉",
+// 		"Bold Fraktur":     "𝕭",
+// 		"Small Caps":       "ᴀ",
+// 		"Reversed":         "🔄",
+// 		"Wide":             "Ｆ",
+// 	}
+// 	if emoji, ok := emojis[styleName]; ok {
+// 		return emoji
+// 	}
+// 	return "📝"
+// }
 
-// truncateString truncates a string to the specified length
-func truncateString(s string, maxLen int) string {
-	if len(s) <= maxLen {
-		return s
-	}
-	return s[:maxLen] + "..."
-}
+// // truncateString truncates a string to the specified length
+// func truncateString(s string, maxLen int) string {
+// 	if len(s) <= maxLen {
+// 		return s
+// 	}
+// 	return s[:maxLen] + "..."
+// }
 
 // startHTTPServer starts a simple HTTP server for health checks
 func startHTTPServer() {

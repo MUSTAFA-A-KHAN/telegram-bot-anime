@@ -4,6 +4,7 @@ go 1.22.3
 
 require (
 	github.com/STRockefeller/dictionaries v0.0.0-20230418055520-d602c50bb54f
+	github.com/encoredev/examples v0.0.0-20250715124804-d7a4417e0338
 	github.com/go-telegram-bot-api/telegram-bot-api v4.6.4+incompatible
 	github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.5.1
 	github.com/texttheater/golang-levenshtein/levenshtein v0.0.0-20200805054039-cae8b0eaed6c
@@ -12,6 +13,7 @@ require (
 
 require (
 	github.com/golang/snappy v0.0.4 // indirect
+	github.com/haguro/elevenlabs-go v0.2.4 // indirect
 	github.com/klauspost/compress v1.13.6 // indirect
 	github.com/montanaflynn/stats v0.7.1 // indirect
 	github.com/technoweenie/multipartstreamer v1.0.1 // indirect
