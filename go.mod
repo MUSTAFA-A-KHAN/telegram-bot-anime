@@ -1,6 +1,6 @@
 module github.com/MUSTAFA-A-KHAN/telegram-bot-anime
 
-go 1.22.3
+go 1.22
 
 require (
 	github.com/STRockefeller/dictionaries v0.0.0-20230418055520-d602c50bb54f
