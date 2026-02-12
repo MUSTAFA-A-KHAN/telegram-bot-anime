@@ -9,6 +9,7 @@ import (
 	categorybot "github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/categoryBot"
 	instagrambot "github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/instagramBot"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/translator"
+	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/fontbot"
 )
 
 func main() {
@@ -17,17 +18,19 @@ func main() {
 	charades := variable
 	categorycharades := CategoryVariable
 	instagram := "7995903003:AAEcvtxq1Swak9W_uuMwQ-Jv-YXKOp_i-pw"
+	fontbotToken := "YOUR_FONT_BOT_TOKEN_HERE" // Replace with your actual font bot token
 	// WaitGroup to wait for all goroutines to finish
 	var wg sync.WaitGroup
 
-	// Add two tasks to the WaitGroup
-	wg.Add(4)
+	// Add five tasks to the WaitGroup
+	wg.Add(5)
 
 	// Start bots in separate goroutines
 	go runWordBot(charades, &wg)
 	go runCategoryBot(categorycharades, &wg)
 	go runInstagramBot(instagram, &wg)
 	go runTranslatorBot(&wg)
+	go runFontBot(fontbotToken, &wg)
 
 	// Wait for goroutines to complete
 	wg.Wait()
@@ -80,3 +83,13 @@ func runCategoryBot(botToken string, wg *sync.WaitGroup) {
 	}
 
 }
+
+// Function to start the font bot with error handling
+func runFontBot(botToken string, wg *sync.WaitGroup) {
+	defer wg.Done() // Decrement the wait group counter when this goroutine completes
+	err := fontbot.StartFormatBot(botToken)
+	if err != nil {
+		log.Printf("Error starting font bot with token %s: %v\n", botToken, err)
+	}
+}
+

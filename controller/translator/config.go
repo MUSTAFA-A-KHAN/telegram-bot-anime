@@ -5,4 +5,6 @@ var (
 	OpenAIKey     = "dhjsdjjshdjsdhjs"
 	OPenAI        = "dhjsdjjshdjsdhjs"
 	AssemblyAIKey = "dhjsdjjshdjsdhjs"
+	APINinjas="dhjsdjjshdjsdhjs"
+	ElevenLabs="dhjsdjjshdjsdhjs"
 )
