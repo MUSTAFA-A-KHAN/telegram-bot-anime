@@ -605,6 +605,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		chatState.RUnlock()
 
 		if user != 0 && service.NormalizeAndCompare(message.Text, word) && message.From.ID != user {
+			time.Sleep(500 * time.Millisecond)
 			chatState.reset()
 			buttons := createSingleButtonKeyboard("🌟 Claim Leadership 🙋", "explain")
 			view.SendMessageWithButtons(bot, message.Chat.ID, fmt.Sprintf("%s! %s guessed the word %s.\n /word", telegramReactions[7], message.From.FirstName, word), buttons)
