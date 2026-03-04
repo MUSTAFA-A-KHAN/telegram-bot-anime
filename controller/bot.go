@@ -258,8 +258,15 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			view.SendMessage(bot, chatID, "Both datasets exported and sent to admin successfully.")
 			return
 		case "stats":
-			result := service.LeaderBoardList(client, "CrocEn")
+			view.SendMessage(bot, chatID, "Group stats are not available in a DM. You can view global stats using /statsglobal or /leaderstatsglobal.")
+		case "leaderstats":
+			view.SendMessage(bot, chatID, "Group stats are not available in a DM. You can view global stats using /statsglobal or /leaderstatsglobal.")
+		case "statsglobal":
+			result := service.LeaderBoardList(client, "CrocEn", 0)
 			view.SendMessagehtml(bot, chatID, result)
+		case "leaderstatsglobal":
+			result := service.LeaderBoardList(client, "CrocEnLeader", 0)
+			view.SendMessagehtml(bot, message.Chat.ID, result)
 		case "mystats":
 			// args := strings.Fields(message.CommandArguments())
 			// if len(args) < 1 {
@@ -276,9 +283,6 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			}
 			result := service.GetUserStatsByID(client, userID)
 			view.ReplyToMessage(bot, message.MessageID, chatID, result)
-		case "leaderstats":
-			result := service.LeaderBoardList(client, "CrocEnLeader")
-			view.SendMessagehtml(bot, message.Chat.ID, result)
 		case "installAI":
 			logs, err := installOllama.Install(true)
 			logsText := strings.Join(logs, "\n")
@@ -478,14 +482,20 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 	case "start":
 		view.SendMessage(bot, message.Chat.ID, "Welcome! Type /word to start a new game.")
 	case "stats":
-		result := service.LeaderBoardList(client, "CrocEn")
+		result := service.LeaderBoardList(client, "CrocEn", message.Chat.ID)
+		view.SendMessagehtml(bot, message.Chat.ID, result)
+	case "leaderstats":
+		result := service.LeaderBoardList(client, "CrocEnLeader", message.Chat.ID)
+		view.SendMessagehtml(bot, message.Chat.ID, result)
+	case "statsglobal":
+		result := service.LeaderBoardList(client, "CrocEn", 0)
+		view.SendMessagehtml(bot, message.Chat.ID, result)
+	case "leaderstatsglobal":
+		result := service.LeaderBoardList(client, "CrocEnLeader", 0)
 		view.SendMessagehtml(bot, message.Chat.ID, result)
 	case "mystats":
 		result := service.GetUserStatsByID(client, message.From.ID)
 		view.ReplyToMessage(bot, message.MessageID, chatID, result)
-	case "leaderstats":
-		result := service.LeaderBoardList(client, "CrocEnLeader")
-		view.SendMessagehtml(bot, message.Chat.ID, result)
 	case "rules":
 		rulesText := "*🎮 Game Rules 🎮*\n\n" +
 			"*Players:*\n" +

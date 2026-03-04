@@ -9,8 +9,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func LeaderBoardList(client *mongo.Client, collection string) string {
-	idCounts, err := repository.CountIDOccurrences(client, collection)
+func LeaderBoardList(client *mongo.Client, collection string, chatID int64) string {
+	idCounts, err := repository.CountIDOccurrences(client, collection, chatID)
 	if err != nil {
 		log.Fatal(err)
 	}
