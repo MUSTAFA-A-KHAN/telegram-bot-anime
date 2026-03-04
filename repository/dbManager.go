@@ -98,22 +98,29 @@ func ReadAllDoc(client *mongo.Client, collection string) []bson.M {
 }
 
 // Function to count occurrences of each ID along with the Name
-func CountIDOccurrences(client *mongo.Client, collection string) ([]map[string]interface{}, error) {
+func CountIDOccurrences(client *mongo.Client, collection string, chatID int64) ([]map[string]interface{}, error) {
 	database := client.Database("Telegram")
 	commentCollection := database.Collection(collection)
 
 	// Aggregation pipeline to count occurrences of each ID and include the Name
-	pipeline := mongo.Pipeline{
+	var pipeline mongo.Pipeline
+
+	// If chatID is provided (non-zero), filter by chat_ID
+	if chatID != 0 {
+		pipeline = append(pipeline, bson.D{{"$match", bson.D{{Key: "chat_ID", Value: chatID}}}})
+	}
+
+	pipeline = append(pipeline,
 		// Group by ID, count occurrences, and include Name
-		{{"$group", bson.D{
+		bson.D{{"$group", bson.D{
 			{Key: "_id", Value: "$ID"},                                    // Group by the "ID" field
 			{Key: "count", Value: bson.D{{Key: "$sum", Value: 1}}},        // Count occurrences
 			{Key: "Name", Value: bson.D{{Key: "$first", Value: "$Name"}}}, // Get the first "Name" encountered for the grouped ID
 		}}},
 
 		// Sort by count (descending)
-		{{"$sort", bson.D{{Key: "count", Value: -1}}}},
-	}
+		bson.D{{"$sort", bson.D{{Key: "count", Value: -1}}}},
+	)
 
 	// Execute the aggregation query
 	cursor, err := commentCollection.Aggregate(context.TODO(), pipeline)
