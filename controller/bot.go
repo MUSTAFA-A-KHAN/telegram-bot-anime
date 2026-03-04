@@ -699,7 +699,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 
 			// The Owl gives a stern warning
 			time.Sleep(800 * time.Millisecond)
-			view.SendMessage(bot, chatID, "🦉 *The Owl blinks slowly.*\n\"Be precise, traveler. Do not speak the word itself.\"")
+			// view.SendMessage(bot, chatID, "🦉 *The Owl blinks slowly.*\n\"Be precise, traveler. Do not speak the word itself.\"")
 
 			// Remove the inline keyboard (buttons) from the "claim leadership" message when someone starts leading
 			editMarkup := tgbotapi.NewEditMessageReplyMarkup(callback.Message.Chat.ID, callback.Message.MessageID, tgbotapi.InlineKeyboardMarkup{InlineKeyboard: [][]tgbotapi.InlineKeyboardButton{}})
