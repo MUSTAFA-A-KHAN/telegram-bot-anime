@@ -38,6 +38,23 @@ var (
 	stateMutex = &sync.RWMutex{}
 )
 
+const (
+	StickerOwlWatching = "CAACAgUAAxkBAAEwCnNnYW-OkgV7Odt9osVwoBSzLC6vsAACMhMAAj45CFdCstMoIYiPfjYE" // Using the existing ID
+	StickerCrocHappy   = ""
+	StickerCrocCurious = ""
+	StickerOwlNodding  = ""
+)
+
+// Helper to send a character message with a sticker
+func sendCharacterAction(bot *tgbotapi.BotAPI, chatID int64, stickerID string, text string) {
+	if stickerID != "" {
+		view.SendSticker(bot, chatID, stickerID)
+	}
+	msg := tgbotapi.NewMessage(chatID, text)
+	msg.ParseMode = "Markdown"
+	bot.Send(msg)
+}
+
 // telegramReactions is a map that holds the reactions for each chat, identified by chat ID.
 var telegramReactions = []string{
 	"👍",  // Thumbs Up 0
@@ -409,7 +426,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		chatState.RUnlock()
 
 		if service.NormalizeAndCompare(message.Text, word) && message.From.ID == chatState.User {
-			view.SendMessage(bot, chatID, fmt.Sprintf("%s ! You guessed the word '%s' correctly!", telegramReactions[7], word))
+			view.SendMessage(bot, chatID, fmt.Sprintf("🦉 Correct! %s ! You guessed the word '%s' correctly!", telegramReactions[7], word))
 			view.ReactToMessage(bot.Token, chatID, message.MessageID, telegramReactions[17], true)
 			view.ReactToMessage(bot.Token, chatID, message.MessageID, "⚡", true)
 			buttons := tgbotapi.NewInlineKeyboardMarkup(
@@ -522,8 +539,11 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			chatState.Leader = ""
 			chatState.Unlock()
 
-			view.SendSticker(bot, chatID, "CAACAgUAAxkBAAEwCnNnYW-OkgV7Odt9osVwoBSzLC6vsAACMhMAAj45CFdCstMoIYiPfjYE")
-			view.SendMessageWithButtons(bot, message.Chat.ID, "The word is ready! Click 'Explain' to start explaining it.", buttons)
+			// THE CHARACTER UPGRADE:
+			sendCharacterAction(bot, chatID, StickerOwlWatching,
+				"🦉 *The Owl ruffles its feathers in the moonlight.*\n\"A new secret has been placed in the forest. Who will step forward to explain?\"")
+
+			view.SendMessageWithButtons(bot, chatID, "🐊 *The Crocodile peeks from the reeds, waiting...*", buttons)
 		} else {
 			sentMsg, err := view.SendMessage(bot, message.Chat.ID, "A game is currently in progress.")
 			deleteWarningMessage(bot, message, sentMsg, err)
@@ -558,9 +578,10 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		}
 		chatState.RUnlock()
 
-		// Send chat action "typing" before sending hint
-		// chatAction := tgbotapi.NewChatAction(message.Chat.ID, tgbotapi.ChatTyping)
-		// bot.Send(chatAction)
+		// THE CHARACTER UPGRADE:
+		sendCharacterAction(bot, chatID, StickerCrocCurious, "🐊 *The Crocodile tilts his head.*\n\"Stuck already? I thought humans were supposed to be the smart ones!\"")
+
+		time.Sleep(1 * time.Second) // Let the Croc's joke land
 
 		// Send chat action "typing" before sending hint
 		chatAction := tgbotapi.NewChatAction(chatID, tgbotapi.ChatTyping)
@@ -606,8 +627,17 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 
 		if user != 0 && service.NormalizeAndCompare(message.Text, word) && message.From.ID != user {
 			chatState.reset()
+
+			// THE CHARACTER UPGRADE:
+			victoryText := fmt.Sprintf("🎊 *The forest erupts in cheers!*\n\n🦉 \"Correct. The word was indeed **%s**.\"\n🐊 \"WOW! [%s](tg://user?id=%d) is a genius! Can we play again? Can we?!\"",
+				word, message.From.FirstName, message.From.ID)
+
+			if StickerCrocHappy != "" {
+				view.SendSticker(bot, chatID, StickerCrocHappy)
+			}
 			buttons := createSingleButtonKeyboard("🌟 Claim Leadership 🙋", "explain")
-			view.SendMessageWithButtons(bot, message.Chat.ID, fmt.Sprintf("%s! %s guessed the word %s.\n /word", telegramReactions[7], message.From.FirstName, word), buttons)
+			view.SendMessageWithButtons(bot, chatID, victoryText, buttons)
+
 			go view.ReactToMessage(bot.Token, chatID, message.MessageID, "🔥", true)
 			go view.ReactToMessage(bot.Token, chatID, message.MessageID, "⚡", true)
 			go repository.InsertDoc(message.From.ID, message.From.FirstName, message.Chat.ID, client, "CrocEn")
@@ -637,6 +667,12 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		}
 		if chatState.User == 0 || (time.Since(chatState.LeadTimestamp) >= 600*time.Second && chatState.User != callback.From.ID) {
 			chatState.User = callback.From.ID
+
+			// THE CHARACTER UPGRADE: Owl nods in approval
+			if StickerOwlNodding != "" {
+				view.SendSticker(bot, chatID, StickerOwlNodding)
+			}
+
 			word, err := model.GetRandomWord()
 			if err != nil {
 				chatState.Unlock()
@@ -654,7 +690,16 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 				),
 			)
 			chatState.Word = word
-			view.SendMessageWithButtons(bot, callback.Message.Chat.ID, fmt.Sprintf(" [%s](tg://user?id=%d) is explaining the word!", callback.From.FirstName, callback.From.ID), buttons)
+
+			// THE CHARACTER UPGRADE:
+			text := fmt.Sprintf("🐊 *The Crocodile splashes happily!*\n\"Look! [%s](tg://user?id=%d) is going to tell us a story! I'm all ears... and teeth!\"",
+				callback.From.FirstName, callback.From.ID)
+
+			view.SendMessageWithButtons(bot, chatID, text, buttons)
+
+			// The Owl gives a stern warning
+			time.Sleep(800 * time.Millisecond)
+			view.SendMessage(bot, chatID, "🦉 *The Owl blinks slowly.*\n\"Be precise, traveler. Do not speak the word itself.\"")
 
 			// Remove the inline keyboard (buttons) from the "claim leadership" message when someone starts leading
 			editMarkup := tgbotapi.NewEditMessageReplyMarkup(callback.Message.Chat.ID, callback.Message.MessageID, tgbotapi.InlineKeyboardMarkup{InlineKeyboard: [][]tgbotapi.InlineKeyboardButton{}})
