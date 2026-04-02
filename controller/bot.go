@@ -636,6 +636,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		chatState.RUnlock()
 
 		if user != 0 && service.NormalizeAndCompare(message.Text, word) && message.From.ID != user {
+			time.Sleep(500 * time.Millisecond)
 			chatState.reset()
 
 			// THE CHARACTER UPGRADE:
