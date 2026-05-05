@@ -80,7 +80,7 @@ func Bot() {
 					if err != nil {
 						log.Print(err)
 					}
-				case "sayai":
+				case "sayAI", "sayai":
 					text := ""
 					if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
 
@@ -116,7 +116,7 @@ func Bot() {
 					if err != nil {
 						log.Print(err)
 					}
-				case "sayaiuk":
+				case "sayAIUK":
 					text := ""
 					if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
 
@@ -152,7 +152,7 @@ func Bot() {
 					if err != nil {
 						log.Print(err)
 					}
-				case "sayuk":
+				case "sayUK":
 					text := ""
 					if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
 
@@ -188,7 +188,7 @@ func Bot() {
 					if err != nil {
 						log.Print(err)
 					}
-				case "sayukfemale":
+				case "sayUKFemale":
 					text := ""
 					if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
 
@@ -277,7 +277,7 @@ func Bot() {
 					if err != nil {
 						log.Print(err)
 					}
-				case "saymale":
+				case "saymale", "sayMale":
 					text := ""
 					if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
 
@@ -313,7 +313,7 @@ func Bot() {
 					if err != nil {
 						log.Print(err)
 					}
-				case "sayfemale":
+				case "sayfemale", "sayFemale":
 					text := ""
 					if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
 
@@ -348,7 +348,7 @@ func Bot() {
 					if err != nil {
 						log.Print(err)
 					}
-				case "ar":
+				case "ar", "Ar":
 					text := ""
 					if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
 						photo := message.ReplyToMessage.Photo
@@ -453,7 +453,7 @@ func Bot() {
 							log.Printf("Error sending translation: %v", err)
 						}
 					}
-				case "fr":
+				case "fr", "Fr":
 					if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
 						photo := message.ReplyToMessage.Photo
 						if len(photo) == 0 {
@@ -671,18 +671,9 @@ func normalizeCommand(text, botUserName string) string {
 	normalized := strings.TrimPrefix(cmd[0], "/")
 	if botUserName != "" {
 		normalized = strings.TrimSuffix(normalized, "@"+botUserName)
-		normalized = strings.TrimSuffix(normalized, "@"+strings.ToLower(botUserName))
 	}
 
-	lower := strings.ToLower(normalized)
-	if strings.HasPrefix(lower, "say:") {
-		return "say:" + normalized[len("say:"):]
-	}
-	if utilities.IsLikelyRawVoiceToken(normalized) {
-		return normalized
-	}
-
-	return lower
+	return normalized
 }
 
 func writeImage(chatID int64, bot *tgbotapi.BotAPI, photo []tgbotapi.PhotoSize) string {
