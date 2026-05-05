@@ -19,6 +19,10 @@ func isLikelyRawToken(s string) bool {
 	return tokenPattern.MatchString(s)
 }
 
+func IsLikelyRawVoiceToken(s string) bool {
+	return isLikelyRawToken(s)
+}
+
 func normalizeLookupKey(s string) string {
 	var b strings.Builder
 	for _, r := range s {
