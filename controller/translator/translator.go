@@ -39,6 +39,8 @@ func (a *Audio) Read(p []byte) (n int, err error) {
 
 type TextTranslator struct{}
 
+const llmErrorMessage = "something went wrong"
+
 func NewTextTranslator() *TextTranslator {
 	return &TextTranslator{}
 }
@@ -154,6 +156,10 @@ func (t *TextTranslator) ReadItLoudUKFemale(text string) string {
 }
 
 func (t *TextTranslator) ReadItLoud(text string) string {
+	if text == "" {
+		return ""
+	}
+
 	client := &http.Client{}
 
 	// Build JSON properly
@@ -174,33 +180,43 @@ func (t *TextTranslator) ReadItLoud(text string) string {
 
 	jsonData, err := json.Marshal(reqBody)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("Error marshaling Murf request: %v", err)
+		return ""
 	}
 
 	req, err := http.NewRequest("POST", "https://api.murf.ai/v1/speech/generate", bytes.NewReader(jsonData))
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("Error creating Murf request: %v", err)
+		return ""
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("api-key", "ap2_23dcac5c-ad9f-4435-877e-4706abf4a9e3")
 
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("Error calling Murf API: %v", err)
+		return ""
 	}
 	defer resp.Body.Close()
 
 	bodyText, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("Error reading Murf response: %v", err)
+		return ""
 	}
 
 	var result Response
 	if err := json.Unmarshal(bodyText, &result); err != nil {
-		log.Fatal(err)
+		log.Printf("Error parsing Murf response: %v", err)
+		return ""
+	}
+	if result.AudioFile == "" {
+		log.Printf("Murf response did not include an audio file: %s", string(bodyText))
+		return ""
 	}
 	if err := utilities.DownloadFile("output.mp3", result.AudioFile); err != nil {
-		log.Fatal(err)
+		log.Printf("Error downloading Murf audio: %v", err)
+		return ""
 	}
 
 	return result.AudioFile
@@ -424,10 +440,10 @@ func (t *TextTranslator) pollTranscriptionResult(transcriptID string) (string, e
 
 func (t *TextTranslator) TranslateToEnglish(text string) string {
 	if OpenAIKey == "" {
-		return "OpenAI API key not configured"
+		return llmErrorMessage
 	}
 
-	url := "https://glama.ai/api/gateway/openai/v1/chat/completions"
+	url := "https://api.llm7.io/v1/chat/completions"
 
 	payload := map[string]interface{}{
 		"model": "openai/gpt-4o",
@@ -438,12 +454,12 @@ func (t *TextTranslator) TranslateToEnglish(text string) string {
 
 	jsonData, err := json.Marshal(payload)
 	if err != nil {
-		return fmt.Sprintf("Error: %v", err)
+		return llmErrorMessage
 	}
 
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
-		return fmt.Sprintf("Error: %v", err)
+		return llmErrorMessage
 	}
 
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", OpenAIKey))
@@ -452,22 +468,22 @@ func (t *TextTranslator) TranslateToEnglish(text string) string {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return fmt.Sprintf("Error: %v", err)
+		return llmErrorMessage
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Sprintf("Error: %v", err)
+		return llmErrorMessage
 	}
 
 	if resp.StatusCode != 200 {
-		return fmt.Sprintf("API Error: %d - %s", resp.StatusCode, string(body))
+		return llmErrorMessage
 	}
 
 	var response map[string]interface{}
 	if err := json.Unmarshal(body, &response); err != nil {
-		return fmt.Sprintf("Parse error: %v", err)
+		return llmErrorMessage
 	}
 
 	if choices, ok := response["choices"].([]interface{}); ok && len(choices) > 0 {
@@ -480,15 +496,15 @@ func (t *TextTranslator) TranslateToEnglish(text string) string {
 		}
 	}
 
-	return "Translation failed"
+	return llmErrorMessage
 }
 
 func (t *TextTranslator) TranslateToRussian(text string) string {
 	if OpenAIKey == "" {
-		return "OpenAI API key not configured"
+		return llmErrorMessage
 	}
 
-	url := "https://glama.ai/api/gateway/openai/v1/chat/completions"
+	url := "https://api.llm7.io/v1/chat/completions"
 
 	payload := map[string]interface{}{
 		"model": "openai/gpt-4o",
@@ -499,12 +515,12 @@ func (t *TextTranslator) TranslateToRussian(text string) string {
 
 	jsonData, err := json.Marshal(payload)
 	if err != nil {
-		return fmt.Sprintf("Error: %v", err)
+		return llmErrorMessage
 	}
 
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
-		return fmt.Sprintf("Error: %v", err)
+		return llmErrorMessage
 	}
 
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", OpenAIKey))
@@ -513,22 +529,22 @@ func (t *TextTranslator) TranslateToRussian(text string) string {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return fmt.Sprintf("Error: %v", err)
+		return llmErrorMessage
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Sprintf("Error: %v", err)
+		return llmErrorMessage
 	}
 
 	if resp.StatusCode != 200 {
-		return fmt.Sprintf("API Error: %d - %s", resp.StatusCode, string(body))
+		return llmErrorMessage
 	}
 
 	var response map[string]interface{}
 	if err := json.Unmarshal(body, &response); err != nil {
-		return fmt.Sprintf("Parse error: %v", err)
+		return llmErrorMessage
 	}
 
 	if choices, ok := response["choices"].([]interface{}); ok && len(choices) > 0 {
@@ -541,15 +557,15 @@ func (t *TextTranslator) TranslateToRussian(text string) string {
 		}
 	}
 
-	return "Translation failed"
+	return llmErrorMessage
 }
 
 func (t *TextTranslator) TranslateToFrench(text string) string {
 	if OpenAIKey == "" {
-		return "OpenAI API key not configured"
+		return llmErrorMessage
 	}
 
-	url := "https://glama.ai/api/gateway/openai/v1/chat/completions"
+	url := "https://api.llm7.io/v1/chat/completions"
 
 	payload := map[string]interface{}{
 		"model": "openai/gpt-4o",
@@ -560,12 +576,12 @@ func (t *TextTranslator) TranslateToFrench(text string) string {
 
 	jsonData, err := json.Marshal(payload)
 	if err != nil {
-		return fmt.Sprintf("Error: %v", err)
+		return llmErrorMessage
 	}
 
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
-		return fmt.Sprintf("Error: %v", err)
+		return llmErrorMessage
 	}
 
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", OpenAIKey))
@@ -574,22 +590,22 @@ func (t *TextTranslator) TranslateToFrench(text string) string {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return fmt.Sprintf("Error: %v", err)
+		return llmErrorMessage
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Sprintf("Error: %v", err)
+		return llmErrorMessage
 	}
 
 	if resp.StatusCode != 200 {
-		return fmt.Sprintf("API Error: %d - %s", resp.StatusCode, string(body))
+		return llmErrorMessage
 	}
 
 	var response map[string]interface{}
 	if err := json.Unmarshal(body, &response); err != nil {
-		return fmt.Sprintf("Parse error: %v", err)
+		return llmErrorMessage
 	}
 
 	if choices, ok := response["choices"].([]interface{}); ok && len(choices) > 0 {
@@ -602,15 +618,15 @@ func (t *TextTranslator) TranslateToFrench(text string) string {
 		}
 	}
 
-	return "Translation failed"
+	return llmErrorMessage
 }
 
 func (t *TextTranslator) TranslateToArabic(text string) string {
 	if OpenAIKey == "" {
-		return "OpenAI API key not configured"
+		return llmErrorMessage
 	}
 
-	url := "https://glama.ai/api/gateway/openai/v1/chat/completions"
+	url := "https://api.llm7.io/v1/chat/completions"
 
 	payload := map[string]interface{}{
 		"model": "openai/gpt-4o",
@@ -621,12 +637,12 @@ func (t *TextTranslator) TranslateToArabic(text string) string {
 
 	jsonData, err := json.Marshal(payload)
 	if err != nil {
-		return fmt.Sprintf("Error: %v", err)
+		return llmErrorMessage
 	}
 
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
-		return fmt.Sprintf("Error: %v", err)
+		return llmErrorMessage
 	}
 
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", OpenAIKey))
@@ -635,22 +651,22 @@ func (t *TextTranslator) TranslateToArabic(text string) string {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return fmt.Sprintf("Error: %v", err)
+		return llmErrorMessage
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Sprintf("Error: %v", err)
+		return llmErrorMessage
 	}
 
 	if resp.StatusCode != 200 {
-		return fmt.Sprintf("API Error: %d - %s", resp.StatusCode, string(body))
+		return llmErrorMessage
 	}
 
 	var response map[string]interface{}
 	if err := json.Unmarshal(body, &response); err != nil {
-		return fmt.Sprintf("Parse error: %v", err)
+		return llmErrorMessage
 	}
 
 	if choices, ok := response["choices"].([]interface{}); ok && len(choices) > 0 {
@@ -663,15 +679,15 @@ func (t *TextTranslator) TranslateToArabic(text string) string {
 		}
 	}
 
-	return "Translation failed"
+	return llmErrorMessage
 }
 
 func (t *TextTranslator) GetSynonyms(text string) string {
 	if OpenAIKey == "" {
-		return "OpenAI API key not configured"
+		return llmErrorMessage
 	}
 
-	url := "https://glama.ai/api/gateway/openai/v1/chat/completions"
+	url := "https://api.llm7.io/v1/chat/completions"
 
 	payload := map[string]interface{}{
 		"model": "openai/gpt-4o",
@@ -682,12 +698,12 @@ func (t *TextTranslator) GetSynonyms(text string) string {
 
 	jsonData, err := json.Marshal(payload)
 	if err != nil {
-		return fmt.Sprintf("Error: %v", err)
+		return llmErrorMessage
 	}
 
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
-		return fmt.Sprintf("Error: %v", err)
+		return llmErrorMessage
 	}
 
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", OpenAIKey))
@@ -696,22 +712,22 @@ func (t *TextTranslator) GetSynonyms(text string) string {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return fmt.Sprintf("Error: %v", err)
+		return llmErrorMessage
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Sprintf("Error: %v", err)
+		return llmErrorMessage
 	}
 
 	if resp.StatusCode != 200 {
-		return fmt.Sprintf("API Error: %d - %s", resp.StatusCode, string(body))
+		return llmErrorMessage
 	}
 
 	var response map[string]interface{}
 	if err := json.Unmarshal(body, &response); err != nil {
-		return fmt.Sprintf("Parse error: %v", err)
+		return llmErrorMessage
 	}
 
 	if choices, ok := response["choices"].([]interface{}); ok && len(choices) > 0 {
@@ -724,15 +740,15 @@ func (t *TextTranslator) GetSynonyms(text string) string {
 		}
 	}
 
-	return "Translation failed"
+	return llmErrorMessage
 }
 
 func (t *TextTranslator) GetAntonyms(text string) string {
 	if OpenAIKey == "" {
-		return "OpenAI API key not configured"
+		return llmErrorMessage
 	}
 
-	url := "https://glama.ai/api/gateway/openai/v1/chat/completions"
+	url := "https://api.llm7.io/v1/chat/completions"
 
 	payload := map[string]interface{}{
 		"model": "openai/gpt-4o",
@@ -743,12 +759,12 @@ func (t *TextTranslator) GetAntonyms(text string) string {
 
 	jsonData, err := json.Marshal(payload)
 	if err != nil {
-		return fmt.Sprintf("Error: %v", err)
+		return llmErrorMessage
 	}
 
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
-		return fmt.Sprintf("Error: %v", err)
+		return llmErrorMessage
 	}
 
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", OpenAIKey))
@@ -757,22 +773,22 @@ func (t *TextTranslator) GetAntonyms(text string) string {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return fmt.Sprintf("Error: %v", err)
+		return llmErrorMessage
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Sprintf("Error: %v", err)
+		return llmErrorMessage
 	}
 
 	if resp.StatusCode != 200 {
-		return fmt.Sprintf("API Error: %d - %s", resp.StatusCode, string(body))
+		return llmErrorMessage
 	}
 
 	var response map[string]interface{}
 	if err := json.Unmarshal(body, &response); err != nil {
-		return fmt.Sprintf("Parse error: %v", err)
+		return llmErrorMessage
 	}
 
 	if choices, ok := response["choices"].([]interface{}); ok && len(choices) > 0 {
@@ -785,15 +801,15 @@ func (t *TextTranslator) GetAntonyms(text string) string {
 		}
 	}
 
-	return "Translation failed"
+	return llmErrorMessage
 }
 
 func (t *TextTranslator) GetDefinition(text string) string {
 	if OpenAIKey == "" {
-		return "OpenAI API key not configured"
+		return llmErrorMessage
 	}
 
-	url := "https://glama.ai/api/gateway/openai/v1/chat/completions"
+	url := "https://api.llm7.io/v1/chat/completions"
 
 	payload := map[string]interface{}{
 		"model": "openai/gpt-4o",
@@ -804,12 +820,12 @@ func (t *TextTranslator) GetDefinition(text string) string {
 
 	jsonData, err := json.Marshal(payload)
 	if err != nil {
-		return fmt.Sprintf("Error: %v", err)
+		return llmErrorMessage
 	}
 
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
-		return fmt.Sprintf("Error: %v", err)
+		return llmErrorMessage
 	}
 
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", OpenAIKey))
@@ -818,22 +834,22 @@ func (t *TextTranslator) GetDefinition(text string) string {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return fmt.Sprintf("Error: %v", err)
+		return llmErrorMessage
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Sprintf("Error: %v", err)
+		return llmErrorMessage
 	}
 
 	if resp.StatusCode != 200 {
-		return fmt.Sprintf("API Error: %d - %s", resp.StatusCode, string(body))
+		return llmErrorMessage
 	}
 
 	var response map[string]interface{}
 	if err := json.Unmarshal(body, &response); err != nil {
-		return fmt.Sprintf("Parse error: %v", err)
+		return llmErrorMessage
 	}
 
 	if choices, ok := response["choices"].([]interface{}); ok && len(choices) > 0 {
@@ -846,15 +862,15 @@ func (t *TextTranslator) GetDefinition(text string) string {
 		}
 	}
 
-	return "Translation failed"
+	return llmErrorMessage
 }
 
 func (t *TextTranslator) GetAbbreviation(text string) string {
 	if OpenAIKey == "" {
-		return "OpenAI API key not configured"
+		return llmErrorMessage
 	}
 
-	url := "https://glama.ai/api/gateway/openai/v1/chat/completions"
+	url := "https://api.llm7.io/v1/chat/completions"
 
 	payload := map[string]interface{}{
 		"model": "openai/gpt-4o",
@@ -865,12 +881,12 @@ func (t *TextTranslator) GetAbbreviation(text string) string {
 
 	jsonData, err := json.Marshal(payload)
 	if err != nil {
-		return fmt.Sprintf("Error: %v", err)
+		return llmErrorMessage
 	}
 
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
-		return fmt.Sprintf("Error: %v", err)
+		return llmErrorMessage
 	}
 
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", OpenAIKey))
@@ -879,22 +895,22 @@ func (t *TextTranslator) GetAbbreviation(text string) string {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return fmt.Sprintf("Error: %v", err)
+		return llmErrorMessage
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Sprintf("Error: %v", err)
+		return llmErrorMessage
 	}
 
 	if resp.StatusCode != 200 {
-		return fmt.Sprintf("API Error: %d - %s", resp.StatusCode, string(body))
+		return llmErrorMessage
 	}
 
 	var response map[string]interface{}
 	if err := json.Unmarshal(body, &response); err != nil {
-		return fmt.Sprintf("Parse error: %v", err)
+		return llmErrorMessage
 	}
 
 	if choices, ok := response["choices"].([]interface{}); ok && len(choices) > 0 {
@@ -907,7 +923,7 @@ func (t *TextTranslator) GetAbbreviation(text string) string {
 		}
 	}
 
-	return "Translation failed"
+	return llmErrorMessage
 }
 
 func (t *TextTranslator) WriteImage(text string, imagePath string) string {
@@ -922,10 +938,10 @@ func (t *TextTranslator) WriteImage(text string, imagePath string) string {
 	encoded := base64.StdEncoding.EncodeToString(imgData)
 
 	if OpenAIKey == "" {
-		return "OpenAI API key not configured"
+		return llmErrorMessage
 	}
 
-	url := "https://glama.ai/api/gateway/openai/v1/chat/completions"
+	url := "https://api.llm7.io/v1/chat/completions"
 
 	payload := map[string]interface{}{
 		"model": "openai/gpt-4o",
@@ -949,12 +965,12 @@ func (t *TextTranslator) WriteImage(text string, imagePath string) string {
 	}
 	jsonData, err := json.Marshal(payload)
 	if err != nil {
-		return fmt.Sprintf("Error: %v", err)
+		return llmErrorMessage
 	}
 
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
-		return fmt.Sprintf("Error: %v", err)
+		return llmErrorMessage
 	}
 
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", OpenAIKey))
@@ -963,22 +979,22 @@ func (t *TextTranslator) WriteImage(text string, imagePath string) string {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return fmt.Sprintf("Error: %v", err)
+		return llmErrorMessage
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Sprintf("Error: %v", err)
+		return llmErrorMessage
 	}
 
 	if resp.StatusCode != 200 {
-		return fmt.Sprintf("API Error: %d - %s", resp.StatusCode, string(body))
+		return llmErrorMessage
 	}
 
 	var response map[string]interface{}
 	if err := json.Unmarshal(body, &response); err != nil {
-		return fmt.Sprintf("Parse error: %v", err)
+		return llmErrorMessage
 	}
 
 	if choices, ok := response["choices"].([]interface{}); ok && len(choices) > 0 {
@@ -991,7 +1007,7 @@ func (t *TextTranslator) WriteImage(text string, imagePath string) string {
 		}
 	}
 
-	return "Translation failed"
+	return llmErrorMessage
 }
 
 func (t *TextTranslator) TextToSpeechElevenLabs(text string) string {

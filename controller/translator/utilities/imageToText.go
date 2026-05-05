@@ -8,6 +8,7 @@ import (
 	"log"
 	"mime/multipart"
 	"net/http"
+	urlpkg "net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -64,6 +65,14 @@ func SaveImage(bot *tgbotapi.BotAPI, chatID int64, photo tgbotapi.PhotoSize) (st
 }
 
 func DownloadFile(filepath string, url string) error {
+	parsedURL, err := urlpkg.Parse(url)
+	if err != nil {
+		return fmt.Errorf("invalid download URL: %w", err)
+	}
+	if parsedURL.Scheme != "http" && parsedURL.Scheme != "https" {
+		return fmt.Errorf("download URL must use http or https")
+	}
+
 	resp, err := http.Get(url)
 	if err != nil {
 		return err

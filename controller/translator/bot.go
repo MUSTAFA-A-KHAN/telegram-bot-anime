@@ -39,7 +39,7 @@ func Bot() {
 			text := message.Text
 
 			log.Printf("[%s] %s", message.From.UserName, message.Text)
-			cmd := strings.TrimPrefix(message.Text, "/")
+			cmd := normalizeCommand(message.Text, bot.Self.UserName)
 			if message.ReplyToMessage != nil {
 				switch cmd {
 				case "start":
@@ -66,18 +66,19 @@ func Bot() {
 					// Example 1: Send a local file
 					file, err := os.Open("outputElevenLabFemale.mp3")
 					if err != nil {
-						log.Fatal(err)
+						log.Print(err)
 					}
 					defer file.Close()
 
-					doc := tgbotapi.NewDocument(chatID, tgbotapi.FileReader{
+					doc := tgbotapi.NewVoice(chatID, tgbotapi.FileReader{
 						Name:   "outputElevenLabFemale.mp3",
 						Reader: file,
 					})
+					doc.ReplyToMessageID = message.MessageID
 
 					_, err = bot.Send(doc)
 					if err != nil {
-						log.Fatal(err)
+						log.Print(err)
 					}
 				case "sayAI":
 					text := ""
@@ -101,18 +102,19 @@ func Bot() {
 					// Example 1: Send a local file
 					file, err := os.Open("outputElevenLab.mp3")
 					if err != nil {
-						log.Fatal(err)
+						log.Print(err)
 					}
 					defer file.Close()
 
-					doc := tgbotapi.NewDocument(chatID, tgbotapi.FileReader{
+					doc := tgbotapi.NewVoice(chatID, tgbotapi.FileReader{
 						Name:   "outputElevenLab.mp3",
 						Reader: file,
 					})
+					doc.ReplyToMessageID = message.MessageID
 
 					_, err = bot.Send(doc)
 					if err != nil {
-						log.Fatal(err)
+						log.Print(err)
 					}
 				case "sayAIUK":
 					text := ""
@@ -136,18 +138,19 @@ func Bot() {
 					// Example 1: Send a local file
 					file, err := os.Open("outputElevenLabUK.mp3")
 					if err != nil {
-						log.Fatal(err)
+						log.Print(err)
 					}
 					defer file.Close()
 
-					doc := tgbotapi.NewDocument(chatID, tgbotapi.FileReader{
+					doc := tgbotapi.NewVoice(chatID, tgbotapi.FileReader{
 						Name:   "outputElevenLabUK.mp3",
 						Reader: file,
 					})
+					doc.ReplyToMessageID = message.MessageID
 
 					_, err = bot.Send(doc)
 					if err != nil {
-						log.Fatal(err)
+						log.Print(err)
 					}
 				case "sayUK":
 					text := ""
@@ -171,18 +174,19 @@ func Bot() {
 					// Example 1: Send a local file
 					file, err := os.Open("outputUK.mp3")
 					if err != nil {
-						log.Fatal(err)
+						log.Print(err)
 					}
 					defer file.Close()
 
-					doc := tgbotapi.NewDocument(chatID, tgbotapi.FileReader{
+					doc := tgbotapi.NewVoice(chatID, tgbotapi.FileReader{
 						Name:   "outputUK.mp3",
 						Reader: file,
 					})
+					doc.ReplyToMessageID = message.MessageID
 
 					_, err = bot.Send(doc)
 					if err != nil {
-						log.Fatal(err)
+						log.Print(err)
 					}
 				case "sayUKFemale":
 					text := ""
@@ -206,18 +210,19 @@ func Bot() {
 					// Example 1: Send a local file
 					file, err := os.Open("outputUKFemale.mp3")
 					if err != nil {
-						log.Fatal(err)
+						log.Print(err)
 					}
 					defer file.Close()
 
-					doc := tgbotapi.NewDocument(chatID, tgbotapi.FileReader{
+					doc := tgbotapi.NewVoice(chatID, tgbotapi.FileReader{
 						Name:   "outputUKFemale.mp3",
 						Reader: file,
 					})
+					doc.ReplyToMessageID = message.MessageID
 
 					_, err = bot.Send(doc)
 					if err != nil {
-						log.Fatal(err)
+						log.Print(err)
 					}
 				case "say":
 					text := ""
@@ -233,28 +238,46 @@ func Bot() {
 						// Get the text from the message being replied to
 						text = message.ReplyToMessage.Text
 					}
+					if strings.TrimSpace(text) == "" {
+						msg := tgbotapi.NewMessage(chatID, "Please reply to a text message or a photo with readable text.")
+						msg.ReplyToMessageID = message.MessageID
+						if _, err := bot.Send(msg); err != nil {
+							log.Printf("Error sending empty text warning: %v", err)
+						}
+						break
+					}
 
 					// Call ReadItLoud to convert the text to speech (assuming it returns an Audio struct)
 					Voice := translator.ReadItLoud(text)
+					if Voice == "" {
+						msg := tgbotapi.NewMessage(chatID, "Could not generate voice for this message.")
+						msg.ReplyToMessageID = message.MessageID
+						if _, err := bot.Send(msg); err != nil {
+							log.Printf("Error sending voice generation warning: %v", err)
+						}
+						break
+					}
 					tgbotapi.NewMessage(chatID, Voice)
 
 					// Example 1: Send a local file
 					file, err := os.Open("output.mp3")
 					if err != nil {
-						log.Fatal(err)
+						log.Print(err)
+						break
 					}
 					defer file.Close()
 
-					doc := tgbotapi.NewDocument(chatID, tgbotapi.FileReader{
+					doc := tgbotapi.NewVoice(chatID, tgbotapi.FileReader{
 						Name:   "output.mp3",
 						Reader: file,
 					})
+					doc.ReplyToMessageID = message.MessageID
 
 					_, err = bot.Send(doc)
 					if err != nil {
-						log.Fatal(err)
+						log.Print(err)
 					}
-				case "saymale":
+				case "saymale", "sayMale":
 					text := ""
 					if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
 
@@ -276,20 +299,21 @@ func Bot() {
 					// Example 1: Send a local file
 					file, err := os.Open("output.mp3")
 					if err != nil {
-						log.Fatal(err)
+						log.Print(err)
 					}
 					defer file.Close()
 
-					doc := tgbotapi.NewDocument(chatID, tgbotapi.FileReader{
+					voice := tgbotapi.NewVoice(chatID, tgbotapi.FileReader{
 						Name:   "output.mp3",
 						Reader: file,
 					})
+					voice.ReplyToMessageID = message.MessageID
 
-					_, err = bot.Send(doc)
+					_, err = bot.Send(voice)
 					if err != nil {
-						log.Fatal(err)
+						log.Print(err)
 					}
-				case "sayfemale":
+				case "sayfemale", "sayFemale":
 					text := ""
 					if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
 
@@ -310,18 +334,19 @@ func Bot() {
 					// Example 1: Send a local file
 					file, err := os.Open("outputFemale.mp3")
 					if err != nil {
-						log.Fatal(err)
+						log.Print(err)
 					}
 					defer file.Close()
 
-					doc := tgbotapi.NewDocument(chatID, tgbotapi.FileReader{
+					voice := tgbotapi.NewVoice(chatID, tgbotapi.FileReader{
 						Name:   "outputFemale.mp3",
 						Reader: file,
 					})
+					voice.ReplyToMessageID = message.MessageID
 
-					_, err = bot.Send(doc)
+					_, err = bot.Send(voice)
 					if err != nil {
-						log.Fatal(err)
+						log.Print(err)
 					}
 				case "ar":
 					text := ""
@@ -338,6 +363,7 @@ func Bot() {
 						response := fmt.Sprintf("\n\nArabic Translation: %s", arabicTranslation)
 
 						msg := tgbotapi.NewMessage(chatID, response)
+						msg.ReplyToMessageID = message.MessageID
 						_, err = bot.Send(msg)
 						if err != nil {
 							log.Printf("Error sending translation: %v", err)
@@ -352,6 +378,7 @@ func Bot() {
 						response := fmt.Sprintf(" %s\n", arabicTranslation)
 
 						msg := tgbotapi.NewMessage(chatID, response)
+						msg.ReplyToMessageID = message.MessageID
 						_, err := bot.Send(msg)
 						if err != nil {
 							log.Printf("Error sending translation: %v", err)
@@ -372,6 +399,7 @@ func Bot() {
 						response := fmt.Sprintf("\n\nArabic Translation: %s", arabicTranslation)
 
 						msg := tgbotapi.NewMessage(chatID, response)
+						msg.ReplyToMessageID = message.MessageID
 						_, err = bot.Send(msg)
 						if err != nil {
 							log.Printf("Error sending translation: %v", err)
@@ -385,6 +413,7 @@ func Bot() {
 						response := fmt.Sprintf("English: %s\n", englishTranslation)
 
 						msg := tgbotapi.NewMessage(chatID, response)
+						msg.ReplyToMessageID = message.MessageID
 						_, err := bot.Send(msg)
 						if err != nil {
 							log.Printf("Error sending translation: %v", err)
@@ -404,6 +433,7 @@ func Bot() {
 						response := fmt.Sprintf("\n\n Russian Translation: %s", arabicTranslation)
 
 						msg := tgbotapi.NewMessage(chatID, response)
+						msg.ReplyToMessageID = message.MessageID
 						_, err = bot.Send(msg)
 						if err != nil {
 							log.Printf("Error sending translation: %v", err)
@@ -417,6 +447,7 @@ func Bot() {
 						response := fmt.Sprintf("Russian: %s\n", russianTranslation)
 
 						msg := tgbotapi.NewMessage(chatID, response)
+						msg.ReplyToMessageID = message.MessageID
 						_, err := bot.Send(msg)
 						if err != nil {
 							log.Printf("Error sending translation: %v", err)
@@ -437,6 +468,7 @@ func Bot() {
 						response := fmt.Sprintf("\n\nArabic Translation: %s", arabicTranslation)
 
 						msg := tgbotapi.NewMessage(chatID, response)
+						msg.ReplyToMessageID = message.MessageID
 						_, err = bot.Send(msg)
 						if err != nil {
 							log.Printf("Error sending translation: %v", err)
@@ -450,6 +482,7 @@ func Bot() {
 						response := fmt.Sprintf("French: %s\n", frenchTranslation)
 
 						msg := tgbotapi.NewMessage(chatID, response)
+						msg.ReplyToMessageID = message.MessageID
 						_, err := bot.Send(msg)
 						if err != nil {
 							log.Printf("Error sending translation: %v", err)
@@ -465,6 +498,7 @@ func Bot() {
 						response := fmt.Sprintf("%s: \n:%s", text, abbreviation)
 
 						msg := tgbotapi.NewMessage(chatID, response)
+						msg.ReplyToMessageID = message.MessageID
 						_, err := bot.Send(msg)
 						if err != nil {
 							log.Printf("Error sending translation: %v", err)
@@ -481,6 +515,7 @@ func Bot() {
 					response := fmt.Sprintf("English: %s\n\nArabic: %s", englishTranslation, arabicTranslation)
 
 					msg := tgbotapi.NewMessage(chatID, response)
+					msg.ReplyToMessageID = message.MessageID
 					_, err := bot.Send(msg)
 					if err != nil {
 						log.Printf("Error sending translation: %v", err)
@@ -494,6 +529,7 @@ func Bot() {
 					response := fmt.Sprintf("Synonyms for the word %s \n:%s", text, synonyms)
 
 					msg := tgbotapi.NewMessage(chatID, response)
+					msg.ReplyToMessageID = message.MessageID
 					_, err := bot.Send(msg)
 					if err != nil {
 						log.Printf("Error sending translation: %v", err)
@@ -507,6 +543,7 @@ func Bot() {
 					response := fmt.Sprintf("Antonyms for the word %s \n:%s", text, antonyms)
 
 					msg := tgbotapi.NewMessage(chatID, response)
+					msg.ReplyToMessageID = message.MessageID
 					_, err := bot.Send(msg)
 					if err != nil {
 						log.Printf("Error sending translation: %v", err)
@@ -520,6 +557,7 @@ func Bot() {
 					response := fmt.Sprintf(" %s \n:%s", text, definition)
 
 					msg := tgbotapi.NewMessage(chatID, response)
+					msg.ReplyToMessageID = message.MessageID
 					_, err := bot.Send(msg)
 					if err != nil {
 						log.Printf("Error sending translation: %v", err)
@@ -536,6 +574,7 @@ func Bot() {
 						response := extractedText
 
 						msg := tgbotapi.NewMessage(chatID, response)
+						msg.ReplyToMessageID = message.MessageID
 						msg.ParseMode = tgbotapi.ModeMarkdown
 						_, err2 := bot.Send(msg)
 						if err2 != nil {
@@ -555,6 +594,7 @@ func Bot() {
 					fmt.Println(imgToTxt)
 					fmt.Println(imagePath)
 					msg := tgbotapi.NewMessage(chatID, imgToTxt)
+					msg.ReplyToMessageID = message.MessageID
 					_, err2 := bot.Send(msg)
 					if err2 != nil {
 						log.Printf("Error sending translation: %v", err)
@@ -585,18 +625,19 @@ func Bot() {
 					// Example 1: Send a local file
 					file, err := os.Open(voiceID + ".mp3")
 					if err != nil {
-						log.Fatal(err)
+						log.Print(err)
 					}
 					defer file.Close()
 
-					doc := tgbotapi.NewDocument(chatID, tgbotapi.FileReader{
+					doc := tgbotapi.NewVoice(chatID, tgbotapi.FileReader{
 						Name:   voiceID + ".mp3",
 						Reader: file,
 					})
+					doc.ReplyToMessageID = message.MessageID
 
 					_, err = bot.Send(doc)
 					if err != nil {
-						log.Fatal(err)
+						log.Print(err)
 					}
 
 					// t:=message.ReplyToMessage.Photo
@@ -619,6 +660,20 @@ func Bot() {
 			}
 		}
 	}
+}
+
+func normalizeCommand(text, botUserName string) string {
+	cmd := strings.Fields(strings.TrimSpace(text))
+	if len(cmd) == 0 {
+		return ""
+	}
+
+	normalized := strings.TrimPrefix(cmd[0], "/")
+	if botUserName != "" {
+		normalized = strings.TrimSuffix(normalized, "@"+botUserName)
+	}
+
+	return normalized
 }
 
 func writeImage(chatID int64, bot *tgbotapi.BotAPI, photo []tgbotapi.PhotoSize) string {
