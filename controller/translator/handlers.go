@@ -2,9 +2,11 @@ package translator
 
 import (
 	"fmt"
+	"html"
 	"io"
 	"log"
 	"net/http"
+	"regexp"
 	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -23,6 +25,55 @@ func startHandler(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 	}
 }
 
+func sendMarkdownMessage(bot *tgbotapi.BotAPI, msg tgbotapi.MessageConfig) error {
+	plainText := msg.Text
+	msg.Text = markdownToTelegramHTML(msg.Text)
+	msg.ParseMode = tgbotapi.ModeHTML
+	if _, err := bot.Send(msg); err != nil {
+		log.Printf("Error sending formatted message, retrying as plain text: %v", err)
+		msg.Text = plainText
+		msg.ParseMode = ""
+		_, fallbackErr := bot.Send(msg)
+		return fallbackErr
+	}
+
+	return nil
+}
+
+func markdownToTelegramHTML(text string) string {
+	escaped := html.EscapeString(strings.ReplaceAll(text, "\r\n", "\n"))
+
+	replacements := []struct {
+		pattern string
+		replace string
+	}{
+		{"(?s)```(?:[a-zA-Z0-9_-]+)?\\n?(.*?)```", `<pre>$1</pre>`},
+		{`\*\*([^*\n]+)\*\*`, `<b>$1</b>`},
+		{`__([^_\n]+)__`, `<b>$1</b>`},
+		{`\*([^*\n]+)\*`, `<i>$1</i>`},
+		{`_([^_\n]+)_`, `<i>$1</i>`},
+		{"`([^`\n]+)`", `<code>$1</code>`},
+	}
+
+	for _, replacement := range replacements {
+		escaped = regexp.MustCompile(replacement.pattern).ReplaceAllString(escaped, replacement.replace)
+	}
+
+	lines := strings.Split(escaped, "\n")
+	for i, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmed, "### ") {
+			lines[i] = strings.Replace(line, "### "+strings.TrimPrefix(trimmed, "### "), "<b>"+strings.TrimPrefix(trimmed, "### ")+"</b>", 1)
+		} else if strings.HasPrefix(trimmed, "## ") {
+			lines[i] = strings.Replace(line, "## "+strings.TrimPrefix(trimmed, "## "), "<b>"+strings.TrimPrefix(trimmed, "## ")+"</b>", 1)
+		} else if strings.HasPrefix(trimmed, "# ") {
+			lines[i] = strings.Replace(line, "# "+strings.TrimPrefix(trimmed, "# "), "<b>"+strings.TrimPrefix(trimmed, "# ")+"</b>", 1)
+		}
+	}
+
+	return strings.Join(lines, "\n")
+}
+
 func textHandler(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 	text := update.Message.Text
 
@@ -35,8 +86,7 @@ func textHandler(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 	response := fmt.Sprintf("English: %s\n\nArabic: %s", englishTranslation, arabicTranslation)
 
 	msg := tgbotapi.NewMessage(update.Message.Chat.ID, response)
-	_, err := bot.Send(msg)
-	if err != nil {
+	if err := sendMarkdownMessage(bot, msg); err != nil {
 		log.Printf("Error sending translation: %v", err)
 	}
 }
@@ -88,8 +138,7 @@ func voiceHandler(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 	response := fmt.Sprintf("Transcribed: %s\n\nEnglish: %s\n\nArabic: %s", transcribedText, englishTranslation, arabicTranslation)
 
 	msg := tgbotapi.NewMessage(update.Message.Chat.ID, response)
-	_, err = bot.Send(msg)
-	if err != nil {
+	if err := sendMarkdownMessage(bot, msg); err != nil {
 		log.Printf("Error sending voice translation: %v", err)
 	}
 }

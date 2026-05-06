@@ -80,7 +80,7 @@ func Bot() {
 					if err != nil {
 						log.Print(err)
 					}
-				case "sayAI", "sayai":
+				case "sayai":
 					text := ""
 					if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
 
@@ -116,7 +116,7 @@ func Bot() {
 					if err != nil {
 						log.Print(err)
 					}
-				case "sayAIUK":
+				case "sayaiuk":
 					text := ""
 					if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
 
@@ -152,7 +152,7 @@ func Bot() {
 					if err != nil {
 						log.Print(err)
 					}
-				case "sayUK":
+				case "sayuk":
 					text := ""
 					if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
 
@@ -188,7 +188,7 @@ func Bot() {
 					if err != nil {
 						log.Print(err)
 					}
-				case "sayUKFemale":
+				case "sayukfemale":
 					text := ""
 					if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
 
@@ -348,7 +348,7 @@ func Bot() {
 					if err != nil {
 						log.Print(err)
 					}
-				case "ar", "Ar":
+				case "ar":
 					text := ""
 					if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
 						photo := message.ReplyToMessage.Photo
@@ -364,8 +364,7 @@ func Bot() {
 
 						msg := tgbotapi.NewMessage(chatID, response)
 						msg.ReplyToMessageID = message.MessageID
-						_, err = bot.Send(msg)
-						if err != nil {
+						if err = sendMarkdownMessage(bot, msg); err != nil {
 							log.Printf("Error sending translation: %v", err)
 						}
 					} else if message.ReplyToMessage != nil {
@@ -379,8 +378,7 @@ func Bot() {
 
 						msg := tgbotapi.NewMessage(chatID, response)
 						msg.ReplyToMessageID = message.MessageID
-						_, err := bot.Send(msg)
-						if err != nil {
+						if err := sendMarkdownMessage(bot, msg); err != nil {
 							log.Printf("Error sending translation: %v", err)
 						}
 					}
@@ -400,8 +398,7 @@ func Bot() {
 
 						msg := tgbotapi.NewMessage(chatID, response)
 						msg.ReplyToMessageID = message.MessageID
-						_, err = bot.Send(msg)
-						if err != nil {
+						if err = sendMarkdownMessage(bot, msg); err != nil {
 							log.Printf("Error sending translation: %v", err)
 						}
 					} else if message.ReplyToMessage != nil {
@@ -414,8 +411,7 @@ func Bot() {
 
 						msg := tgbotapi.NewMessage(chatID, response)
 						msg.ReplyToMessageID = message.MessageID
-						_, err := bot.Send(msg)
-						if err != nil {
+						if err := sendMarkdownMessage(bot, msg); err != nil {
 							log.Printf("Error sending translation: %v", err)
 						}
 					}
@@ -434,8 +430,7 @@ func Bot() {
 
 						msg := tgbotapi.NewMessage(chatID, response)
 						msg.ReplyToMessageID = message.MessageID
-						_, err = bot.Send(msg)
-						if err != nil {
+						if err = sendMarkdownMessage(bot, msg); err != nil {
 							log.Printf("Error sending translation: %v", err)
 						}
 					} else if message.ReplyToMessage != nil {
@@ -448,12 +443,11 @@ func Bot() {
 
 						msg := tgbotapi.NewMessage(chatID, response)
 						msg.ReplyToMessageID = message.MessageID
-						_, err := bot.Send(msg)
-						if err != nil {
+						if err := sendMarkdownMessage(bot, msg); err != nil {
 							log.Printf("Error sending translation: %v", err)
 						}
 					}
-				case "fr", "Fr":
+				case "fr":
 					if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
 						photo := message.ReplyToMessage.Photo
 						if len(photo) == 0 {
@@ -469,8 +463,7 @@ func Bot() {
 
 						msg := tgbotapi.NewMessage(chatID, response)
 						msg.ReplyToMessageID = message.MessageID
-						_, err = bot.Send(msg)
-						if err != nil {
+						if err = sendMarkdownMessage(bot, msg); err != nil {
 							log.Printf("Error sending translation: %v", err)
 						}
 					} else if message.ReplyToMessage != nil {
@@ -483,8 +476,7 @@ func Bot() {
 
 						msg := tgbotapi.NewMessage(chatID, response)
 						msg.ReplyToMessageID = message.MessageID
-						_, err := bot.Send(msg)
-						if err != nil {
+						if err := sendMarkdownMessage(bot, msg); err != nil {
 							log.Printf("Error sending translation: %v", err)
 						}
 					}
@@ -499,8 +491,7 @@ func Bot() {
 
 						msg := tgbotapi.NewMessage(chatID, response)
 						msg.ReplyToMessageID = message.MessageID
-						_, err := bot.Send(msg)
-						if err != nil {
+						if err := sendMarkdownMessage(bot, msg); err != nil {
 							log.Printf("Error sending translation: %v", err)
 						}
 					}
@@ -516,8 +507,7 @@ func Bot() {
 
 					msg := tgbotapi.NewMessage(chatID, response)
 					msg.ReplyToMessageID = message.MessageID
-					_, err := bot.Send(msg)
-					if err != nil {
+					if err := sendMarkdownMessage(bot, msg); err != nil {
 						log.Printf("Error sending translation: %v", err)
 					}
 				case "syn":
@@ -530,8 +520,7 @@ func Bot() {
 
 					msg := tgbotapi.NewMessage(chatID, response)
 					msg.ReplyToMessageID = message.MessageID
-					_, err := bot.Send(msg)
-					if err != nil {
+					if err := sendMarkdownMessage(bot, msg); err != nil {
 						log.Printf("Error sending translation: %v", err)
 					}
 				case "anto":
@@ -544,8 +533,7 @@ func Bot() {
 
 					msg := tgbotapi.NewMessage(chatID, response)
 					msg.ReplyToMessageID = message.MessageID
-					_, err := bot.Send(msg)
-					if err != nil {
+					if err := sendMarkdownMessage(bot, msg); err != nil {
 						log.Printf("Error sending translation: %v", err)
 					}
 				case "define":
@@ -558,8 +546,7 @@ func Bot() {
 
 					msg := tgbotapi.NewMessage(chatID, response)
 					msg.ReplyToMessageID = message.MessageID
-					_, err := bot.Send(msg)
-					if err != nil {
+					if err := sendMarkdownMessage(bot, msg); err != nil {
 						log.Printf("Error sending translation: %v", err)
 					}
 				case "write":
@@ -575,9 +562,7 @@ func Bot() {
 
 						msg := tgbotapi.NewMessage(chatID, response)
 						msg.ReplyToMessageID = message.MessageID
-						msg.ParseMode = tgbotapi.ModeMarkdown
-						_, err2 := bot.Send(msg)
-						if err2 != nil {
+						if err := sendMarkdownMessage(bot, msg); err != nil {
 							log.Printf("Error sending translation: %v", err)
 						}
 					}
@@ -595,8 +580,7 @@ func Bot() {
 					fmt.Println(imagePath)
 					msg := tgbotapi.NewMessage(chatID, imgToTxt)
 					msg.ReplyToMessageID = message.MessageID
-					_, err2 := bot.Send(msg)
-					if err2 != nil {
+					if err := sendMarkdownMessage(bot, msg); err != nil {
 						log.Printf("Error sending translation: %v", err)
 					}
 				case cmd:
@@ -673,7 +657,35 @@ func normalizeCommand(text, botUserName string) string {
 		normalized = strings.TrimSuffix(normalized, "@"+botUserName)
 	}
 
+	lowerNormalized := strings.ToLower(normalized)
+	if _, ok := builtInTranslatorCommands[lowerNormalized]; ok {
+		return lowerNormalized
+	}
+
 	return normalized
+}
+
+var builtInTranslatorCommands = map[string]struct{}{
+	"abb":         {},
+	"anto":        {},
+	"ar":          {},
+	"define":      {},
+	"en":          {},
+	"fr":          {},
+	"ru":          {},
+	"say":         {},
+	"sayai":       {},
+	"sayaiuk":     {},
+	"sayaifemale": {},
+	"sayfemale":   {},
+	"saymale":     {},
+	"sayuk":       {},
+	"sayukfemale": {},
+	"start":       {},
+	"syn":         {},
+	"test":        {},
+	"translate":   {},
+	"write":       {},
 }
 
 func writeImage(chatID int64, bot *tgbotapi.BotAPI, photo []tgbotapi.PhotoSize) string {
