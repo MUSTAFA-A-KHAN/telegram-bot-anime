@@ -926,6 +926,67 @@ func (t *TextTranslator) CorrectGrammar(text string) string {
 	return llmErrorMessage
 }
 
+func (t *TextTranslator) RewriteStatement(text string) string {
+	if OpenAIKey == "" {
+		return llmErrorMessage
+	}
+
+	url := "https://api.llm7.io/v1/chat/completions"
+
+	payload := map[string]interface{}{
+		"model": "openai/gpt-4o",
+		"messages": []map[string]string{
+			{"role": "user", "content": fmt.Sprintf("Rewrite the following statement to make it clearer, more natural, and better worded. Preserve the original meaning, tone, and language. Reply only with the rewritten statement, without explanations or quotation marks: %s", text)},
+		},
+	}
+
+	jsonData, err := json.Marshal(payload)
+	if err != nil {
+		return llmErrorMessage
+	}
+
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return llmErrorMessage
+	}
+
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", OpenAIKey))
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return llmErrorMessage
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return llmErrorMessage
+	}
+
+	if resp.StatusCode != 200 {
+		return llmErrorMessage
+	}
+
+	var response map[string]interface{}
+	if err := json.Unmarshal(body, &response); err != nil {
+		return llmErrorMessage
+	}
+
+	if choices, ok := response["choices"].([]interface{}); ok && len(choices) > 0 {
+		if choice, ok := choices[0].(map[string]interface{}); ok {
+			if message, ok := choice["message"].(map[string]interface{}); ok {
+				if content, ok := message["content"].(string); ok {
+					return content
+				}
+			}
+		}
+	}
+
+	return llmErrorMessage
+}
+
 func (t *TextTranslator) GetAbbreviation(text string) string {
 	if OpenAIKey == "" {
 		return llmErrorMessage
