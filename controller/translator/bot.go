@@ -208,42 +208,44 @@ func Bot() {
 					if err != nil {
 						log.Print(err)
 					}
-				case "sayuk":
-					text := ""
-					if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
 
-						photo := message.ReplyToMessage.Photo
-						if len(photo) == 0 {
-							log.Printf("Error: No photo found in reply")
-							break
-						}
-						text = writeImage(chatID, bot, photo)
-					} else {
-						// Get the text from the message being replied to
-						text = message.ReplyToMessage.Text
-					}
+				// case "sayuk":
+				// 	text := ""
+				// 	if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
 
-					// Call ReadItLoud to convert the text to speech (assuming it returns an Audio struct)
-					Voice := translator.ReadItLoudUK(text)
-					tgbotapi.NewMessage(chatID, Voice)
+				// 		photo := message.ReplyToMessage.Photo
+				// 		if len(photo) == 0 {
+				// 			log.Printf("Error: No photo found in reply")
+				// 			break
+				// 		}
+				// 		text = writeImage(chatID, bot, photo)
+				// 	} else {
+				// 		// Get the text from the message being replied to
+				// 		text = message.ReplyToMessage.Text
+				// 	}
 
-					// Example 1: Send a local file
-					file, err := os.Open("outputUK.mp3")
-					if err != nil {
-						log.Print(err)
-					}
-					defer file.Close()
+				// 	// Call ReadItLoud to convert the text to speech (assuming it returns an Audio struct)
+				// 	Voice := translator.ReadItLoudUK(text)
+				// 	tgbotapi.NewMessage(chatID, Voice)
 
-					doc := tgbotapi.NewVoice(chatID, tgbotapi.FileReader{
-						Name:   "outputUK.mp3",
-						Reader: file,
-					})
-					doc.ReplyToMessageID = message.MessageID
+				// 	// Example 1: Send a local file
+				// 	file, err := os.Open("outputUK.mp3")
+				// 	if err != nil {
+				// 		log.Print(err)
+				// 	}
+				// 	defer file.Close()
 
-					_, err = bot.Send(doc)
-					if err != nil {
-						log.Print(err)
-					}
+				// 	doc := tgbotapi.NewVoice(chatID, tgbotapi.FileReader{
+				// 		Name:   "outputUK.mp3",
+				// 		Reader: file,
+				// 	})
+				// 	doc.ReplyToMessageID = message.MessageID
+
+				// 	_, err = bot.Send(doc)
+				// 	if err != nil {
+				// 		log.Print(err)
+				// 	}
+
 				case "sayukfemale":
 					text := ""
 					if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
@@ -739,7 +741,7 @@ var builtInTranslatorCommands = map[string]struct{}{
 	"sayaifemale": {},
 	"sayfemale":   {},
 	"saymale":     {},
-	"sayuk":       {},
+	// "sayuk":       {},
 	"sayukfemale": {},
 	"start":       {},
 	"syn":         {},
