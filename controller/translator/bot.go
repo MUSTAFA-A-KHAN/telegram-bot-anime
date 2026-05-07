@@ -277,7 +277,7 @@ func Bot() {
 					if err != nil {
 						log.Print(err)
 					}
-				case "saymale", "sayMale":
+				case "saymale":
 					text := ""
 					if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
 
@@ -313,7 +313,7 @@ func Bot() {
 					if err != nil {
 						log.Print(err)
 					}
-				case "sayfemale", "sayFemale":
+				case "sayfemale":
 					text := ""
 					if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
 
@@ -654,7 +654,9 @@ func normalizeCommand(text, botUserName string) string {
 
 	normalized := strings.TrimPrefix(cmd[0], "/")
 	if botUserName != "" {
-		normalized = strings.TrimSuffix(normalized, "@"+botUserName)
+		if commandName, mention, ok := strings.Cut(normalized, "@"); ok && strings.EqualFold(mention, botUserName) {
+			normalized = commandName
+		}
 	}
 
 	lowerNormalized := strings.ToLower(normalized)
