@@ -42,6 +42,34 @@ func Bot() {
 			cmd := normalizeCommand(message.Text, bot.Self.UserName)
 			if message.ReplyToMessage != nil {
 				switch cmd {
+				case "correct":
+					text := strings.TrimSpace(commandArguments(message.Text))
+					if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
+						photo := message.ReplyToMessage.Photo
+						if len(photo) == 0 {
+							log.Printf("Error: No photo found in reply")
+							continue
+						}
+						text = writeImage(chatID, bot, photo)
+					} else if message.ReplyToMessage != nil {
+						text = message.ReplyToMessage.Text
+					}
+
+					if strings.TrimSpace(text) == "" {
+						msg := tgbotapi.NewMessage(chatID, "Please reply to a text message or use /correct followed by the sentence.")
+						msg.ReplyToMessageID = message.MessageID
+						if _, err := bot.Send(msg); err != nil {
+							log.Printf("Error sending correct usage message: %v", err)
+						}
+						continue
+					}
+
+					correctedText := translator.CorrectGrammar(text)
+					msg := tgbotapi.NewMessage(chatID, correctedText)
+					msg.ReplyToMessageID = message.MessageID
+					if err := sendMarkdownMessage(bot, msg); err != nil {
+						log.Printf("Error sending corrected text: %v", err)
+					}
 				case "start":
 					startHandler(bot, update)
 				case "sayaifemale":
@@ -671,6 +699,7 @@ var builtInTranslatorCommands = map[string]struct{}{
 	"abb":         {},
 	"anto":        {},
 	"ar":          {},
+	"correct":     {},
 	"define":      {},
 	"en":          {},
 	"fr":          {},
@@ -688,6 +717,15 @@ var builtInTranslatorCommands = map[string]struct{}{
 	"test":        {},
 	"translate":   {},
 	"write":       {},
+}
+
+func commandArguments(text string) string {
+	fields := strings.Fields(strings.TrimSpace(text))
+	if len(fields) < 2 {
+		return ""
+	}
+
+	return strings.TrimSpace(strings.TrimPrefix(strings.TrimSpace(text), fields[0]))
 }
 
 func writeImage(chatID int64, bot *tgbotapi.BotAPI, photo []tgbotapi.PhotoSize) string {
