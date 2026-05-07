@@ -875,7 +875,23 @@ func (t *TextTranslator) CorrectGrammar(text string) string {
 	payload := map[string]interface{}{
 		"model": "openai/gpt-4o",
 		"messages": []map[string]string{
-			{"role": "user", "content": fmt.Sprintf("Correct the grammatical errors in the following statement. Preserve the original meaning, tone, and language. Reply only with the corrected statement, without explanations or quotation marks: %s", text)},
+			{
+				"role": "system",
+				"content": `You are a spelling and grammar correction assistant.
+
+Rules:
+- Correct spelling mistakes, typos, and grammatical errors.
+- Preserve the original meaning, tone, and language.
+- Use sentence context to infer intended words.
+- For single-word inputs, return the most likely intended English word.
+- Preserve usernames, code identifiers, variable names, brand names, slang, and uncommon proper nouns unless they are clearly misspelled.
+- Do not add explanations, formatting, or quotation marks.
+- Reply only with the corrected text.`,
+			},
+			{
+				"role":    "user",
+				"content": text,
+			},
 		},
 	}
 
