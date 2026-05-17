@@ -4,14 +4,106 @@ package translator
 //Add synonyms
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
+	"sort"
+	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/translator/utilities"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
+
+var (
+	bannedUsers     = make(map[int64]bool)
+	bannedUsersMu   = &sync.RWMutex{}
+	bannedUsersFile = "translator_banned_users.json"
+	adminID         = int64(1006461736)
+)
+
+func loadBannedUsers() error {
+	data, err := os.ReadFile(bannedUsersFile)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+
+	var list []int64
+	if err := json.Unmarshal(data, &list); err != nil {
+		return err
+	}
+
+	bannedUsersMu.Lock()
+	defer bannedUsersMu.Unlock()
+	for _, id := range list {
+		bannedUsers[id] = true
+	}
+	return nil
+}
+
+func saveBannedUsers() error {
+	bannedUsersMu.RLock()
+	list := make([]int64, 0, len(bannedUsers))
+	for id := range bannedUsers {
+		list = append(list, id)
+	}
+	bannedUsersMu.RUnlock()
+
+	sort.Slice(list, func(i, j int) bool { return list[i] < list[j] })
+	data, err := json.MarshalIndent(list, "", "  ")
+	if err != nil {
+		return err
+	}
+
+	return os.WriteFile(bannedUsersFile, data, 0644)
+}
+
+func isUserBanned(userID int64) bool {
+	bannedUsersMu.RLock()
+	defer bannedUsersMu.RUnlock()
+	return bannedUsers[userID]
+}
+
+func banUser(userID int64) error {
+	bannedUsersMu.Lock()
+	bannedUsers[userID] = true
+	bannedUsersMu.Unlock()
+	return saveBannedUsers()
+}
+
+func unbanUser(userID int64) error {
+	bannedUsersMu.Lock()
+	delete(bannedUsers, userID)
+	bannedUsersMu.Unlock()
+	return saveBannedUsers()
+}
+
+func getBannedUserList() []int64 {
+	bannedUsersMu.RLock()
+	list := make([]int64, 0, len(bannedUsers))
+	for id := range bannedUsers {
+		list = append(list, id)
+	}
+	bannedUsersMu.RUnlock()
+	sort.Slice(list, func(i, j int) bool { return list[i] < list[j] })
+	return list
+}
+
+func getTargetUserID(message *tgbotapi.Message) (int64, error) {
+	args := strings.Fields(commandArguments(message.Text))
+	if len(args) > 0 {
+		return strconv.ParseInt(args[0], 10, 64)
+	}
+	if message.ReplyToMessage != nil && message.ReplyToMessage.From != nil {
+		return message.ReplyToMessage.From.ID, nil
+	}
+	return 0, fmt.Errorf("Usage: reply with /ban or /unban, or provide a numeric user ID")
+}
 
 func Bot() {
 	if BotToken == "" {
@@ -32,6 +124,10 @@ func Bot() {
 
 	updates := bot.GetUpdatesChan(u)
 
+	if err := loadBannedUsers(); err != nil {
+		log.Printf("Failed to load banned users: %v", err)
+	}
+
 	for update := range updates {
 		if update.Message != nil {
 			message := update.Message
@@ -40,6 +136,59 @@ func Bot() {
 
 			log.Printf("[%s] %s", message.From.UserName, message.Text)
 			cmd := normalizeCommand(message.Text, bot.Self.UserName)
+
+			if isUserBanned(message.From.ID) && cmd != "banZoro" && cmd != "unban" && cmd != "bannedlist" {
+				if message.Chat.IsPrivate() {
+					bannedMsg := tgbotapi.NewMessage(chatID, "You are banned from using this bot. Contact the bot admin for assistance.")
+					bot.Send(bannedMsg)
+				}
+				continue
+			}
+
+			if cmd == "banZoro" || cmd == "unban" || cmd == "bannedlist" {
+				switch cmd {
+				case "banZoro":
+					if message.From.ID != adminID {
+						break
+					}
+					targetID, err := getTargetUserID(message)
+					if err != nil {
+						bot.Send(tgbotapi.NewMessage(chatID, err.Error()))
+						break
+					}
+					if err := banUser(targetID); err != nil {
+						bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("Failed to ban user: %v", err)))
+						break
+					}
+					bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("User %d has been banned.", targetID)))
+				case "unban":
+					if message.From.ID != adminID {
+						break
+					}
+					targetID, err := getTargetUserID(message)
+					if err != nil {
+						bot.Send(tgbotapi.NewMessage(chatID, err.Error()))
+						break
+					}
+					if err := unbanUser(targetID); err != nil {
+						bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("Failed to unban user: %v", err)))
+						break
+					}
+					bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("User %d has been unbanned.", targetID)))
+				case "bannedlist":
+					if message.From.ID != adminID {
+						break
+					}
+					list := getBannedUserList()
+					if len(list) == 0 {
+						bot.Send(tgbotapi.NewMessage(chatID, "No users are currently banned."))
+						break
+					}
+					bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("Banned user IDs: %v", list)))
+				}
+				continue
+			}
+
 			if message.ReplyToMessage != nil {
 				switch cmd {
 				case "correct":
@@ -100,6 +249,54 @@ func Bot() {
 					}
 				case "start":
 					startHandler(bot, update)
+				case "banZoro":
+					if message.From.ID != adminID {
+						break
+					}
+					args := strings.Fields(commandArguments(message.Text))
+					if len(args) == 0 {
+						bot.Send(tgbotapi.NewMessage(chatID, "Usage: /ban <userID>"))
+						break
+					}
+					userID, err := strconv.ParseInt(args[0], 10, 64)
+					if err != nil {
+						bot.Send(tgbotapi.NewMessage(chatID, "Please provide a valid numeric user ID to ban."))
+						break
+					}
+					if err := banUser(userID); err != nil {
+						bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("Failed to ban user: %v", err)))
+						break
+					}
+					bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("User %d has been banned.", userID)))
+				case "unban":
+					if message.From.ID != adminID {
+						break
+					}
+					args := strings.Fields(commandArguments(message.Text))
+					if len(args) == 0 {
+						bot.Send(tgbotapi.NewMessage(chatID, "Usage: /unban <userID>"))
+						break
+					}
+					userID, err := strconv.ParseInt(args[0], 10, 64)
+					if err != nil {
+						bot.Send(tgbotapi.NewMessage(chatID, "Please provide a valid numeric user ID to unban."))
+						break
+					}
+					if err := unbanUser(userID); err != nil {
+						bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("Failed to unban user: %v", err)))
+						break
+					}
+					bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("User %d has been unbanned.", userID)))
+				case "bannedlist":
+					if message.From.ID != adminID {
+						break
+					}
+					list := getBannedUserList()
+					if len(list) == 0 {
+						bot.Send(tgbotapi.NewMessage(chatID, "No users are currently banned."))
+						break
+					}
+					bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("Banned user IDs: %v", list)))
 				case "sayaifemale":
 					text := ""
 					if message.ReplyToMessage != nil && len(message.ReplyToMessage.Photo) > 0 {
