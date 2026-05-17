@@ -92,7 +92,7 @@ func (t *TextTranslator) SolveWordle(puzzle string) string {
 	for attempt := 0; attempt < 4; attempt++ {
 		result := t.callLLM(fmt.Sprintf("%s\n\n%s", prompt, input))
 		if result == llmErrorMessage {
-			return "Unable to solve the puzzle right now. Please try again later."
+			return "Unable to solve "
 		}
 
 		word := extractFirstWord(result)
