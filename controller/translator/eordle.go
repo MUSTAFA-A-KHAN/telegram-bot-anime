@@ -2,6 +2,7 @@ package translator
 
 import (
 	"bytes"
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -36,12 +37,22 @@ func (t *TextTranslator) SolveWordle(puzzle string) string {
 	if input == "" {
 		return "uwu."
 	}
-	if OpenAIKey == "" {
-		return "OFF"
-	}
 
 	// derive constraints from provided puzzle
 	pattern, present, excluded, notIn := parseConstraints(input)
+
+	candidates, err := findCandidates(pattern, present, excluded, notIn)
+	if err == nil && len(candidates) > 0 {
+		best := chooseBestCandidate(candidates)
+		return fmt.Sprintf("Best next word: %s", best)
+	}
+	if OpenAIKey == "" {
+		analysis := t.AnalyzeEordle(input)
+		if err != nil {
+			return fmt.Sprintf("couldn't load word list.\n%s", analysis)
+		}
+		return fmt.Sprintf("No valid candidate found in local word list.\n%s", analysis)
+	}
 
 	// build constraint summary for the prompt
 	mustContain := ""
@@ -245,8 +256,10 @@ func validateCandidate(word, pattern string, present, excluded []rune, notIn []m
 	return true
 }
 
+//go:embed words.txt
+var embeddedWordsTxt string
+
 var (
-	wordListURL     = "https://raw.githubusercontent.com/MUSTAFA-A-KHAN/json-data-hub/refs/heads/main/words.json"
 	cachedWordList  []string
 	cachedWordMutex sync.Mutex
 )
@@ -257,41 +270,72 @@ func loadWordList() ([]string, error) {
 	if len(cachedWordList) > 0 {
 		return cachedWordList, nil
 	}
-	resp, err := http.Get(wordListURL)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	var data struct {
-		CommonWords []string `json:"commonWords"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
-		return nil, err
-	}
-	for _, w := range data.CommonWords {
+	for _, w := range strings.Split(strings.TrimSpace(embeddedWordsTxt), "\n") {
+		w = strings.TrimSpace(w)
 		if len(w) == 5 {
-			cachedWordList = append(cachedWordList, strings.ToUpper(strings.TrimSpace(w)))
+			cachedWordList = append(cachedWordList, strings.ToUpper(w))
 		}
 	}
 	return cachedWordList, nil
 }
 
 // generateCandidates returns up to limit words from the wordlist that satisfy constraints
-func generateCandidates(pattern string, present, excluded []rune, notIn []map[rune]bool, limit int) ([]string, error) {
+func findCandidates(pattern string, present, excluded []rune, notIn []map[rune]bool) ([]string, error) {
 	words, err := loadWordList()
 	if err != nil {
 		return nil, err
 	}
-	out := make([]string, 0, limit)
+	out := make([]string, 0, len(words))
 	for _, w := range words {
 		if validateCandidate(w, pattern, present, excluded, notIn) {
 			out = append(out, w)
-			if len(out) >= limit {
-				break
-			}
 		}
 	}
 	return out, nil
+}
+
+func chooseBestCandidate(candidates []string) string {
+	if len(candidates) == 0 {
+		return ""
+	}
+	freq := make(map[rune]int)
+	for _, w := range candidates {
+		seen := make(map[rune]bool)
+		for _, ch := range w {
+			if !seen[ch] {
+				seen[ch] = true
+				freq[ch]++
+			}
+		}
+	}
+	best := candidates[0]
+	bestScore := -1
+	for _, w := range candidates {
+		score := 0
+		seen := make(map[rune]bool)
+		for _, ch := range w {
+			if !seen[ch] {
+				seen[ch] = true
+				score += 10 + freq[ch]
+			}
+		}
+		if score > bestScore || (score == bestScore && w < best) {
+			bestScore = score
+			best = w
+		}
+	}
+	return best
+}
+
+func generateCandidates(pattern string, present, excluded []rune, notIn []map[rune]bool, limit int) ([]string, error) {
+	out, err := findCandidates(pattern, present, excluded, notIn)
+	if err != nil {
+		return nil, err
+	}
+	if limit <= 0 || len(out) <= limit {
+		return out, nil
+	}
+	return out[:limit], nil
 }
 
 func (t *TextTranslator) callLLM(prompt string) string {
