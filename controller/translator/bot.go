@@ -641,6 +641,50 @@ func Bot() {
 					if err := sendMarkdownMessage(bot, msg); err != nil {
 						log.Printf("Error sending translation: %v", err)
 					}
+				case "eordle", "wordle":
+					text = ""
+					if message.ReplyToMessage != nil {
+						text = message.ReplyToMessage.Text
+					}
+					if strings.TrimSpace(text) == "" {
+						text = strings.TrimSpace(commandArguments(message.Text))
+					}
+					if strings.TrimSpace(text) == "" {
+						msg := tgbotapi.NewMessage(chatID, "Please reply to the Wordle/Eordle puzzle text or include the puzzle after /eordle.")
+						msg.ReplyToMessageID = message.MessageID
+						if _, err := bot.Send(msg); err != nil {
+							log.Printf("Error sending eordle usage message: %v", err)
+						}
+						break
+					}
+					suggestion := translator.SolveWordle(text)
+					msg := tgbotapi.NewMessage(chatID, suggestion)
+					msg.ReplyToMessageID = message.MessageID
+					if _, err := bot.Send(msg); err != nil {
+						log.Printf("Error sending eordle solution: %v", err)
+					}
+				case "eordlehelp":
+					text = ""
+					if message.ReplyToMessage != nil {
+						text = message.ReplyToMessage.Text
+					}
+					if strings.TrimSpace(text) == "" {
+						text = strings.TrimSpace(commandArguments(message.Text))
+					}
+					if strings.TrimSpace(text) == "" {
+						msg := tgbotapi.NewMessage(chatID, "Please reply to the Wordle/Eordle puzzle text or include the puzzle after /eordlehelp.")
+						msg.ReplyToMessageID = message.MessageID
+						if _, err := bot.Send(msg); err != nil {
+							log.Printf("Error sending eordlehelp usage message: %v", err)
+						}
+						break
+					}
+					analysis := translator.AnalyzeEordle(text)
+					msg := tgbotapi.NewMessage(chatID, analysis)
+					msg.ReplyToMessageID = message.MessageID
+					if _, err := bot.Send(msg); err != nil {
+						log.Printf("Error sending eordle analysis: %v", err)
+					}
 				case cmd:
 					voiceID, err := utilities.Configurator("config.json", cmd)
 					if err != nil {
@@ -748,6 +792,9 @@ var builtInTranslatorCommands = map[string]struct{}{
 	"test":        {},
 	"translate":   {},
 	"write":       {},
+	"eordlehelp":  {},
+	"eordle":      {},
+	"wordle":      {},
 }
 
 func commandArguments(text string) string {
