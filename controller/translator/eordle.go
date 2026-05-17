@@ -91,9 +91,9 @@ func (t *TextTranslator) SolveWordle(puzzle string) string {
 	// Try up to 3 times to get a valid suggestion from LLM
 	for attempt := 0; attempt < 4; attempt++ {
 		result := t.callLLM(fmt.Sprintf("%s\n\n%s", prompt, input))
-		if result == llmErrorMessage {
-			return "Unable to solve "
-		}
+		// if result == llmErrorMessage {
+		// 	return "Unable to solve "
+		// }
 
 		word := extractFirstWord(result)
 		if word == "" {
