@@ -641,7 +641,7 @@ func Bot() {
 					if err := sendMarkdownMessage(bot, msg); err != nil {
 						log.Printf("Error sending translation: %v", err)
 					}
-				case "eordle", "wordle":
+				case "eordle":
 					text = ""
 					if message.ReplyToMessage != nil {
 						text = message.ReplyToMessage.Text
