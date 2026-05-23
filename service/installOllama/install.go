@@ -9,7 +9,8 @@ import (
 	"os/exec"
 	"time"
 )
-//will skip model pull if passed true 
+
+// will skip model pull if passed true
 func Install(skipModelPull bool) ([]string, error) {
 	var logs []string
 

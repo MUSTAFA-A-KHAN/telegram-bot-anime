@@ -7,9 +7,9 @@ import (
 
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller"
 	categorybot "github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/categoryBot"
+	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/fontbot"
 	instagrambot "github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/instagramBot"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/translator"
-	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/fontbot"
 )
 
 func main() {
@@ -92,4 +92,3 @@ func runFontBot(botToken string, wg *sync.WaitGroup) {
 		log.Printf("Error starting font bot with token %s: %v\n", botToken, err)
 	}
 }
-

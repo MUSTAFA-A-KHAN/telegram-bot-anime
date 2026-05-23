@@ -363,3 +363,36 @@ func GetAllStylesForText(text string) map[string]string {
 	return result
 }
 
+// GetStyleEmoji returns an emoji for each font style
+func GetStyleEmoji(styleName string) string {
+	emojis := map[string]string{
+		"Bold":             "𝐁",
+		"Italic":           "𝑰",
+		"Bold Italic":      "𝑩𝑰",
+		"Monospace":        "𝙼",
+		"Double Struck":    "𝔻",
+		"Sans Serif":       "𝖲",
+		"Bold Sans":        "𝗕",
+		"Italic Sans":      "𝘒",
+		"Bold Italic Sans": "𝙱",
+		"Script":           "𝒮",
+		"Bold Script":      "𝓑",
+		"Fraktur":          "𝔉",
+		"Bold Fraktur":     "𝕭",
+		"Small Caps":       "ᴀ",
+		"Reversed":         "🔄",
+		"Wide":             "Ｆ",
+	}
+	if emoji, ok := emojis[styleName]; ok {
+		return emoji
+	}
+	return "📝"
+}
+
+// TruncateString truncates a string to the specified length
+func TruncateString(s string, maxLen int) string {
+	if len(s) <= maxLen {
+		return s
+	}
+	return s[:maxLen] + "..."
+}
