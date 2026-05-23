@@ -528,6 +528,9 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		// } else {
 		// 	view.SendMessage(bot, chatID, "Please provide a message with your report. Usage: /report [your message]")
 		// }
+	case "wordle":
+		view.SendMessage(bot, chatID, "Wordle mode is available in the Category bot! Use the Category bot to play.")
+		return
 	case "word":
 		chatState.RLock()
 		wordEmpty := chatState.Word == ""
