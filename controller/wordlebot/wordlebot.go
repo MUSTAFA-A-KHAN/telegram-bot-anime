@@ -219,13 +219,13 @@ func HandleGuess(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.
 		msg := fmt.Sprintf("%s\n\n🟩 🟩 🟩 🟩 🟩  %s   [+25💎]\n🎉 [%s](tg://user?id=%d) guessed it in %d attempts!\n\nStart new Wordle! /wordle",
 			board, strings.ToUpper(ws.Word), message.From.FirstName, message.From.ID, ws.Attempts)
 
-		view.SendMessage(bot, chatID, msg)
-		go repository.InsertDoc(message.From.ID, message.From.FirstName, chatID, client, "CrocEn")
+		view.ReplyToMessage(bot, message.MessageID, chatID, msg)
+		go repository.InsertDoc(message.From.ID, message.From.FirstName, chatID, client, "WordleEn")
 	} else if ws.Attempts >= ws.MaxAttempts {
 		ws.Active = false
 		msg := fmt.Sprintf("%s\n\n❌ Out of attempts! The word was %s.\n\nStart new Wordle! /wordle", board, strings.ToUpper(ws.Word))
-		view.SendMessage(bot, chatID, msg)
+		view.ReplyToMessage(bot, message.MessageID, chatID, msg)
 	} else {
-		view.SendMessage(bot, chatID, board)
+		view.ReplyToMessage(bot, message.MessageID, chatID, board)
 	}
 }

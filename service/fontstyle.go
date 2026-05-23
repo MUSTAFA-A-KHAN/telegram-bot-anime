@@ -362,4 +362,3 @@ func GetAllStylesForText(text string) map[string]string {
 	}
 	return result
 }
-

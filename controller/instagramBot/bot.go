@@ -44,13 +44,13 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 	if strings.HasPrefix(message.Text, "/getinfo ") {
 		username := strings.TrimSpace(strings.TrimPrefix(message.Text, "/getinfo "))
 		if username == "" {
-view.SendMessage(bot, chatID, "Please provide a valid Instagram username. Format: /getinfo <username>")
+			view.SendMessage(bot, chatID, "Please provide a valid Instagram username. Format: /getinfo <username>")
 			return
 		}
 
 		info, err := service.GetInstagramUserInfo(username)
 		if err != nil {
-view.SendMessage(bot, chatID, "Sorry, we couldn't retrieve the user information. Please verify the username and try again. "+err.Error())
+			view.SendMessage(bot, chatID, "Sorry, we couldn't retrieve the user information. Please verify the username and try again. "+err.Error())
 			log.Println("Error fetching Instagram user info:", err)
 			return
 		}
@@ -73,12 +73,12 @@ view.SendMessage(bot, chatID, "Sorry, we couldn't retrieve the user information.
 				}
 			}
 		} else {
-response += "No videos found for this user.\n"
+			response += "No videos found for this user.\n"
 		}
 
 		// Send the response to the user
 		view.SendMessage(bot, chatID, response)
 	} else {
-view.SendMessage(bot, chatID, "Invalid command. Please use /getinfo <username> to fetch Instagram user information.")
+		view.SendMessage(bot, chatID, "Invalid command. Please use /getinfo <username> to fetch Instagram user information.")
 	}
 }

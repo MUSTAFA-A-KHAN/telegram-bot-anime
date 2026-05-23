@@ -6,7 +6,6 @@ import (
 	"log"
 	"math/rand"
 	"os"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -330,21 +329,13 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			result := service.LeaderBoardList(client, "CrocEnLeader", 0)
 			view.SendMessagehtml(bot, message.Chat.ID, result)
 		case "mystats":
-			// args := strings.Fields(message.CommandArguments())
-			// if len(args) < 1 {
-			// 	view.SendMessage(bot, chatID, "Please provide a user ID. Usage: /userstats <userID>")
-			// 	return
-			// }
-			// userIDStr := args[0]
-			ID := strconv.Itoa(message.From.ID)
-			userID, err := strconv.Atoi(ID)
-			if err != nil {
-				sentMsg, err := view.SendMessage(bot, chatID, "Invalid user ID. Please enter a valid numeric user ID.")
-				deleteWarningMessage(bot, message, sentMsg, err)
-				return
-			}
-			result := service.GetUserStatsByID(client, userID)
-			view.ReplyToMessage(bot, message.MessageID, chatID, result)
+			buttons := tgbotapi.NewInlineKeyboardMarkup(
+				tgbotapi.NewInlineKeyboardRow(
+					tgbotapi.NewInlineKeyboardButtonData("Word Guess", "stats_wordguess"),
+					tgbotapi.NewInlineKeyboardButtonData("Wordle", "stats_wordle"),
+				),
+			)
+			view.SendMessageWithButtons(bot, chatID, "🐊🇮🇳\n📊 Choose game stats to view:", buttons)
 		case "installAI":
 			logs, err := installOllama.Install(true)
 			logsText := strings.Join(logs, "\n")
@@ -605,9 +596,9 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		return
 	case "start":
 		view.SendMessage(bot, message.Chat.ID, "Welcome! Type /word to start a new game.")
-		case "wordle":
-			wordlebot.HandleWordleCommand(bot, chatID)
-			return
+	case "wordle":
+		wordlebot.HandleWordleCommand(bot, chatID)
+		return
 	case "stats":
 		result := service.LeaderBoardList(client, "CrocEn", message.Chat.ID)
 		view.SendMessagehtml(bot, message.Chat.ID, result)
@@ -621,8 +612,14 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		result := service.LeaderBoardList(client, "CrocEnLeader", 0)
 		view.SendMessagehtml(bot, message.Chat.ID, result)
 	case "mystats":
-		result := service.GetUserStatsByID(client, message.From.ID)
-		view.ReplyToMessage(bot, message.MessageID, chatID, result)
+		buttons := tgbotapi.NewInlineKeyboardMarkup(
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("Word Guess", "stats_wordguess"),
+				tgbotapi.NewInlineKeyboardButtonData("Wordle", "stats_wordle"),
+			),
+		)
+		view.SendMessageWithButtons(bot, chatID, "🐊🇮🇳\n📊 Choose game stats to view:", buttons)
+		// view.ReplyToMessage(bot, message.MessageID, chatID, result)
 	case "rules":
 		rulesText := "*🎮 Game Rules 🎮*\n\n" +
 			"*Players:*\n" +
@@ -874,6 +871,16 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 	chatState := getOrCreateChatState(chatID)
 
 	switch callback.Data {
+	case "stats_wordguess":
+		result := service.GetUserStatsByID(client, callback.From.ID)
+		view.SendMessage(bot, chatID, result)
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
+		return
+	case "stats_wordle":
+		result := service.GetWordleUserStatsByID(client, callback.From.ID)
+		view.SendMessage(bot, chatID, result)
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
+		return
 	case "explain":
 		chatState.Lock()
 		if chatState.User != callback.From.ID && chatState.User != 0 && time.Since(chatState.LeadTimestamp) < 600*time.Second {

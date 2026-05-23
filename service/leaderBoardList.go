@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/repository"
@@ -70,4 +71,19 @@ func GetUserStatsByID(client *mongo.Client, userID int) string {
 	stats += fmt.Sprintf("\nAnd have leaded for:\n%d Times", count)
 	return stats
 
+}
+
+func GetWordleUserStatsByID(client *mongo.Client, userID int) string {
+	result, err := repository.GetUserStatsByID(client, "WordleEn", userID)
+	stats := "something went wrong"
+	if err != nil {
+		stats = "No winning stats found"
+	} else {
+		name, _ := result["Name"].(string)
+		count := int(result["Count"].(int32))
+
+		stats = "```text\nName: " + name + "\nWins: " + strconv.Itoa(count) + "\n```"
+	}
+
+	return stats
 }
