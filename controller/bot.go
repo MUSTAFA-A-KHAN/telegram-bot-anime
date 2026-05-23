@@ -261,8 +261,8 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		case "leaderstats":
 			view.SendMessage(bot, chatID, "Group stats are not available in a DM. You can view global stats using /statsglobal or /leaderstatsglobal.")
 		case "statsglobal":
-			result := service.LeaderBoardList(client, "CrocEn", 0)
-			view.SendMessagehtml(bot, chatID, result)
+			buttons := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Word Guess Global", "statsglobal_wordguess"),tgbotapi.NewInlineKeyboardButtonData("Wordle Global", "statsglobal_wordle")))
+			view.SendMessageWithButtons(bot, chatID, "🐊🇮🇳\n📊 Choose global stats to view:", buttons)
 		case "leaderstatsglobal":
 			result := service.LeaderBoardList(client, "CrocEnLeader", 0)
 			view.SendMessagehtml(bot, message.Chat.ID, result)
@@ -473,14 +473,14 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 	case "start":
 		view.SendMessage(bot, message.Chat.ID, "Welcome! Type /word to start a new game.")
 	case "stats":
-		result := service.LeaderBoardList(client, "CrocEn", message.Chat.ID)
-		view.SendMessagehtml(bot, message.Chat.ID, result)
+		buttons := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Word Guess Group", "statsgroup_wordguess"),tgbotapi.NewInlineKeyboardButtonData("Wordle Group", "statsgroup_wordle")))
+		view.SendMessageWithButtons(bot, chatID, "🐊🇮🇳\n📊 Choose group stats to view:", buttons)
 	case "leaderstats":
 		result := service.LeaderBoardList(client, "CrocEnLeader", message.Chat.ID)
 		view.SendMessagehtml(bot, message.Chat.ID, result)
 	case "statsglobal":
-		result := service.LeaderBoardList(client, "CrocEn", 0)
-		view.SendMessagehtml(bot, message.Chat.ID, result)
+		buttons := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Word Guess Global", "statsglobal_wordguess"),tgbotapi.NewInlineKeyboardButtonData("Wordle Global", "statsglobal_wordle")))
+		view.SendMessageWithButtons(bot, chatID, "🐊🇮🇳\n📊 Choose global stats to view:", buttons)
 	case "leaderstatsglobal":
 		result := service.LeaderBoardList(client, "CrocEnLeader", 0)
 		view.SendMessagehtml(bot, message.Chat.ID, result)
@@ -663,6 +663,26 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 	chatState := getOrCreateChatState(chatID)
 
 	switch callback.Data {
+	case "statsglobal_wordguess":
+		result := service.LeaderBoardList(client, "CrocEn", 0)
+		view.SendMessagehtml(bot, chatID, result)
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
+		return
+	case "statsglobal_wordle":
+		result := service.LeaderBoardList(client, "WordleEn", 0)
+		view.SendMessagehtml(bot, chatID, result)
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
+		return
+	case "statsgroup_wordguess":
+		result := service.LeaderBoardList(client, "CrocEn", chatID)
+		view.SendMessagehtml(bot, chatID, result)
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
+		return
+	case "statsgroup_wordle":
+		result := service.LeaderBoardList(client, "WordleEn", chatID)
+		view.SendMessagehtml(bot, chatID, result)
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
+		return
 	case "stats_wordguess":
 		result := service.GetUserStatsByID(client, callback.From.ID)
 		view.SendMessage(bot, chatID, result)
@@ -914,11 +934,11 @@ func handleInlineQuery(bot *tgbotapi.BotAPI, inlineQuery *tgbotapi.InlineQuery) 
 		// Create inline query result
 		result := tgbotapi.NewInlineQueryResultArticle(
 			id,
-			fmt.Sprintf("%s %s", getStyleEmoji(style.Name), style.Name),
+			fmt.Sprintf("%s %s", service.GetStyleEmoji(style.Name), style.Name),
 			formattedText,
 		)
 
-		result.Description = fmt.Sprintf("%s: %s", style.Description, truncateString(formattedText, 50))
+		result.Description = fmt.Sprintf("%s: %s", style.Description, service.TruncateString(formattedText, 50))
 
 		// Set the input message content to send the formatted text
 		result.InputMessageContent = tgbotapi.InputTextMessageContent{
@@ -939,40 +959,6 @@ func handleInlineQuery(bot *tgbotapi.BotAPI, inlineQuery *tgbotapi.InlineQuery) 
 		log.Printf("Failed to answer inline query: %v", err)
 	}
 }
-
-// // getStyleEmoji returns an emoji for each font style
-// func getStyleEmoji(styleName string) string {
-// 	emojis := map[string]string{
-// 		"Bold":             "𝐁",
-// 		"Italic":           "𝑰",
-// 		"Bold Italic":      "𝑩𝑰",
-// 		"Monospace":        "𝙼",
-// 		"Double Struck":    "𝔻",
-// 		"Sans Serif":       "𝖲",
-// 		"Bold Sans":        "𝗕",
-// 		"Italic Sans":      "𝘒",
-// 		"Bold Italic Sans": "𝙱",
-// 		"Script":           "𝒮",
-// 		"Bold Script":      "𝓑",
-// 		"Fraktur":          "𝔉",
-// 		"Bold Fraktur":     "𝕭",
-// 		"Small Caps":       "ᴀ",
-// 		"Reversed":         "🔄",
-// 		"Wide":             "Ｆ",
-// 	}
-// 	if emoji, ok := emojis[styleName]; ok {
-// 		return emoji
-// 	}
-// 	return "📝"
-// }
-
-// // truncateString truncates a string to the specified length
-// func truncateString(s string, maxLen int) string {
-// 	if len(s) <= maxLen {
-// 		return s
-// 	}
-// 	return s[:maxLen] + "..."
-// }
 
 // startHTTPServer starts a simple HTTP server for health checks
 func startHTTPServer() {

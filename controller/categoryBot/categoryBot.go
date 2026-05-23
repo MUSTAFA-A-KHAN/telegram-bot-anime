@@ -323,8 +323,8 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		case "leaderstats":
 			view.SendMessage(bot, chatID, "Group stats are not available in a DM. You can view global stats using /statsglobal or /leaderstatsglobal.")
 		case "statsglobal":
-			result := service.LeaderBoardList(client, "CrocEn", 0)
-			view.SendMessagehtml(bot, chatID, result)
+			buttons := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Word Guess Global", "statsglobal_wordguess"),tgbotapi.NewInlineKeyboardButtonData("Wordle Global", "statsglobal_wordle")))
+			view.SendMessageWithButtons(bot, chatID, "🐊🇮🇳\n📊 Choose global stats to view:", buttons)
 		case "leaderstatsglobal":
 			result := service.LeaderBoardList(client, "CrocEnLeader", 0)
 			view.SendMessagehtml(bot, message.Chat.ID, result)
@@ -600,14 +600,14 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		wordlebot.HandleWordleCommand(bot, chatID)
 		return
 	case "stats":
-		result := service.LeaderBoardList(client, "CrocEn", message.Chat.ID)
-		view.SendMessagehtml(bot, message.Chat.ID, result)
+		buttons := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Word Guess Group", "statsgroup_wordguess"),tgbotapi.NewInlineKeyboardButtonData("Wordle Group", "statsgroup_wordle")))
+		view.SendMessageWithButtons(bot, chatID, "🐊🇮🇳\n📊 Choose group stats to view:", buttons)
 	case "leaderstats":
 		result := service.LeaderBoardList(client, "CrocEnLeader", message.Chat.ID)
 		view.SendMessagehtml(bot, message.Chat.ID, result)
 	case "statsglobal":
-		result := service.LeaderBoardList(client, "CrocEn", 0)
-		view.SendMessagehtml(bot, message.Chat.ID, result)
+		buttons := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Word Guess Global", "statsglobal_wordguess"),tgbotapi.NewInlineKeyboardButtonData("Wordle Global", "statsglobal_wordle")))
+		view.SendMessageWithButtons(bot, chatID, "🐊🇮🇳\n📊 Choose global stats to view:", buttons)
 	case "leaderstatsglobal":
 		result := service.LeaderBoardList(client, "CrocEnLeader", 0)
 		view.SendMessagehtml(bot, message.Chat.ID, result)
@@ -871,6 +871,26 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 	chatState := getOrCreateChatState(chatID)
 
 	switch callback.Data {
+	case "statsglobal_wordguess":
+		result := service.LeaderBoardList(client, "CrocEn", 0)
+		view.SendMessagehtml(bot, chatID, result)
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
+		return
+	case "statsglobal_wordle":
+		result := service.LeaderBoardList(client, "WordleEn", 0)
+		view.SendMessagehtml(bot, chatID, result)
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
+		return
+	case "statsgroup_wordguess":
+		result := service.LeaderBoardList(client, "CrocEn", chatID)
+		view.SendMessagehtml(bot, chatID, result)
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
+		return
+	case "statsgroup_wordle":
+		result := service.LeaderBoardList(client, "WordleEn", chatID)
+		view.SendMessagehtml(bot, chatID, result)
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
+		return
 	case "stats_wordguess":
 		result := service.GetUserStatsByID(client, callback.From.ID)
 		view.SendMessage(bot, chatID, result)

@@ -216,15 +216,30 @@ func HandleGuess(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.
 
 	if guess == ws.Word {
 		ws.Active = false
-		msg := fmt.Sprintf("%s\n\n🟩 🟩 🟩 🟩 🟩  %s   [+25💎]\n🎉 [%s](tg://user?id=%d) guessed it in %d attempts!\n\nStart new Wordle! /wordle",
+		msg := fmt.Sprintf("%s\n\n🟩 🟩 🟩 🟩 🟩  %s   [+25💎]\n🎉 [%s](tg://user?id=%d) guessed it in %d attempts!",
 			board, strings.ToUpper(ws.Word), message.From.FirstName, message.From.ID, ws.Attempts)
 
-		view.ReplyToMessage(bot, message.MessageID, chatID, msg)
+		buttons := tgbotapi.NewInlineKeyboardMarkup(
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("Start new Wordle! 🟩🟨", "wordle_start"),
+				tgbotapi.NewInlineKeyboardButtonData("Start Croc Game 🐊", "explain"),
+			),
+		)
+
+		view.ReplyToMessageWithButtons(bot, message.MessageID, chatID, msg, buttons)
 		go repository.InsertDoc(message.From.ID, message.From.FirstName, chatID, client, "WordleEn")
 	} else if ws.Attempts >= ws.MaxAttempts {
 		ws.Active = false
-		msg := fmt.Sprintf("%s\n\n❌ Out of attempts! The word was %s.\n\nStart new Wordle! /wordle", board, strings.ToUpper(ws.Word))
-		view.ReplyToMessage(bot, message.MessageID, chatID, msg)
+		msg := fmt.Sprintf("%s\n\n❌ Out of attempts! The word was %s.", board, strings.ToUpper(ws.Word))
+
+		buttons := tgbotapi.NewInlineKeyboardMarkup(
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("Start new Wordle! 🟩🟨", "wordle_start"),
+				tgbotapi.NewInlineKeyboardButtonData("Start Croc Game 🐊", "explain"),
+			),
+		)
+
+		view.ReplyToMessageWithButtons(bot, message.MessageID, chatID, msg, buttons)
 	} else {
 		view.ReplyToMessage(bot, message.MessageID, chatID, board)
 	}

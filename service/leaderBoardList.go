@@ -80,7 +80,17 @@ func GetWordleUserStatsByID(client *mongo.Client, userID int) string {
 		stats = "No winning stats found"
 	} else {
 		name, _ := result["Name"].(string)
-		count := int(result["Count"].(int32))
+		count := 0
+		if val, ok := result["Count"]; ok {
+			switch v := val.(type) {
+			case int32:
+				count = int(v)
+			case int64:
+				count = int(v)
+			case int:
+				count = v
+			}
+		}
 
 		stats = "```text\nName: " + name + "\nWins: " + strconv.Itoa(count) + "\n```"
 	}

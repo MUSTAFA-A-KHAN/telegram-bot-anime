@@ -112,3 +112,14 @@ func SendFile(bot *tgbotapi.BotAPI, chatID int64, filename string, data []byte) 
 	_, err := bot.Send(msg)
 	return err
 }
+
+func ReplyToMessageWithButtons(bot *tgbotapi.BotAPI, mesgID int, chatID int64, text string, buttons tgbotapi.InlineKeyboardMarkup) (tgbotapi.Message, error) {
+	msg := tgbotapi.NewMessage(chatID, text)
+	msg.ReplyToMessageID = mesgID
+	msg.ParseMode = tgbotapi.ModeMarkdown
+	if len(buttons.InlineKeyboard) > 0 {
+		msg.ReplyMarkup = buttons
+	}
+	res, err := bot.Send(msg)
+	return res, err
+}
