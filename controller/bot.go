@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/wordlebot"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/model"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/repository"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/service"
@@ -261,7 +262,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		case "leaderstats":
 			view.SendMessage(bot, chatID, "Group stats are not available in a DM. You can view global stats using /statsglobal or /leaderstatsglobal.")
 		case "statsglobal":
-			buttons := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Word Guess Global", "statsglobal_wordguess"),tgbotapi.NewInlineKeyboardButtonData("Wordle Global", "statsglobal_wordle")))
+			buttons := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Word Guess Global", "statsglobal_wordguess"), tgbotapi.NewInlineKeyboardButtonData("Wordle Global", "statsglobal_wordle")))
 			view.SendMessageWithButtons(bot, chatID, "🐊🇮🇳\n📊 Choose global stats to view:", buttons)
 		case "leaderstatsglobal":
 			result := service.LeaderBoardList(client, "CrocEnLeader", 0)
@@ -415,6 +416,12 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			return
 		}
 
+		// Check if Wordle is active for DM
+		if wordlebot.IsWordleActive(chatID) {
+			wordlebot.HandleGuess(bot, message, client, chatID, message.Text)
+			return
+		}
+
 		// Check user's guess in DM
 		chatState.RLock()
 		word := chatState.Word
@@ -473,13 +480,13 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 	case "start":
 		view.SendMessage(bot, message.Chat.ID, "Welcome! Type /word to start a new game.")
 	case "stats":
-		buttons := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Word Guess Group", "statsgroup_wordguess"),tgbotapi.NewInlineKeyboardButtonData("Wordle Group", "statsgroup_wordle")))
+		buttons := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Word Guess Group", "statsgroup_wordguess"), tgbotapi.NewInlineKeyboardButtonData("Wordle Group", "statsgroup_wordle")))
 		view.SendMessageWithButtons(bot, chatID, "🐊🇮🇳\n📊 Choose group stats to view:", buttons)
 	case "leaderstats":
 		result := service.LeaderBoardList(client, "CrocEnLeader", message.Chat.ID)
 		view.SendMessagehtml(bot, message.Chat.ID, result)
 	case "statsglobal":
-		buttons := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Word Guess Global", "statsglobal_wordguess"),tgbotapi.NewInlineKeyboardButtonData("Wordle Global", "statsglobal_wordle")))
+		buttons := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Word Guess Global", "statsglobal_wordguess"), tgbotapi.NewInlineKeyboardButtonData("Wordle Global", "statsglobal_wordle")))
 		view.SendMessageWithButtons(bot, chatID, "🐊🇮🇳\n📊 Choose global stats to view:", buttons)
 	case "leaderstatsglobal":
 		result := service.LeaderBoardList(client, "CrocEnLeader", 0)
@@ -526,7 +533,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		// 	view.SendMessage(bot, chatID, "Please provide a message with your report. Usage: /report [your message]")
 		// }
 	case "wordle":
-		view.SendMessage(bot, chatID, "Wordle mode is available in the Category bot! Use the Category bot to play.")
+		wordlebot.HandleWordleCommand(bot, chatID)
 		return
 	case "word":
 		chatState.RLock()
@@ -541,7 +548,10 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 				return
 			}
 
-			buttons := createSingleButtonKeyboard(" 🗣️ Explain ", "explain")
+			buttons := createMultiButtonKeyboard([][]string{
+				{" 🗣️ Explain ", "explain"},
+				{"Wordle 🟩🟨", "wordle_start"},
+			})
 
 			chatState.Lock()
 			chatState.Word = word
@@ -620,7 +630,10 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		chatState.RUnlock()
 
 		if time.Since(leadTime) >= 600*time.Second {
-			buttons := createSingleButtonKeyboard(" 🗣️ Explain ", "explain")
+			buttons := createMultiButtonKeyboard([][]string{
+				{" 🗣️ Explain ", "explain"},
+				{"Wordle 🟩🟨", "wordle_start"},
+			})
 			view.SendMessageWithButtons(bot, message.Chat.ID, fmt.Sprintf("The word was: %s", word), buttons)
 
 			chatState.reset()
@@ -629,6 +642,12 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			deleteWarningMessage(bot, message, sentMsg, err)
 		}
 	default:
+		// Check if Wordle is active for group chat
+		if wordlebot.IsWordleActive(chatID) {
+			wordlebot.HandleGuess(bot, message, client, chatID, message.Text)
+			return
+		}
+
 		chatState.RLock()
 		word := chatState.Word
 		user := chatState.User
@@ -645,7 +664,10 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			if StickerCrocHappy != "" {
 				view.SendSticker(bot, chatID, StickerCrocHappy)
 			}
-			buttons := createSingleButtonKeyboard("🌟 Claim Leadership 🙋", "explain")
+			buttons := createMultiButtonKeyboard([][]string{
+				{"🌟 Claim Leadership 🙋", "explain"},
+				{"Start Wordle! 🟩🟨", "wordle_start"},
+			})
 			view.SendMessageWithButtons(bot, chatID, victoryText, buttons)
 
 			go view.ReactToMessage(bot.Token, chatID, message.MessageID, "🔥", true)
@@ -693,6 +715,10 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		view.SendMessage(bot, chatID, result)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
 		return
+	case "wordle_start":
+		wordlebot.HandleWordleCommand(bot, chatID)
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Wordle Started!"))
+		return
 	case "explain":
 		chatState.Lock()
 		if chatState.User != callback.From.ID && chatState.User != 0 && time.Since(chatState.LeadTimestamp) < 600*time.Second {
@@ -724,6 +750,9 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 				),
 				tgbotapi.NewInlineKeyboardRow(
 					tgbotapi.NewInlineKeyboardButtonData("Next ⏭️", "next"),
+				),
+				tgbotapi.NewInlineKeyboardRow(
+					tgbotapi.NewInlineKeyboardButtonData("Wordle 🟩🟨", "wordle_start"),
 				),
 				tgbotapi.NewInlineKeyboardRow(
 					tgbotapi.NewInlineKeyboardButtonData("Changed my mind ❌", "droplead"),
@@ -813,7 +842,10 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 				chatState.LastHintTypeSent = 0
 				chatState.Unlock()
 			} else {
-				buttons := createSingleButtonKeyboard(" 🗣️ Explain ", "explain")
+				buttons := createMultiButtonKeyboard([][]string{
+					{" 🗣️ Explain ", "explain"},
+					{"Wordle 🟩🟨", "wordle_start"},
+				})
 				view.SendMessageWithButtons(bot, callback.Message.Chat.ID, "No active game right now. Click below to start one!", buttons)
 				bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
 				return
@@ -966,4 +998,17 @@ func startHTTPServer() {
 		fmt.Fprintf(w, "Bot is running!")
 	})
 	log.Fatal(http.ListenAndServe(":8080", nil))
+}
+
+// createMultiButtonKeyboard creates an inline keyboard markup with multiple buttons
+func createMultiButtonKeyboard(buttonsData [][]string) tgbotapi.InlineKeyboardMarkup {
+	var rows [][]tgbotapi.InlineKeyboardButton
+	for _, rowData := range buttonsData {
+		var row []tgbotapi.InlineKeyboardButton
+		for i := 0; i < len(rowData); i += 2 {
+			row = append(row, tgbotapi.NewInlineKeyboardButtonData(rowData[i], rowData[i+1]))
+		}
+		rows = append(rows, tgbotapi.NewInlineKeyboardRow(row...))
+	}
+	return tgbotapi.NewInlineKeyboardMarkup(rows...)
 }
