@@ -1,7 +1,6 @@
 package categorybot
 
 import (
-	"bufio"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -13,6 +12,7 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/wordlebot"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/model"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/repository"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/service"
@@ -22,114 +22,6 @@ import (
 	lev "github.com/texttheater/golang-levenshtein/levenshtein"
 	"go.mongodb.org/mongo-driver/mongo"
 )
-
-var (
-	validWordleWords = make(map[string]bool)
-	wordleWordList   = make([]string, 0)
-	wordsLoaded      bool
-	wordsMutex       sync.RWMutex
-)
-
-// loadWordleWords loads the 5-letter words from words.txt
-func loadWordleWords() error {
-	wordsMutex.Lock()
-	defer wordsMutex.Unlock()
-
-	if wordsLoaded {
-		return nil
-	}
-
-	// Try to find words.txt starting from current dir or going up
-	paths := []string{
-		"controller/translator/words.txt",
-		"../translator/words.txt",
-		"../../controller/translator/words.txt",
-	}
-
-	var file *os.File
-	var err error
-	for _, p := range paths {
-		file, err = os.Open(p)
-		if err == nil {
-			break
-		}
-	}
-
-	if err != nil {
-		return fmt.Errorf("could not find words.txt: %v", err)
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		word := strings.TrimSpace(strings.ToLower(scanner.Text()))
-		if len(word) == 5 {
-			validWordleWords[word] = true
-			wordleWordList = append(wordleWordList, word)
-		}
-	}
-
-	if err := scanner.Err(); err != nil {
-		return err
-	}
-
-	wordsLoaded = true
-	log.Printf("Loaded %d Wordle words", len(wordleWordList))
-	return nil
-}
-
-// getRandomWordleWord returns a random 5-letter word
-func getRandomWordleWord() string {
-	wordsMutex.RLock()
-	defer wordsMutex.RUnlock()
-	if len(wordleWordList) == 0 {
-		return "apple" // fallback
-	}
-	return wordleWordList[rand.Intn(len(wordleWordList))]
-}
-
-// validateWordleGuess compares a guess against the target word and returns colored emojis
-func validateWordleGuess(guess, target string) string {
-	guess = strings.ToLower(guess)
-	target = strings.ToLower(target)
-
-	result := make([]string, 5)
-	targetCounts := make(map[rune]int)
-
-	// First pass: count characters in target and check for exact matches (Green)
-	for i, ch := range target {
-		targetCounts[ch]++
-		result[i] = "🟥" // Default to Red
-	}
-
-	// Mark Green
-	for i := 0; i < 5; i++ {
-		if guess[i] == target[i] {
-			result[i] = "🟩"
-			targetCounts[rune(guess[i])]--
-		}
-	}
-
-	// Second pass: check for correct letter in wrong place (Yellow)
-	for i := 0; i < 5; i++ {
-		if guess[i] != target[i] && targetCounts[rune(guess[i])] > 0 {
-			result[i] = "🟨"
-			targetCounts[rune(guess[i])]--
-		}
-	}
-
-	return strings.Join(result, " ")
-}
-
-// buildWordleBoard generates the string representation of the current Wordle board
-func buildWordleBoard(ws *WordleState) string {
-	var sb strings.Builder
-	for _, guess := range ws.Guesses {
-		feedback := validateWordleGuess(guess, ws.Word)
-		sb.WriteString(fmt.Sprintf("%s  %s\n", feedback, strings.ToUpper(guess)))
-	}
-	return sb.String()
-}
 
 func MessageToJSONString(message *tgbotapi.Message) (string, error) {
 	jsonBytes, err := json.MarshalIndent(message, "", "  ")
@@ -185,43 +77,16 @@ type ChatState struct {
 	LastHintTypeSent  int // 0 or 1 to track which hint was last sent
 }
 
-// WordleState holds the state for a Wordle game in a specific chat.
-type WordleState struct {
-	sync.RWMutex
-	Active   bool
-	Word     string
-	Guesses  []string
-	Attempts int
-	MaxAttempts int
-}
-
 var (
 	// chatStates is a map that holds the state for each chat, identified by chat ID.
 	chatStates = make(map[int64]*ChatState)
 	// stateMutex ensures safe access to the chatStates map.
 	stateMutex = &sync.RWMutex{}
 
-	// wordleStates holds the Wordle game state per chat
-	wordleStates = make(map[int64]*WordleState)
-	wordleMutex  = &sync.RWMutex{}
-
 	// aiLastResponse stores the last AI response per chat for follow-up hints
 	aiLastResponse  = make(map[int64]string)
 	aiResponseMutex = &sync.RWMutex{}
 )
-
-// getOrCreateWordleState safely retrieves or creates a WordleState for a chatID.
-func getOrCreateWordleState(chatID int64) *WordleState {
-	wordleMutex.Lock()
-	defer wordleMutex.Unlock()
-	if _, exists := wordleStates[chatID]; !exists {
-		wordleStates[chatID] = &WordleState{
-			Guesses: make([]string, 0),
-			MaxAttempts: 15,
-		}
-	}
-	return wordleStates[chatID]
-}
 
 // telegramReactions is a map that holds the reactions for each chat, identified by chat ID.
 var telegramReactions = []string{
@@ -325,7 +190,7 @@ func (cs *ChatState) reset() {
 
 // StartBot initializes and starts the bot
 func StartBot(token string) error {
-	if err := loadWordleWords(); err != nil {
+	if err := wordlebot.LoadWordleWords(); err != nil {
 		log.Printf("Warning: failed to load Wordle words: %v", err)
 	}
 
@@ -421,16 +286,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 				tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Get Hint"+telegramReactions[20], "hint")))
 			view.SendMessageWithButtons(bot, message.Chat.ID, "Heyyy! Got a word for ya 😏 Tap the button below if you need a lil hint 👇", buttons)
 		case "wordle":
-			ws := getOrCreateWordleState(chatID)
-			ws.Lock()
-			ws.Active = true
-			ws.Word = getRandomWordleWord()
-			ws.Guesses = make([]string, 0)
-			ws.Attempts = 0
-			ws.Unlock()
-
-			msg := fmt.Sprintf("🐊 🖼 *Wordle started!* ✨\n\n• The word consists of 5 letters.\n• You have %d attempts.\n\n💡 Hints:\n🟩 Correct letter in the right spot\n🟨 Correct letter but in the wrong spot\n🟥 Letter is not in the word\n\nSend a 5-letter word to guess.", ws.MaxAttempts)
-			view.SendMessage(bot, chatID, msg)
+			wordlebot.HandleWordleCommand(bot, chatID)
 			return
 		case "exportdata":
 			if message.From.ID != int(adminID) {
@@ -653,59 +509,10 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		}
 
 		// Check if Wordle is active for DM
-		ws := getOrCreateWordleState(chatID)
-		ws.Lock()
-		if ws.Active {
-			guess := strings.ToLower(strings.TrimSpace(message.Text))
-			if len(guess) == 5 {
-				wordsMutex.RLock()
-				isValid := validWordleWords[guess]
-				wordsMutex.RUnlock()
-
-				if !isValid {
-					view.SendMessage(bot, chatID, fmt.Sprintf("❌ %s is not a valid word.", strings.ToUpper(guess)))
-					ws.Unlock()
-					return
-				}
-
-				alreadyGuessed := false
-				for _, g := range ws.Guesses {
-					if g == guess {
-						alreadyGuessed = true
-						break
-					}
-				}
-
-				if alreadyGuessed {
-					view.SendMessage(bot, chatID, "⚠️ This word was already guessed!")
-					ws.Unlock()
-					return
-				}
-
-				ws.Guesses = append(ws.Guesses, guess)
-				ws.Attempts++
-
-				board := buildWordleBoard(ws)
-
-				if guess == ws.Word {
-					ws.Active = false
-					msg := fmt.Sprintf("%s\n\n🟩 🟩 🟩 🟩 🟩  %s   [+25💎]\n🎉 [%s](tg://user?id=%d) guessed it in %d attempts!\n\nStart new Wordle! /wordle",
-						board, strings.ToUpper(ws.Word), message.From.FirstName, message.From.ID, ws.Attempts)
-
-					view.SendMessage(bot, chatID, msg)
-					go repository.InsertDoc(message.From.ID, message.From.FirstName, chatID, client, "CrocEn")
-				} else if ws.Attempts >= ws.MaxAttempts {
-					ws.Active = false
-					msg := fmt.Sprintf("%s\n\n❌ Out of attempts! The word was %s.\n\nStart new Wordle! /wordle", board, strings.ToUpper(ws.Word))
-					view.SendMessage(bot, chatID, msg)
-				} else {
-					view.SendMessage(bot, chatID, board)
-				}
-				ws.Unlock()
-				return
-			}
+		if wordlebot.IsWordleActive(chatID) {
+			wordlebot.HandleGuess(bot, message, client, chatID, message.Text)
+			return
 		}
-		ws.Unlock()
 
 		// Check user's guess in DM
 		chatState.RLock()
@@ -799,16 +606,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 	case "start":
 		view.SendMessage(bot, message.Chat.ID, "Welcome! Type /word to start a new game.")
 		case "wordle":
-			ws := getOrCreateWordleState(chatID)
-			ws.Lock()
-			ws.Active = true
-			ws.Word = getRandomWordleWord()
-			ws.Guesses = make([]string, 0)
-			ws.Attempts = 0
-			ws.Unlock()
-
-			msg := fmt.Sprintf("🐊 🖼 *Wordle started!* ✨\n\n• The word consists of 5 letters.\n• You have %d attempts.\n\n💡 Hints:\n🟩 Correct letter in the right spot\n🟨 Correct letter but in the wrong spot\n🟥 Letter is not in the word\n\nSend a 5-letter word to guess.", ws.MaxAttempts)
-			view.SendMessage(bot, chatID, msg)
+			wordlebot.HandleWordleCommand(bot, chatID)
 			return
 	case "stats":
 		result := service.LeaderBoardList(client, "CrocEn", message.Chat.ID)
@@ -1000,6 +798,12 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			deleteWarningMessage(bot, message, sentMsg, err)
 		}
 	default:
+		// Check if Wordle is active for group chat
+		if wordlebot.IsWordleActive(chatID) {
+			wordlebot.HandleGuess(bot, message, client, chatID, message.Text)
+			return
+		}
+
 		chatState.RLock()
 		word := chatState.Word
 		user := chatState.User
@@ -1105,16 +909,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		chatState.Unlock()
 		bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, chatState.Word))
 	case "wordle_start":
-		ws := getOrCreateWordleState(chatID)
-		ws.Lock()
-		ws.Active = true
-		ws.Word = getRandomWordleWord()
-		ws.Guesses = make([]string, 0)
-		ws.Attempts = 0
-		ws.Unlock()
-
-		msg := fmt.Sprintf("🐊 🖼 *Wordle started!* ✨\n\n• The word consists of 5 letters.\n• You have %d attempts.\n\n💡 Hints:\n🟩 Correct letter in the right spot\n🟨 Correct letter but in the wrong spot\n🟥 Letter is not in the word\n\nSend a 5-letter word to guess.", ws.MaxAttempts)
-		view.SendMessage(bot, chatID, msg)
+		wordlebot.HandleWordleCommand(bot, chatID)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Wordle Started!"))
 		return
 	case "ai_hint":
