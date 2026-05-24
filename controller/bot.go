@@ -686,23 +686,23 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 
 	switch callback.Data {
 	case "statsglobal_wordguess":
-		result := service.LeaderBoardList(client, "CrocEn", 0)
-		view.SendMessagehtml(bot, chatID, result)
+		markup := service.LeaderBoardListButtons(client, "CrocEn", 0)
+		view.SendMessageWithStyledButtons(bot.Token, chatID, "🏆 <b>Top 10 Players Leaderboard</b> 🏆\n\n✨ <b>Keep it up and aim for the top!</b> ✨", markup)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
 		return
 	case "statsglobal_wordle":
-		result := service.LeaderBoardList(client, "WordleEn", 0)
-		view.SendMessagehtml(bot, chatID, result)
+		markup := service.LeaderBoardListButtons(client, "WordleEn", 0)
+		view.SendMessageWithStyledButtons(bot.Token, chatID, "🏆 <b>Top 10 Players Leaderboard</b> 🏆\n\n✨ <b>Keep it up and aim for the top!</b> ✨", markup)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
 		return
 	case "statsgroup_wordguess":
-		result := service.LeaderBoardList(client, "CrocEn", chatID)
-		view.SendMessagehtml(bot, chatID, result)
+		markup := service.LeaderBoardListButtons(client, "CrocEn", chatID)
+		view.SendMessageWithStyledButtons(bot.Token, chatID, "🏆 <b>Top 10 Players Leaderboard</b> 🏆\n\n✨ <b>Keep it up and aim for the top!</b> ✨", markup)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
 		return
 	case "statsgroup_wordle":
-		result := service.LeaderBoardList(client, "WordleEn", chatID)
-		view.SendMessagehtml(bot, chatID, result)
+		markup := service.LeaderBoardListButtons(client, "WordleEn", chatID)
+		view.SendMessageWithStyledButtons(bot.Token, chatID, "🏆 <b>Top 10 Players Leaderboard</b> 🏆\n\n✨ <b>Keep it up and aim for the top!</b> ✨", markup)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
 		return
 	case "stats_wordguess":
