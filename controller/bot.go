@@ -687,22 +687,38 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 	switch callback.Data {
 	case "statsglobal_wordguess":
 		markup := service.LeaderBoardListButtons(client, "CrocEn", 0)
-		view.SendMessageWithStyledButtons(bot.Token, chatID, "🏆 <b>Top 10 Players Leaderboard</b> 🏆\n\n✨ <b>Keep it up and aim for the top!</b> ✨", markup)
+		err := view.SendMessageWithStyledButtons(bot.Token, chatID, "🏆 <b>Top 10 Players Leaderboard</b> 🏆\n\n✨ <b>Keep it up and aim for the top!</b> ✨", markup)
+		if err != nil {
+			log.Printf("Failed to send styled buttons message: %v", err)
+			view.SendMessagehtml(bot, chatID, "Failed to load leaderboard.")
+		}
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
 		return
 	case "statsglobal_wordle":
 		markup := service.LeaderBoardListButtons(client, "WordleEn", 0)
-		view.SendMessageWithStyledButtons(bot.Token, chatID, "🏆 <b>Top 10 Players Leaderboard</b> 🏆\n\n✨ <b>Keep it up and aim for the top!</b> ✨", markup)
+		err := view.SendMessageWithStyledButtons(bot.Token, chatID, "🏆 <b>Top 10 Players Leaderboard</b> 🏆\n\n✨ <b>Keep it up and aim for the top!</b> ✨", markup)
+		if err != nil {
+			log.Printf("Failed to send styled buttons message: %v", err)
+			view.SendMessagehtml(bot, chatID, "Failed to load leaderboard.")
+		}
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
 		return
 	case "statsgroup_wordguess":
 		markup := service.LeaderBoardListButtons(client, "CrocEn", chatID)
-		view.SendMessageWithStyledButtons(bot.Token, chatID, "🏆 <b>Top 10 Players Leaderboard</b> 🏆\n\n✨ <b>Keep it up and aim for the top!</b> ✨", markup)
+		err := view.SendMessageWithStyledButtons(bot.Token, chatID, "🏆 <b>Top 10 Players Leaderboard</b> 🏆\n\n✨ <b>Keep it up and aim for the top!</b> ✨", markup)
+		if err != nil {
+			log.Printf("Failed to send styled buttons message: %v", err)
+			view.SendMessagehtml(bot, chatID, "Failed to load leaderboard.")
+		}
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
 		return
 	case "statsgroup_wordle":
 		markup := service.LeaderBoardListButtons(client, "WordleEn", chatID)
-		view.SendMessageWithStyledButtons(bot.Token, chatID, "🏆 <b>Top 10 Players Leaderboard</b> 🏆\n\n✨ <b>Keep it up and aim for the top!</b> ✨", markup)
+		err := view.SendMessageWithStyledButtons(bot.Token, chatID, "🏆 <b>Top 10 Players Leaderboard</b> 🏆\n\n✨ <b>Keep it up and aim for the top!</b> ✨", markup)
+		if err != nil {
+			log.Printf("Failed to send styled buttons message: %v", err)
+			view.SendMessagehtml(bot, chatID, "Failed to load leaderboard.")
+		}
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
 		return
 	case "stats_wordguess":

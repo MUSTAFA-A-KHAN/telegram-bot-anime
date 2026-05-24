@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
+	"log"
 	"net/http"
 )
 
@@ -18,13 +20,13 @@ type CustomInlineKeyboardMarkup struct {
 }
 
 type SendMessageRequest struct {
-	ChatID      int64                      `json:"chat_id"`
-	Text        string                     `json:"text"`
-	ParseMode   string                     `json:"parse_mode,omitempty"`
-	ReplyMarkup CustomInlineKeyboardMarkup `json:"reply_markup,omitempty"`
+	ChatID      int64                       `json:"chat_id"`
+	Text        string                      `json:"text"`
+	ParseMode   string                      `json:"parse_mode,omitempty"`
+	ReplyMarkup *CustomInlineKeyboardMarkup `json:"reply_markup,omitempty"`
 }
 
-func SendMessageWithStyledButtons(botToken string, chatID int64, text string, markup CustomInlineKeyboardMarkup) error {
+func SendMessageWithStyledButtons(botToken string, chatID int64, text string, markup *CustomInlineKeyboardMarkup) error {
 	url := fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage", botToken)
 
 	reqBody := SendMessageRequest{
@@ -36,16 +38,20 @@ func SendMessageWithStyledButtons(botToken string, chatID int64, text string, ma
 
 	jsonData, err := json.Marshal(reqBody)
 	if err != nil {
+		log.Printf("failed to marshal request: %v", err)
 		return fmt.Errorf("failed to marshal request: %w", err)
 	}
 
 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(jsonData))
 	if err != nil {
+		log.Printf("failed to send request: %v", err)
 		return fmt.Errorf("failed to send request: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		log.Printf("Telegram API responded with status: %s, body: %s", resp.Status, string(bodyBytes))
 		return fmt.Errorf("Telegram API responded with status: %s", resp.Status)
 	}
 

@@ -9,7 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func LeaderBoardListButtons(client *mongo.Client, collection string, chatID int64) view.CustomInlineKeyboardMarkup {
+func LeaderBoardListButtons(client *mongo.Client, collection string, chatID int64) *view.CustomInlineKeyboardMarkup {
 	idCounts, err := repository.CountIDOccurrences(client, collection, chatID)
 	if err != nil {
 		log.Printf("Error getting leaderboard: %v", err)
@@ -18,6 +18,10 @@ func LeaderBoardListButtons(client *mongo.Client, collection string, chatID int6
 	limit := 10
 	if len(idCounts) < limit {
 		limit = len(idCounts)
+	}
+
+	if limit == 0 {
+		return nil
 	}
 
 	rankEmojis := []string{"🥇", "🥈", "🥉"}
@@ -34,7 +38,7 @@ func LeaderBoardListButtons(client *mongo.Client, collection string, chatID int6
 		}
 
 		rankDisplay := fmt.Sprintf("%d", i+1)
-		style := "secondary" // default style
+		style := "primary" // Telegram only supports "primary", "success", "danger"
 		if i < 3 {
 			rankDisplay = rankEmojis[i]
 			style = styles[i]
@@ -53,7 +57,7 @@ func LeaderBoardListButtons(client *mongo.Client, collection string, chatID int6
 		buttons = append(buttons, []view.CustomInlineKeyboardButton{btn})
 	}
 
-	return view.CustomInlineKeyboardMarkup{
+	return &view.CustomInlineKeyboardMarkup{
 		InlineKeyboard: buttons,
 	}
 }
