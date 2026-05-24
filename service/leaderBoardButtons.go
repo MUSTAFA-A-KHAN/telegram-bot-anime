@@ -44,6 +44,7 @@ func LeaderBoardListButtons(client *mongo.Client, collection string, chatID int6
 			style = styles[i]
 		} else {
 			rankDisplay = "⭐ " + rankDisplay
+			style=""
 		}
 
 		text := fmt.Sprintf("%s | %s | %s", rankDisplay, name, score)
