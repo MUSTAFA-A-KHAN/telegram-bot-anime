@@ -32,6 +32,9 @@ func LeaderBoardList(client *mongo.Client, collection string, chatID int64) stri
 		count := idCounts[i]
 		name := fmt.Sprintf("%v", count["Name"])
 		score := fmt.Sprintf("%v", count["count"])
+		if collection == "WordleEn" {
+			score += " 🪙"
+		}
 		rankDisplay := fmt.Sprintf("%d", i+1)
 		if i < 3 {
 			rankDisplay = rankEmojis[i]
@@ -81,7 +84,7 @@ func GetWordleUserStatsByID(client *mongo.Client, userID int) string {
 	} else {
 		name, _ := result["Name"].(string)
 		count := 0
-		if val, ok := result["Count"]; ok {
+		if val, ok := result["count"]; ok {
 			switch v := val.(type) {
 			case int32:
 				count = int(v)
@@ -92,7 +95,7 @@ func GetWordleUserStatsByID(client *mongo.Client, userID int) string {
 			}
 		}
 
-		stats = "```text\nName: " + name + "\nWins: " + strconv.Itoa(count) + "\n```"
+		stats = "```text\nName: " + name + "\nPoints: " + strconv.Itoa(count) + " 🪙\n```"
 	}
 
 	return stats
