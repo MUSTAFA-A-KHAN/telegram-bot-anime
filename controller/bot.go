@@ -289,6 +289,32 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 				view.SendMessage(bot, chatID, "Build fail Error:"+err.Error())
 			}
 			view.SendMessage(bot, chatID, "\nLogs:\n"+output)
+		case "addwordlepoints":
+			if message.From.ID != int(adminID) {
+				return
+			}
+			parts := strings.Fields(message.Text)
+			if len(parts) < 3 {
+				view.SendMessage(bot, chatID, "Usage: /addwordlepoints <userID> <points> [name]")
+				return
+			}
+			var userID int
+			var points int
+			if _, err := fmt.Sscanf(parts[1], "%d", &userID); err != nil {
+				view.SendMessage(bot, chatID, "Invalid userID. Must be a number.")
+				return
+			}
+			if _, err := fmt.Sscanf(parts[2], "%d", &points); err != nil {
+				view.SendMessage(bot, chatID, "Invalid points. Must be a number.")
+				return
+			}
+			name := "Unknown"
+			if len(parts) > 3 {
+				name = strings.Join(parts[3:], " ")
+			}
+			go repository.InsertWordleBonusDoc(userID, name, chatID, client, "WordleEn", points)
+			view.SendMessage(bot, chatID, fmt.Sprintf("Added %d Wordle points for user %d (%s)", points, userID, name))
+			return
 		case "report":
 			msgstr, _ := MessageToJSONString(message)
 			view.SendMessage(bot, adminID, msgstr)
@@ -520,6 +546,32 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		if err != nil {
 			log.Printf("Failed to send rules message: %v", err)
 		}
+		return
+	case "addwordlepoints":
+		if message.From.ID != int(adminID) {
+			return
+		}
+		parts := strings.Fields(message.Text)
+		if len(parts) < 3 {
+			view.SendMessage(bot, chatID, "Usage: /addwordlepoints <userID> <points> [name]")
+			return
+		}
+		var userID int
+		var points int
+		if _, err := fmt.Sscanf(parts[1], "%d", &userID); err != nil {
+			view.SendMessage(bot, chatID, "Invalid userID. Must be a number.")
+			return
+		}
+		if _, err := fmt.Sscanf(parts[2], "%d", &points); err != nil {
+			view.SendMessage(bot, chatID, "Invalid points. Must be a number.")
+			return
+		}
+		name := "Unknown"
+		if len(parts) > 3 {
+			name = strings.Join(parts[3:], " ")
+		}
+		go repository.InsertWordleBonusDoc(userID, name, chatID, client, "WordleEn", points)
+		view.SendMessage(bot, chatID, fmt.Sprintf("Added %d Wordle points for user %d (%s)", points, userID, name))
 		return
 	case "report":
 		// if len(message.Text) > 7 {

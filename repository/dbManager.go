@@ -75,6 +75,36 @@ func InsertDoc(ID int, Name string, chatID int64, client *mongo.Client, collecti
 	fmt.Println("Inserted comment with ID:", insertResult.InsertedID)
 }
 
+func InsertWordleBonusDoc(ID int, Name string, chatID int64, client *mongo.Client, collection string, points int) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("Recovered from panic in InsertWordleBonusDoc: %v", r)
+		}
+	}()
+
+	if client == nil {
+		log.Println("MongoDB client is nil in InsertWordleBonusDoc, skipping insert")
+		return
+	}
+
+	database := client.Database("Telegram")
+	commentCollection := database.Collection(collection)
+
+	comment := bson.D{
+		{Key: "ID", Value: ID},
+		{Key: "Name", Value: Name},
+		{Key: "chat_ID", Value: chatID},
+		{Key: "Points", Value: points},
+	}
+
+	insertResult, err := commentCollection.InsertOne(context.TODO(), comment)
+	if err != nil {
+		log.Println("Error inserting document in InsertWordleBonusDoc:", err)
+		return
+	}
+	fmt.Println("Inserted Wordle bonus comment with ID:", insertResult.InsertedID, "Points:", points)
+}
+
 func InsertWordleDoc(ID int, Name string, chatID int64, client *mongo.Client, collection string, attempts int) {
 	defer func() {
 		if r := recover(); r != nil {
