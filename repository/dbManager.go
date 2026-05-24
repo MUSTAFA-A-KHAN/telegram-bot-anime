@@ -74,6 +74,42 @@ func InsertDoc(ID int, Name string, chatID int64, client *mongo.Client, collecti
 	}
 	fmt.Println("Inserted comment with ID:", insertResult.InsertedID)
 }
+
+func InsertWordleDoc(ID int, Name string, chatID int64, client *mongo.Client, collection string, attempts int) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("Recovered from panic in InsertWordleDoc: %v", r)
+		}
+	}()
+
+	if client == nil {
+		log.Println("MongoDB client is nil in InsertWordleDoc, skipping insert")
+		return
+	}
+
+	database := client.Database("Telegram")
+	commentCollection := database.Collection(collection)
+
+	points := 25 - attempts + 1
+	if points < 1 {
+		points = 1 // Ensure minimum 1 point for winning
+	}
+
+	comment := bson.D{
+		{Key: "ID", Value: ID},
+		{Key: "Name", Value: Name},
+		{Key: "chat_ID", Value: chatID},
+		{Key: "Points", Value: points},
+	}
+
+	insertResult, err := commentCollection.InsertOne(context.TODO(), comment)
+	if err != nil {
+		log.Println("Error inserting document in InsertWordleDoc:", err)
+		return
+	}
+	fmt.Println("Inserted Wordle comment with ID:", insertResult.InsertedID, "Points:", points)
+}
+
 func ReadAllDoc(client *mongo.Client, collection string) []bson.M {
 	database := client.Database("Telegram")
 	// movieCollection := database.Collection("CrocEn")
@@ -110,14 +146,24 @@ func CountIDOccurrences(client *mongo.Client, collection string, chatID int64) (
 		pipeline = append(pipeline, bson.D{{"$match", bson.D{{Key: "chat_ID", Value: chatID}}}})
 	}
 
-	pipeline = append(pipeline,
-		// Group by ID, count occurrences, and include Name
-		bson.D{{"$group", bson.D{
-			{Key: "_id", Value: "$ID"},                                    // Group by the "ID" field
-			{Key: "count", Value: bson.D{{Key: "$sum", Value: 1}}},        // Count occurrences
-			{Key: "Name", Value: bson.D{{Key: "$first", Value: "$Name"}}}, // Get the first "Name" encountered for the grouped ID
-		}}},
+	var groupStage bson.D
+	if collection == "WordleEn" {
+		groupStage = bson.D{{"$group", bson.D{
+			{Key: "_id", Value: "$ID"},
+			{Key: "count", Value: bson.D{{Key: "$sum", Value: bson.D{{Key: "$ifNull", Value: bson.A{"$Points", 25}}}}}},
+			{Key: "Name", Value: bson.D{{Key: "$first", Value: "$Name"}}},
+		}}}
+	} else {
+		groupStage = bson.D{{"$group", bson.D{
+			{Key: "_id", Value: "$ID"},
+			{Key: "count", Value: bson.D{{Key: "$sum", Value: 1}}},
+			{Key: "Name", Value: bson.D{{Key: "$first", Value: "$Name"}}},
+		}}}
+	}
 
+	pipeline = append(pipeline,
+		// Group by ID, count occurrences (or points), and include Name
+		groupStage,
 		// Sort by count (descending)
 		bson.D{{"$sort", bson.D{{Key: "count", Value: -1}}}},
 	)
@@ -157,14 +203,25 @@ func GetUserStatsByID(client *mongo.Client, collection string, userID int) (map[
 	database := client.Database("Telegram")
 	commentCollection := database.Collection(collection)
 
-	// Aggregation pipeline to match the userID and count occurrences
-	pipeline := mongo.Pipeline{
-		{{"$match", bson.D{{Key: "ID", Value: userID}}}},
-		{{"$group", bson.D{
+	var groupStage bson.D
+	if collection == "WordleEn" {
+		groupStage = bson.D{{"$group", bson.D{
+			{Key: "_id", Value: "$ID"},
+			{Key: "count", Value: bson.D{{Key: "$sum", Value: bson.D{{Key: "$ifNull", Value: bson.A{"$Points", 25}}}}}},
+			{Key: "Name", Value: bson.D{{Key: "$first", Value: "$Name"}}},
+		}}}
+	} else {
+		groupStage = bson.D{{"$group", bson.D{
 			{Key: "_id", Value: "$ID"},
 			{Key: "count", Value: bson.D{{Key: "$sum", Value: 1}}},
 			{Key: "Name", Value: bson.D{{Key: "$first", Value: "$Name"}}},
-		}}},
+		}}}
+	}
+
+	// Aggregation pipeline to match the userID and count occurrences (or points)
+	pipeline := mongo.Pipeline{
+		{{"$match", bson.D{{Key: "ID", Value: userID}}}},
+		groupStage,
 	}
 
 	cursor, err := commentCollection.Aggregate(context.TODO(), pipeline)
