@@ -445,7 +445,6 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		// Check if Wordle is active for DM
 		if wordlebot.IsWordleActive(chatID) {
 			wordlebot.HandleGuess(bot, message, client, chatID, message.Text)
-			return
 		}
 
 		// Check user's guess in DM
@@ -697,7 +696,6 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		// Check if Wordle is active for group chat
 		if wordlebot.IsWordleActive(chatID) {
 			wordlebot.HandleGuess(bot, message, client, chatID, message.Text)
-			return
 		}
 
 		chatState.RLock()
