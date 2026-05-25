@@ -285,7 +285,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 				tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Get Hint"+telegramReactions[20], "hint")))
 			view.SendMessageWithButtons(bot, message.Chat.ID, "Heyyy! Got a word for ya 😏 Tap the button below if you need a lil hint 👇", buttons)
 		case "wordle":
-			wordlebot.HandleWordleCommand(bot, chatID)
+			wordlebot.HandleWordleCommand(bot, chatID, message.From.FirstName)
 			return
 		case "exportdata":
 			if message.From.ID != int(adminID) {
@@ -623,7 +623,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 	case "start":
 		view.SendMessage(bot, message.Chat.ID, "Welcome! Type /word to start a new game.")
 	case "wordle":
-		wordlebot.HandleWordleCommand(bot, chatID)
+		wordlebot.HandleWordleCommand(bot, chatID, message.From.FirstName)
 		return
 	case "stats":
 		buttons := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Word Guess Group", "statsgroup_wordguess"), tgbotapi.NewInlineKeyboardButtonData("Wordle Group", "statsgroup_wordle")))
@@ -1004,8 +1004,15 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		chatState.Unlock()
 		bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, chatState.Word))
 	case "wordle_start":
-		wordlebot.HandleWordleCommand(bot, chatID)
+		wordlebot.HandleWordleCommand(bot, chatID, callback.From.FirstName)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Wordle Started!"))
+		return
+	case "cancel_new_wordle":
+		if wordlebot.CancelPendingGame(bot, chatID, callback.From.FirstName) {
+			bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Cancelled new game request."))
+		} else {
+			bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "No pending game request to cancel."))
+		}
 		return
 	case "ai_hint":
 		aiResponseMutex.RLock()

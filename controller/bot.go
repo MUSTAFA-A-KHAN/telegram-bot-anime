@@ -585,7 +585,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		// 	view.SendMessage(bot, chatID, "Please provide a message with your report. Usage: /report [your message]")
 		// }
 	case "wordle":
-		wordlebot.HandleWordleCommand(bot, chatID)
+		wordlebot.HandleWordleCommand(bot, chatID, message.From.FirstName)
 		return
 	case "word":
 		chatState.RLock()
@@ -784,8 +784,15 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
 		return
 	case "wordle_start":
-		wordlebot.HandleWordleCommand(bot, chatID)
+		wordlebot.HandleWordleCommand(bot, chatID, callback.From.FirstName)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Wordle Started!"))
+		return
+	case "cancel_new_wordle":
+		if wordlebot.CancelPendingGame(bot, chatID, callback.From.FirstName) {
+			bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Cancelled new game request."))
+		} else {
+			bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "No pending game request to cancel."))
+		}
 		return
 	case "explain":
 		chatState.Lock()

@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/repository"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/view"
@@ -18,11 +19,13 @@ import (
 // WordleState holds the state for a Wordle game in a specific chat.
 type WordleState struct {
 	sync.RWMutex
-	Active      bool
-	Word        string
-	Guesses     []string
-	Attempts    int
-	MaxAttempts int
+	Active         bool
+	Word           string
+	Guesses        []string
+	Attempts       int
+	MaxAttempts    int
+	PendingNewGame bool
+	CancelChan     chan bool
 }
 
 var (
@@ -159,9 +162,65 @@ func IsWordleActive(chatID int64) bool {
 }
 
 // HandleWordleCommand starts a new Wordle game
-func HandleWordleCommand(bot *tgbotapi.BotAPI, chatID int64) {
+func HandleWordleCommand(bot *tgbotapi.BotAPI, chatID int64, username string) {
 	ws := GetOrCreateWordleState(chatID)
+
 	ws.Lock()
+	if ws.Active {
+		if ws.PendingNewGame {
+			ws.Unlock()
+			return // Already a pending request
+		}
+		ws.PendingNewGame = true
+		ws.CancelChan = make(chan bool, 1)
+		ws.Unlock()
+
+		markup := tgbotapi.NewInlineKeyboardMarkup(
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("Cancel New Game ❌", "cancel_new_wordle"),
+			),
+		)
+		alertMsg := fmt.Sprintf("⚠️ %s is trying to start a new Wordle game despite the current session going on!\n\nYou have 5 seconds to cancel the new game request.", username)
+		sentMsg, err := bot.Send(tgbotapi.NewMessage(chatID, alertMsg))
+		if err == nil {
+			editMsg := tgbotapi.NewEditMessageReplyMarkup(chatID, sentMsg.MessageID, markup)
+			bot.Send(editMsg)
+		}
+
+		go func() {
+			select {
+			case <-time.After(5 * time.Second):
+				ws.Lock()
+				if !ws.PendingNewGame {
+					// It was cancelled
+					ws.Unlock()
+					return
+				}
+				ws.PendingNewGame = false
+				ws.Active = true
+				ws.Word = getRandomWordleWord()
+				ws.Guesses = make([]string, 0)
+				ws.Attempts = 0
+				ws.Unlock()
+
+				if err == nil {
+					deleteMsg := tgbotapi.NewDeleteMessage(chatID, sentMsg.MessageID)
+					bot.Send(deleteMsg)
+				}
+
+				msg := fmt.Sprintf("🐊 🖼 *Wordle started!* ✨\n\n• The word consists of 5 letters.\n• You have %d attempts.\n\n💡 Hints:\n🟩 Correct letter in the right spot\n🟨 Correct letter but in the wrong spot\n🟥 Letter is not in the word\n\nSend a 5-letter word to guess.", ws.MaxAttempts)
+				view.SendMessage(bot, chatID, msg)
+			case <-ws.CancelChan:
+				// Cancelled by a user
+				if err == nil {
+					deleteMsg := tgbotapi.NewDeleteMessage(chatID, sentMsg.MessageID)
+					bot.Send(deleteMsg)
+				}
+			}
+		}()
+		return
+	}
+
 	ws.Active = true
 	ws.Word = getRandomWordleWord()
 	ws.Guesses = make([]string, 0)
@@ -170,6 +229,24 @@ func HandleWordleCommand(bot *tgbotapi.BotAPI, chatID int64) {
 
 	msg := fmt.Sprintf("🐊 🖼 *Wordle started!* ✨\n\n• The word consists of 5 letters.\n• You have %d attempts.\n\n💡 Hints:\n🟩 Correct letter in the right spot\n🟨 Correct letter but in the wrong spot\n🟥 Letter is not in the word\n\nSend a 5-letter word to guess.", ws.MaxAttempts)
 	view.SendMessage(bot, chatID, msg)
+}
+
+// CancelPendingGame cancels an ongoing new game request
+func CancelPendingGame(bot *tgbotapi.BotAPI, chatID int64, username string) bool {
+	ws := GetOrCreateWordleState(chatID)
+	ws.Lock()
+	defer ws.Unlock()
+
+	if ws.PendingNewGame {
+		ws.PendingNewGame = false
+		select {
+		case ws.CancelChan <- true:
+		default:
+		}
+		view.SendMessage(bot, chatID, fmt.Sprintf("✅ %s cancelled the new Wordle game request. The current game will continue.", username))
+		return true
+	}
+	return false
 }
 
 // HandleGuess processes a guess for a Wordle game
