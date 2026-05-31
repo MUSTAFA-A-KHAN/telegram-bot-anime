@@ -14,6 +14,7 @@ import (
 	"sync"
 
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/translator/utilities"
+	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/repository"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
@@ -854,6 +855,24 @@ func Bot() {
 						}
 						break
 					}
+
+					dbClient := repository.DbManager()
+					userID := int(message.From.ID)
+					userName := message.From.FirstName
+
+					if repository.HasFreeEordle(dbClient, userID) {
+						repository.UseFreeEordle(dbClient, userID)
+					} else {
+						points := repository.GetCurrentPoints(dbClient, userID)
+						if points < 5 {
+							msg := tgbotapi.NewMessage(chatID, "You don't have enough points. Every Eordle costs 5 points. Play Wordle to earn more points.")
+							msg.ReplyToMessageID = message.MessageID
+							bot.Send(msg)
+							break
+						}
+						repository.DeductWordlePoints(dbClient, userID, userName, chatID, 5)
+					}
+
 					suggestion := translator.SolveWordle(text)
 					msg := tgbotapi.NewMessage(chatID, suggestion)
 					msg.ReplyToMessageID = message.MessageID
@@ -876,6 +895,24 @@ func Bot() {
 						}
 						break
 					}
+
+					dbClient := repository.DbManager()
+					userID := int(message.From.ID)
+					userName := message.From.FirstName
+
+					if repository.HasFreeEordle(dbClient, userID) {
+						repository.UseFreeEordle(dbClient, userID)
+					} else {
+						points := repository.GetCurrentPoints(dbClient, userID)
+						if points < 5 {
+							msg := tgbotapi.NewMessage(chatID, "You don't have enough points. Every Eordle costs 5 points. Play Wordle to earn more points.")
+							msg.ReplyToMessageID = message.MessageID
+							bot.Send(msg)
+							break
+						}
+						repository.DeductWordlePoints(dbClient, userID, userName, chatID, 5)
+					}
+
 					analysis := translator.AnalyzeEordle(text)
 					msg := tgbotapi.NewMessage(chatID, analysis)
 					msg.ReplyToMessageID = message.MessageID
