@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/url"
+	"sync"
 
 	"time"
 
@@ -14,7 +15,19 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+var (
+	clientInstance *mongo.Client
+	clientMutex    sync.Mutex
+)
+
 func DbManager() *mongo.Client {
+	clientMutex.Lock()
+	defer clientMutex.Unlock()
+
+	if clientInstance != nil {
+		return clientInstance
+	}
+
 	fmt.Print("into DBmanager")
 	passsword := "pass@123"
 	encodedPassword := url.QueryEscape(passsword)
@@ -24,6 +37,7 @@ func DbManager() *mongo.Client {
 	client, err := mongo.Connect(context.TODO(), clientOptions)
 	if err != nil {
 		log.Print(err)
+		return nil
 	}
 
 	// Ensure connection is established
@@ -32,7 +46,9 @@ func DbManager() *mongo.Client {
 		return nil
 	}
 	fmt.Println("Connected to MongoDB successfully!")
-	return client
+	clientInstance = client
+
+	return clientInstance
 }
 func InsertDoc(ID int, Name string, chatID int64, client *mongo.Client, collection string) {
 	defer func() {
