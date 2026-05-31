@@ -95,8 +95,40 @@ func LoadWordleWords() error {
 		return err
 	}
 
+	// Load allowed_words.txt for validation
+	allowedPaths := []string{
+		"controller/translator/allowed_words.txt",
+		"../translator/allowed_words.txt",
+		"../../controller/translator/allowed_words.txt",
+	}
+
+	var allowedFile *os.File
+	var allowedErr error
+	for _, p := range allowedPaths {
+		allowedFile, allowedErr = os.Open(p)
+		if allowedErr == nil {
+			break
+		}
+	}
+
+	if allowedErr == nil {
+		defer allowedFile.Close()
+		allowedScanner := bufio.NewScanner(allowedFile)
+		for allowedScanner.Scan() {
+			word := strings.TrimSpace(strings.ToLower(allowedScanner.Text()))
+			if len(word) == 5 {
+				validWordleWords[word] = true
+			}
+		}
+		if err := allowedScanner.Err(); err != nil {
+			log.Printf("Error scanning allowed_words.txt: %v", err)
+		}
+	} else {
+		log.Printf("Could not find allowed_words.txt, fallback to words.txt only: %v", allowedErr)
+	}
+
 	wordsLoaded = true
-	log.Printf("Loaded %d Wordle words", len(wordleWordList))
+	log.Printf("Loaded %d Wordle target words and %d valid guesses", len(wordleWordList), len(validWordleWords))
 	return nil
 }
 
