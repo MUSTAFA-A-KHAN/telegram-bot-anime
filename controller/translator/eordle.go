@@ -44,7 +44,7 @@ func (t *TextTranslator) SolveWordle(puzzle string) string {
 	candidates, err := findCandidates(pattern, present, excluded, notIn)
 	if err == nil && len(candidates) > 0 {
 		best := chooseBestCandidate(candidates)
-		return fmt.Sprintf("Best next word: %s\n\nBeware: Every Eordle costs 5 points.", best)
+		return fmt.Sprintf("Best next word: %s\n\n<i>Beware: Every Eordle costs 5 points.</i>", best)
 	}
 	if OpenAIKey == "" {
 		analysis := t.AnalyzeEordle(input)
@@ -114,7 +114,7 @@ func (t *TextTranslator) SolveWordle(puzzle string) string {
 		}
 
 		if validateCandidate(word, pattern, present, excluded, notIn) {
-			return fmt.Sprintf("Best next word: %s\n\nBeware: Every Eordle costs 5 points.", word)
+			return fmt.Sprintf("Best next word: %s\n\n<i>Beware: Every Eordle costs 5 points.</i>", word)
 		}
 
 		// If invalid, append a clarification and retry
