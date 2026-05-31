@@ -285,7 +285,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 				tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Get Hint"+telegramReactions[20], "hint")))
 			view.SendMessageWithButtons(bot, message.Chat.ID, "Heyyy! Got a word for ya 😏 Tap the button below if you need a lil hint 👇", buttons)
 		case "wordle":
-			wordlebot.HandleWordleCommand(bot, chatID)
+			wordlebot.HandleWordleCommand(bot, chatID, message.From.FirstName)
 			return
 		case "exportdata":
 			if message.From.ID != int(adminID) {
@@ -350,6 +350,32 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 				view.SendMessage(bot, chatID, "Build fail Error:"+err.Error())
 			}
 			view.SendMessage(bot, chatID, "\nLogs:\n"+output)
+		case "addwordlepoints":
+			if message.From.ID != int(adminID) {
+				return
+			}
+			parts := strings.Fields(message.Text)
+			if len(parts) < 3 {
+				view.SendMessage(bot, chatID, "Usage: /addwordlepoints <userID> <points> [name]")
+				return
+			}
+			var userID int
+			var points int
+			if _, err := fmt.Sscanf(parts[1], "%d", &userID); err != nil {
+				view.SendMessage(bot, chatID, "Invalid userID. Must be a number.")
+				return
+			}
+			if _, err := fmt.Sscanf(parts[2], "%d", &points); err != nil {
+				view.SendMessage(bot, chatID, "Invalid points. Must be a number.")
+				return
+			}
+			name := "Unknown"
+			if len(parts) > 3 {
+				name = strings.Join(parts[3:], " ")
+			}
+			go repository.InsertWordleBonusDoc(userID, name, chatID, client, "WordleEn", points)
+			view.SendMessage(bot, chatID, fmt.Sprintf("Added %d Wordle points for user %d (%s)", points, userID, name))
+			return
 		case "report":
 			msgstr, _ := MessageToJSONString(message)
 			view.SendMessage(bot, adminID, msgstr)
@@ -502,7 +528,6 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		// Check if Wordle is active for DM
 		if wordlebot.IsWordleActive(chatID) {
 			wordlebot.HandleGuess(bot, message, client, chatID, message.Text)
-			return
 		}
 
 		// Check user's guess in DM
@@ -597,7 +622,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 	case "start":
 		view.SendMessage(bot, message.Chat.ID, "Welcome! Type /word to start a new game.")
 	case "wordle":
-		wordlebot.HandleWordleCommand(bot, chatID)
+		wordlebot.HandleWordleCommand(bot, chatID, message.From.FirstName)
 		return
 	case "stats":
 		buttons := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Word Guess Group", "statsgroup_wordguess"), tgbotapi.NewInlineKeyboardButtonData("Wordle Group", "statsgroup_wordle")))
@@ -640,6 +665,32 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		if err != nil {
 			log.Printf("Failed to send rules message: %v", err)
 		}
+		return
+	case "addwordlepoints":
+		if message.From.ID != int(adminID) {
+			return
+		}
+		parts := strings.Fields(message.Text)
+		if len(parts) < 3 {
+			view.SendMessage(bot, chatID, "Usage: /addwordlepoints <userID> <points> [name]")
+			return
+		}
+		var userID int
+		var points int
+		if _, err := fmt.Sscanf(parts[1], "%d", &userID); err != nil {
+			view.SendMessage(bot, chatID, "Invalid userID. Must be a number.")
+			return
+		}
+		if _, err := fmt.Sscanf(parts[2], "%d", &points); err != nil {
+			view.SendMessage(bot, chatID, "Invalid points. Must be a number.")
+			return
+		}
+		name := "Unknown"
+		if len(parts) > 3 {
+			name = strings.Join(parts[3:], " ")
+		}
+		go repository.InsertWordleBonusDoc(userID, name, chatID, client, "WordleEn", points)
+		view.SendMessage(bot, chatID, fmt.Sprintf("Added %d Wordle points for user %d (%s)", points, userID, name))
 		return
 	case "report":
 		// if len(message.Text) > 7 {
@@ -798,7 +849,6 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		// Check if Wordle is active for group chat
 		if wordlebot.IsWordleActive(chatID) {
 			wordlebot.HandleGuess(bot, message, client, chatID, message.Text)
-			return
 		}
 
 		chatState.RLock()
@@ -952,8 +1002,15 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		chatState.Unlock()
 		bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, chatState.Word))
 	case "wordle_start":
-		wordlebot.HandleWordleCommand(bot, chatID)
+		wordlebot.HandleWordleCommand(bot, chatID, callback.From.FirstName)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Wordle Started!"))
+		return
+	case "cancel_new_wordle":
+		if wordlebot.CancelPendingGame(bot, chatID, callback.From.FirstName) {
+			bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Cancelled new game request."))
+		} else {
+			bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "No pending game request to cancel."))
+		}
 		return
 	case "ai_hint":
 		aiResponseMutex.RLock()
