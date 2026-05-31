@@ -293,8 +293,12 @@ func HandleGuess(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.
 
 	if guess == ws.Word {
 		ws.Active = false
-		msg := fmt.Sprintf("%s\n\n🟩 🟩 🟩 🟩 🟩  %s   [+25💎]\n🎉 [%s](tg://user?id=%d) guessed it in %d attempts!",
-			board, strings.ToUpper(ws.Word), message.From.FirstName, message.From.ID, ws.Attempts)
+		points := 25 - ws.Attempts + 1
+		if points < 1 {
+			points = 1 // Ensure minimum 1 point for winning
+		}
+		msg := fmt.Sprintf("%s\n\n🟩 🟩 🟩 🟩 🟩  %s   [+%d💎]\n🎉 [%s](tg://user?id=%d) guessed it in %d attempts!",
+			board, strings.ToUpper(ws.Word), points, message.From.FirstName, message.From.ID, ws.Attempts)
 
 		buttons := tgbotapi.NewInlineKeyboardMarkup(
 			tgbotapi.NewInlineKeyboardRow(
