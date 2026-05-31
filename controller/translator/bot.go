@@ -875,6 +875,7 @@ func Bot() {
 
 					suggestion := translator.SolveWordle(text)
 					msg := tgbotapi.NewMessage(chatID, suggestion)
+					msg.ParseMode = tgbotapi.ModeHTML
 					msg.ReplyToMessageID = message.MessageID
 					if _, err := bot.Send(msg); err != nil {
 						log.Printf("Error sending eordle solution: %v", err)
@@ -915,6 +916,7 @@ func Bot() {
 
 					analysis := translator.AnalyzeEordle(text)
 					msg := tgbotapi.NewMessage(chatID, analysis)
+					msg.ParseMode = tgbotapi.ModeHTML
 					msg.ReplyToMessageID = message.MessageID
 					if _, err := bot.Send(msg); err != nil {
 						log.Printf("Error sending eordle analysis: %v", err)
