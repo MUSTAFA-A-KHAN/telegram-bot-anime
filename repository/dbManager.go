@@ -6,6 +6,8 @@ import (
 	"log"
 	"net/url"
 
+	"time"
+
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/model"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -269,4 +271,83 @@ func GetUserStatsByID(client *mongo.Client, collection string, userID int) (map[
 	}
 
 	return nil, fmt.Errorf("no stats found for user ID %d", userID)
+}
+
+// HasFreeEordle checks if the user has a free Eordle available for today.
+func HasFreeEordle(client *mongo.Client, userID int) bool {
+	if client == nil {
+		log.Println("MongoDB client is nil in HasFreeEordle")
+		return false
+	}
+
+	database := client.Database("Telegram")
+	collection := database.Collection("EordleUsage")
+
+	today := time.Now().Format("2006-01-02")
+
+	var result bson.M
+	err := collection.FindOne(context.TODO(), bson.D{
+		{Key: "ID", Value: userID},
+		{Key: "Date", Value: today},
+	}).Decode(&result)
+
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return true // No usage for today, free eordle is available
+		}
+		log.Printf("Error checking free Eordle: %v", err)
+		return false
+	}
+
+	return false // Used already
+}
+
+// UseFreeEordle marks the free Eordle as used for today for a specific user.
+func UseFreeEordle(client *mongo.Client, userID int) {
+	if client == nil {
+		log.Println("MongoDB client is nil in UseFreeEordle")
+		return
+	}
+
+	database := client.Database("Telegram")
+	collection := database.Collection("EordleUsage")
+
+	today := time.Now().Format("2006-01-02")
+
+	doc := bson.D{
+		{Key: "ID", Value: userID},
+		{Key: "Date", Value: today},
+	}
+
+	_, err := collection.InsertOne(context.TODO(), doc)
+	if err != nil {
+		log.Printf("Error inserting Eordle usage: %v", err)
+	}
+}
+
+// GetCurrentPoints gets the current points of a user from WordleEn collection
+func GetCurrentPoints(client *mongo.Client, userID int) int {
+	stats, err := GetUserStatsByID(client, "WordleEn", userID)
+	if err != nil {
+		return 0
+	}
+
+	if val, ok := stats["count"]; ok {
+		switch v := val.(type) {
+		case int32:
+			return int(v)
+		case int64:
+			return int(v)
+		case int:
+			return v
+		case float64:
+			return int(v)
+		}
+	}
+	return 0
+}
+
+// DeductWordlePoints deducts a given amount of points from a user
+func DeductWordlePoints(client *mongo.Client, userID int, name string, chatID int64, points int) {
+	InsertWordleBonusDoc(userID, name, chatID, client, "WordleEn", -points)
 }
