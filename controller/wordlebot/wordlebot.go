@@ -292,8 +292,17 @@ func HandleGuess(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.
 	}
 
 	guess := strings.ToLower(strings.TrimSpace(text))
+
+	// Check if it's exactly 5 bytes (ASCII check)
 	if len(guess) != 5 {
 		return // Not a valid guess format, ignore
+	}
+
+	// Ensure all characters are valid English alphabet letters
+	for i := 0; i < len(guess); i++ {
+		if guess[i] < 'a' || guess[i] > 'z' {
+			return // Ignore non-alphabetical inputs completely
+		}
 	}
 
 	wordsMutex.RLock()
