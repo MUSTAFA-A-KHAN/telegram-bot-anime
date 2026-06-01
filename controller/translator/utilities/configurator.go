@@ -9,13 +9,13 @@ import (
 	"strings"
 	"unicode"
 )
+var tokenPattern = regexp.MustCompile(`^[a-zA-Z0-9]+$`)
 
 func isLikelyRawToken(s string) bool {
 	if len(s) != 20 {
 		return false
 	}
 	// Check if it's alphanumeric
-	tokenPattern := regexp.MustCompile(`^[a-zA-Z0-9]+$`)
 	return tokenPattern.MatchString(s)
 }
 
