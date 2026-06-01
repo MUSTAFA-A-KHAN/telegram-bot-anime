@@ -40,23 +40,23 @@ func sendMarkdownMessage(bot *tgbotapi.BotAPI, msg tgbotapi.MessageConfig) error
 	return nil
 }
 
+var markdownReplacements = []struct {
+	re      *regexp.Regexp
+	replace string
+}{
+	{regexp.MustCompile("(?s)```(?:[a-zA-Z0-9_-]+)?\\n?(.*?)```"), `<pre>$1</pre>`},
+	{regexp.MustCompile(`\*\*([^*\n]+)\*\*`), `<b>$1</b>`},
+	{regexp.MustCompile(`__([^_\n]+)__`), `<b>$1</b>`},
+	{regexp.MustCompile(`\*([^*\n]+)\*`), `<i>$1</i>`},
+	{regexp.MustCompile(`_([^_\n]+)_`), `<i>$1</i>`},
+	{regexp.MustCompile("`([^`\n]+)`"), `<code>$1</code>`},
+}
+
 func markdownToTelegramHTML(text string) string {
 	escaped := html.EscapeString(strings.ReplaceAll(text, "\r\n", "\n"))
 
-	replacements := []struct {
-		pattern string
-		replace string
-	}{
-		{"(?s)```(?:[a-zA-Z0-9_-]+)?\\n?(.*?)```", `<pre>$1</pre>`},
-		{`\*\*([^*\n]+)\*\*`, `<b>$1</b>`},
-		{`__([^_\n]+)__`, `<b>$1</b>`},
-		{`\*([^*\n]+)\*`, `<i>$1</i>`},
-		{`_([^_\n]+)_`, `<i>$1</i>`},
-		{"`([^`\n]+)`", `<code>$1</code>`},
-	}
-
-	for _, replacement := range replacements {
-		escaped = regexp.MustCompile(replacement.pattern).ReplaceAllString(escaped, replacement.replace)
+	for _, replacement := range markdownReplacements {
+		escaped = replacement.re.ReplaceAllString(escaped, replacement.replace)
 	}
 
 	lines := strings.Split(escaped, "\n")

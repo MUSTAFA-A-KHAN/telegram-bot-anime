@@ -5,14 +5,15 @@ import (
 	"strings"
 )
 
+var punctuationRe = regexp.MustCompile(`[^\w\s]`)
+
 // normalizeAndCompare normalizes both strings and compares them
 func NormalizeAndCompare(str1, str2 string) bool {
 	normalizeString := func(s string) string {
 		// Convert to lowercase
 		s = strings.ToLower(s)
 		// Remove punctuation using regex
-		re := regexp.MustCompile(`[^\w\s]`)
-		s = re.ReplaceAllString(s, "")
+		s = punctuationRe.ReplaceAllString(s, "")
 		// Remove extra whitespace
 		s = strings.Join(strings.Fields(s), " ")
 		return s

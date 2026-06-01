@@ -395,8 +395,9 @@ func (t *TextTranslator) callLLM(prompt string) string {
 	return llmErrorMessage
 }
 
+var wordRe = regexp.MustCompile(`\b[a-zA-Z]{5}\b`)
+
 func extractFirstWord(text string) string {
-	wordRe := regexp.MustCompile(`\b[a-zA-Z]{5}\b`)
 	if match := wordRe.FindString(text); match != "" {
 		return strings.ToUpper(match)
 	}
