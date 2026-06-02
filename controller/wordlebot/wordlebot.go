@@ -198,8 +198,12 @@ func buildWordleBoard(ws *WordleState) string {
 	var sb strings.Builder
 	for i, guess := range ws.Guesses {
 		feedback := validateWordleGuess(guess, ws.Word)
-		attemptNum := getSuperscript(i + 1)
-		sb.WriteString(fmt.Sprintf("%s  %s %s\n", feedback, strings.ToUpper(guess), attemptNum))
+		if i > 10 {
+			attemptNum := getSuperscript(i + 1)
+			sb.WriteString(fmt.Sprintf("%s  %s %s\n", feedback, strings.ToUpper(guess), attemptNum))
+		} else {
+			sb.WriteString(fmt.Sprintf("%s  %s\n", feedback, strings.ToUpper(guess)))
+		}
 	}
 	return sb.String()
 }
