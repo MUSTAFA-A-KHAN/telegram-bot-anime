@@ -131,3 +131,27 @@ func GetWordleUserStatsByID(client *mongo.Client, userID int) string {
 
 	return stats
 }
+
+func GetScramyUserStatsByID(client *mongo.Client, userID int) string {
+	result, err := repository.GetUserStatsByID(client, "ScramyEn", userID)
+	stats := "something went wrong"
+	if err != nil {
+		stats = "No winning stats found"
+	} else {
+		name, _ := result["Name"].(string)
+		count := 0
+		if val, ok := result["count"]; ok {
+			switch v := val.(type) {
+			case int32:
+				count = int(v)
+			case int64:
+				count = int(v)
+			case int:
+				count = v
+			}
+		}
+
+		stats = "```text\nName: " + name + "\nPoints: " + strconv.Itoa(count) + " 💎\n```"
+	}
+	return stats
+}
