@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/repository"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/view"
@@ -32,6 +33,24 @@ func LeaderBoardListButtons(client *mongo.Client, collection string, chatID int6
 	for i := 0; i < limit; i++ {
 		count := idCounts[i]
 		name := fmt.Sprintf("%v", count["Name"])
+
+		var userID int
+		if id, ok := count["_id"]; ok {
+			switch v := id.(type) {
+			case int32:
+				userID = int(v)
+			case int64:
+				userID = int(v)
+			case int:
+				userID = v
+			}
+		}
+
+		equippedEmojis, err := repository.GetEquippedEmojis(client, userID)
+		if err == nil && len(equippedEmojis) > 0 {
+			name += " " + strings.Join(equippedEmojis, "")
+		}
+
 		score := fmt.Sprintf("%v", count["count"])
 		if collection == "WordleEn" {
 			score += " 🪙"

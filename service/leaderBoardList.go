@@ -31,6 +31,25 @@ func LeaderBoardList(client *mongo.Client, collection string, chatID int64) stri
 	for i := 0; i < limit; i++ {
 		count := idCounts[i]
 		name := fmt.Sprintf("%v", count["Name"])
+
+		// Fetch and append equipped emojis to the user's name
+		var userID int
+		if id, ok := count["_id"]; ok {
+			switch v := id.(type) {
+			case int32:
+				userID = int(v)
+			case int64:
+				userID = int(v)
+			case int:
+				userID = v
+			}
+		}
+
+		equippedEmojis, err := repository.GetEquippedEmojis(client, userID)
+		if err == nil && len(equippedEmojis) > 0 {
+			name += " " + strings.Join(equippedEmojis, "")
+		}
+
 		score := fmt.Sprintf("%v", count["count"])
 		if collection == "WordleEn" {
 			score += " 🪙"
@@ -58,6 +77,12 @@ func GetUserStatsByID(client *mongo.Client, userID int) string {
 		stats = "No winning stats found"
 	} else {
 		name, _ := result["Name"].(string)
+
+		equippedEmojis, err := repository.GetEquippedEmojis(client, userID)
+		if err == nil && len(equippedEmojis) > 0 {
+			name += " " + strings.Join(equippedEmojis, "")
+		}
+
 		count, _ := result["count"].(int32)
 
 		stats = fmt.Sprintf("You %s have successfully guessed for:\n%d Times", name, count)
@@ -83,6 +108,12 @@ func GetWordleUserStatsByID(client *mongo.Client, userID int) string {
 		stats = "No winning stats found"
 	} else {
 		name, _ := result["Name"].(string)
+
+		equippedEmojis, err := repository.GetEquippedEmojis(client, userID)
+		if err == nil && len(equippedEmojis) > 0 {
+			name += " " + strings.Join(equippedEmojis, "")
+		}
+
 		count := 0
 		if val, ok := result["count"]; ok {
 			switch v := val.(type) {

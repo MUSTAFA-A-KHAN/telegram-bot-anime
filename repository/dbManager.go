@@ -351,3 +351,97 @@ func GetCurrentPoints(client *mongo.Client, userID int) int {
 func DeductWordlePoints(client *mongo.Client, userID int, name string, chatID int64, points int) {
 	InsertWordleBonusDoc(userID, name, chatID, client, "WordleEn", -points)
 }
+
+// GetEquippedEmojis returns the list of emojis equipped by a user
+func GetEquippedEmojis(client *mongo.Client, userID int) ([]string, error) {
+	database := client.Database("Telegram")
+	collection := database.Collection("UserEmojis")
+
+	filter := bson.M{"UserID": userID}
+	var result struct {
+		EquippedEmojis []string `bson:"EquippedEmojis"`
+	}
+
+	err := collection.FindOne(context.TODO(), filter).Decode(&result)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return []string{}, nil
+		}
+		return nil, err
+	}
+	return result.EquippedEmojis, nil
+}
+
+// GetPurchasedEmojis returns the list of emojis purchased by a user
+func GetPurchasedEmojis(client *mongo.Client, userID int) ([]string, error) {
+	database := client.Database("Telegram")
+	collection := database.Collection("UserEmojis")
+
+	filter := bson.M{"UserID": userID}
+	var result struct {
+		PurchasedEmojis []string `bson:"PurchasedEmojis"`
+	}
+
+	err := collection.FindOne(context.TODO(), filter).Decode(&result)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return []string{}, nil
+		}
+		return nil, err
+	}
+	return result.PurchasedEmojis, nil
+}
+
+// PurchaseEmoji adds an emoji to the user's purchased list
+func PurchaseEmoji(client *mongo.Client, userID int, emoji string) error {
+	database := client.Database("Telegram")
+	collection := database.Collection("UserEmojis")
+
+	filter := bson.M{"UserID": userID}
+	update := bson.M{
+		"$addToSet": bson.M{"PurchasedEmojis": emoji},
+	}
+
+	opts := options.Update().SetUpsert(true)
+	_, err := collection.UpdateOne(context.TODO(), filter, update, opts)
+	return err
+}
+
+// ToggleEquipEmoji toggles whether an emoji is equipped for a user
+func ToggleEquipEmoji(client *mongo.Client, userID int, emoji string) (bool, error) {
+	database := client.Database("Telegram")
+	collection := database.Collection("UserEmojis")
+
+	filter := bson.M{"UserID": userID}
+	var result struct {
+		EquippedEmojis []string `bson:"EquippedEmojis"`
+	}
+	err := collection.FindOne(context.TODO(), filter).Decode(&result)
+
+	isEquipped := false
+	if err == nil {
+		for _, e := range result.EquippedEmojis {
+			if e == emoji {
+				isEquipped = true
+				break
+			}
+		}
+	} else if err != mongo.ErrNoDocuments {
+		return false, err
+	}
+
+	var update bson.M
+	if isEquipped {
+		update = bson.M{"$pull": bson.M{"EquippedEmojis": emoji}}
+	} else {
+		update = bson.M{"$addToSet": bson.M{"EquippedEmojis": emoji}}
+	}
+
+	opts := options.Update().SetUpsert(true)
+	_, err = collection.UpdateOne(context.TODO(), filter, update, opts)
+	if err != nil {
+		return false, err
+	}
+
+	return !isEquipped, nil
+}
