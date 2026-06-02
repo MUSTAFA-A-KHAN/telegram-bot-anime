@@ -129,7 +129,7 @@ func LoadScramyWords() error {
 	return nil
 }
 
-// generateScramyLetters generates 8 random letters that can form at least 10 valid 5-letter words
+// generateScramyLetters generates 15 random letters that can form at least 10 valid 5-letter words
 func generateScramyLetters() string {
 	wordsMutex.RLock()
 	defer wordsMutex.RUnlock()
@@ -139,33 +139,19 @@ func generateScramyLetters() string {
 
 	for {
 		var letters []rune
-		letters = make([]rune, 8)
-		for j := 0; j < 3; j++ {
+		letters = make([]rune, 15)
+		for j := 0; j < 5; j++ { // 5 vowels
 			letters[j] = vowels[rand.Intn(len(vowels))]
 		}
-		for j := 3; j < 8; j++ {
+		for j := 5; j < 15; j++ { // 10 consonants
 			letters[j] = consonants[rand.Intn(len(consonants))]
 		}
 
-		letterMap := make(map[rune]bool)
-		uniqueLetters := make([]rune, 0, 8)
-		for _, l := range letters {
-			if !letterMap[l] {
-				letterMap[l] = true
-				uniqueLetters = append(uniqueLetters, l)
-			}
-		}
+		// Because 15 letters almost covers the entire list of 20 unique vowels+consonants provided above,
+		// duplicates are going to be very common, so we just allow duplicates in the 15-letter pool
+		// rather than forcing all 15 to be strictly unique, to make it easier.
 
-		for len(uniqueLetters) < 8 {
-			c := consonants[rand.Intn(len(consonants))]
-			if !letterMap[c] {
-				letterMap[c] = true
-				uniqueLetters = append(uniqueLetters, c)
-			}
-		}
-		letters = uniqueLetters
-
-		rand.Shuffle(8, func(i, j int) {
+		rand.Shuffle(15, func(i, j int) {
 			letters[i], letters[j] = letters[j], letters[i]
 		})
 
@@ -193,7 +179,7 @@ func generateScramyLetters() string {
 			str := ""
 			for i, l := range letters {
 				str += strings.ToUpper(string(l))
-				if i < 7 {
+				if i < 14 {
 					str += ", "
 				}
 			}
