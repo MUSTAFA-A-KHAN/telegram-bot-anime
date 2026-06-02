@@ -328,6 +328,21 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		case "leaderstatsglobal":
 			result := service.LeaderBoardList(client, "CrocEnLeader", 0)
 			view.SendMessagehtml(bot, message.Chat.ID, result)
+		case "shop":
+			if message.Chat.IsPrivate() {
+				// Handle shop in DM
+				showShop(bot, message.Chat.ID)
+			} else {
+				// Send a link to DM
+				botUsername := bot.Self.UserName
+				link := fmt.Sprintf("https://t.me/%s?start=shop", botUsername)
+				markup := tgbotapi.NewInlineKeyboardMarkup(
+					tgbotapi.NewInlineKeyboardRow(
+						tgbotapi.NewInlineKeyboardButtonURL("🛒 Go to Shop", link),
+					),
+				)
+				view.SendMessageWithButtons(bot, message.Chat.ID, "Click the button below to visit the Emoji Shop!", markup)
+			}
 		case "mystats":
 			buttons := tgbotapi.NewInlineKeyboardMarkup(
 				tgbotapi.NewInlineKeyboardRow(
@@ -630,6 +645,21 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 	case "leaderstats":
 		result := service.LeaderBoardList(client, "CrocEnLeader", message.Chat.ID)
 		view.SendMessagehtml(bot, message.Chat.ID, result)
+	case "shop":
+		if message.Chat.IsPrivate() {
+			// Handle shop in DM
+			showShop(bot, message.Chat.ID)
+		} else {
+			// Send a link to DM
+			botUsername := bot.Self.UserName
+			link := fmt.Sprintf("https://t.me/%s?start=shop", botUsername)
+			markup := tgbotapi.NewInlineKeyboardMarkup(
+				tgbotapi.NewInlineKeyboardRow(
+					tgbotapi.NewInlineKeyboardButtonURL("🛒 Go to Shop", link),
+				),
+			)
+			view.SendMessageWithButtons(bot, message.Chat.ID, "Click the button below to visit the Emoji Shop!", markup)
+		}
 	case "statsglobal":
 		buttons := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Word Guess Global", "statsglobal_wordguess"), tgbotapi.NewInlineKeyboardButtonData("Wordle Global", "statsglobal_wordle")))
 		view.SendMessageWithButtons(bot, chatID, "🐊🇮🇳\n📊 Choose global stats to view:", buttons)
@@ -917,6 +947,10 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 
 // handleCallbackQuery processes incoming callback queries and handles the "explain" action.
 func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery, client *mongo.Client) {
+	if handleShopCallback(bot, callback, client) {
+		return
+	}
+
 	chatID := callback.Message.Chat.ID
 	chatState := getOrCreateChatState(chatID)
 
