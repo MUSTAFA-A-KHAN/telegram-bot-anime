@@ -7,3 +7,6 @@
 ## 2024-06-01 - Global Regexp Compilation
 **Learning:** In Go, calling `regexp.MustCompile` inside a frequently executed function recompiles the regex on every invocation, causing significant unnecessary overhead.
 **Action:** Always declare `*regexp.Regexp` variables globally at the package level when possible, compiling them once during initialization to reuse across function calls safely.
+## 2024-05-15 - Optimize Regexp Compilation
+**Learning:** Found dynamic `regexp.MustCompile` in multiple files inside frequently executed loops/functions throughout this Go codebase (e.g. `service/StringUtilsService.go`, `controller/translator/handlers.go`). Compiling regex at runtime is an expensive operation in Go and significantly degrades performance.
+**Action:** Always declare `*regexp.Regexp` variables globally at the package level instead of inside functions or loops. Recompilation overhead should be strictly avoided.
