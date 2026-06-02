@@ -281,9 +281,13 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			button := tgbotapi.NewInlineKeyboardButtonURL("add to group", "https://t.me/Croco_rebirth_bot?startgroup=true")
 			view.SendMessageWithKeyboardButton(bot, chatID, "Unlock my full potential by adding me to a group chat!", button)
 		case "start":
-			buttons := tgbotapi.NewInlineKeyboardMarkup(
-				tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Get Hint"+telegramReactions[20], "hint")))
-			view.SendMessageWithButtons(bot, message.Chat.ID, "Heyyy! Got a word for ya 😏 Tap the button below if you need a lil hint 👇", buttons)
+			if message.CommandArguments() == "shop" {
+				showShop(bot, message.Chat.ID)
+			} else {
+				buttons := tgbotapi.NewInlineKeyboardMarkup(
+					tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Get Hint"+telegramReactions[20], "hint")))
+				view.SendMessageWithButtons(bot, message.Chat.ID, "Heyyy! Got a word for ya 😏 Tap the button below if you need a lil hint 👇", buttons)
+			}
 		case "wordle":
 			wordlebot.HandleWordleCommand(bot, chatID, message.From.FirstName)
 			return
@@ -635,7 +639,11 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		view.SendMessage(bot, chatID, "AI mode is now enabled! Enjoy the smart responses.")
 		return
 	case "start":
-		view.SendMessage(bot, message.Chat.ID, "Welcome! Type /word to start a new game.")
+		if message.CommandArguments() == "shop" {
+			showShop(bot, message.Chat.ID)
+		} else {
+			view.SendMessage(bot, message.Chat.ID, "Welcome! Type /word to start a new game.")
+		}
 	case "wordle":
 		wordlebot.HandleWordleCommand(bot, chatID, message.From.FirstName)
 		return
