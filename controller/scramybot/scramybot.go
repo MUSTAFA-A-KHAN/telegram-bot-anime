@@ -24,6 +24,7 @@ type ScramyState struct {
 	FoundWords     []string
 	UserWords      map[int][]string
 	UserScores     map[int]int
+	UserNames      map[int]string
 	MaxWords       int
 	PendingNewGame bool
 	CancelChan     chan bool
@@ -48,6 +49,7 @@ func GetOrCreateScramyState(chatID int64) *ScramyState {
 			FoundWords: make([]string, 0),
 			UserWords:  make(map[int][]string),
 			UserScores: make(map[int]int),
+			UserNames:  make(map[int]string),
 			MaxWords:   10,
 		}
 	}
@@ -255,6 +257,7 @@ func HandleScramyCommand(bot *tgbotapi.BotAPI, chatID int64, username string) {
 				ss.FoundWords = make([]string, 0)
 				ss.UserWords = make(map[int][]string)
 				ss.UserScores = make(map[int]int)
+				ss.UserNames = make(map[int]string)
 				ss.Unlock()
 
 				if err == nil {
@@ -279,6 +282,7 @@ func HandleScramyCommand(bot *tgbotapi.BotAPI, chatID int64, username string) {
 	ss.FoundWords = make([]string, 0)
 	ss.UserWords = make(map[int][]string)
 	ss.UserScores = make(map[int]int)
+	ss.UserNames = make(map[int]string)
 	ss.Unlock()
 
 	msg := fmt.Sprintf("📝 *WORD SCRAMBLE*\n\n🦴 Make words using these letters\n\n%s\n\n🔎 5-letter words are accepted\n\nTotal: 0/10", ss.Letters)
@@ -373,6 +377,7 @@ func HandleGuess(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.
 
 	points := getPoints(len(ss.FoundWords))
 	ss.UserScores[message.From.ID] += points
+	ss.UserNames[message.From.ID] = message.From.FirstName
 
 	letterStr := getLetterString(ss.Letters)
 
@@ -383,9 +388,9 @@ func HandleGuess(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.
 			message.From.FirstName, capitalizeWord(guess), points, letterStr, len(ss.FoundWords))
 
 		for userID, score := range ss.UserScores {
-			name := message.From.FirstName
-			if userID != message.From.ID {
-			    name = fmt.Sprintf("User %d", userID) // Best effort name
+			name := ss.UserNames[userID]
+			if name == "" {
+			    name = fmt.Sprintf("User %d", userID) // Fallback if somehow not found
 			}
 			msg += fmt.Sprintf("%s - %d points 💎\n", name, score)
 			go repository.InsertWordleBonusDoc(userID, name, chatID, client, "ScramyEn", score) // reusing logic since it just inserts Score/Points
