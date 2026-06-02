@@ -35,6 +35,8 @@ func LeaderBoardListButtons(client *mongo.Client, collection string, chatID int6
 		score := fmt.Sprintf("%v", count["count"])
 		if collection == "WordleEn" {
 			score += " 🪙"
+		} else if collection == "ScramyEn" {
+			score += " 💎"
 		}
 
 		rankDisplay := fmt.Sprintf("%d", i+1)

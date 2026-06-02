@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/scramybot"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/wordlebot"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/model"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/repository"
@@ -262,7 +263,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		case "leaderstats":
 			view.SendMessage(bot, chatID, "Group stats are not available in a DM. You can view global stats using /statsglobal or /leaderstatsglobal.")
 		case "statsglobal":
-			buttons := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Word Guess Global", "statsglobal_wordguess"), tgbotapi.NewInlineKeyboardButtonData("Wordle Global", "statsglobal_wordle")))
+			buttons := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Word Guess Global", "statsglobal_wordguess"), tgbotapi.NewInlineKeyboardButtonData("Wordle Global", "statsglobal_wordle")), tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Scramy Global", "statsglobal_scramy")))
 			view.SendMessageWithButtons(bot, chatID, "🐊🇮🇳\n📊 Choose global stats to view:", buttons)
 		case "leaderstatsglobal":
 			result := service.LeaderBoardList(client, "CrocEnLeader", 0)
@@ -272,6 +273,9 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 				tgbotapi.NewInlineKeyboardRow(
 					tgbotapi.NewInlineKeyboardButtonData("Word Guess", "stats_wordguess"),
 					tgbotapi.NewInlineKeyboardButtonData("Wordle", "stats_wordle"),
+				),
+				tgbotapi.NewInlineKeyboardRow(
+					tgbotapi.NewInlineKeyboardButtonData("Scramy", "stats_scramy"),
 				),
 			)
 			view.SendMessageWithButtons(bot, chatID, "🐊🇮🇳\n📊 Choose game stats to view:", buttons)
@@ -447,6 +451,10 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			wordlebot.HandleGuess(bot, message, client, chatID, message.Text)
 		}
 
+		if scramybot.IsScramyActive(chatID) {
+			scramybot.HandleGuess(bot, message, client, chatID, message.Text)
+		}
+
 		// Check user's guess in DM
 		chatState.RLock()
 		word := chatState.Word
@@ -505,13 +513,13 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 	case "start":
 		view.SendMessage(bot, message.Chat.ID, "Welcome! Type /word to start a new game.")
 	case "stats":
-		buttons := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Word Guess Group", "statsgroup_wordguess"), tgbotapi.NewInlineKeyboardButtonData("Wordle Group", "statsgroup_wordle")))
+		buttons := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Word Guess Group", "statsgroup_wordguess"), tgbotapi.NewInlineKeyboardButtonData("Wordle Group", "statsgroup_wordle")), tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Scramy Group", "statsgroup_scramy")))
 		view.SendMessageWithButtons(bot, chatID, "🐊🇮🇳\n📊 Choose group stats to view:", buttons)
 	case "leaderstats":
 		result := service.LeaderBoardList(client, "CrocEnLeader", message.Chat.ID)
 		view.SendMessagehtml(bot, message.Chat.ID, result)
 	case "statsglobal":
-		buttons := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Word Guess Global", "statsglobal_wordguess"), tgbotapi.NewInlineKeyboardButtonData("Wordle Global", "statsglobal_wordle")))
+		buttons := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Word Guess Global", "statsglobal_wordguess"), tgbotapi.NewInlineKeyboardButtonData("Wordle Global", "statsglobal_wordle")), tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Scramy Global", "statsglobal_scramy")))
 		view.SendMessageWithButtons(bot, chatID, "🐊🇮🇳\n📊 Choose global stats to view:", buttons)
 	case "leaderstatsglobal":
 		result := service.LeaderBoardList(client, "CrocEnLeader", 0)
@@ -521,6 +529,9 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			tgbotapi.NewInlineKeyboardRow(
 				tgbotapi.NewInlineKeyboardButtonData("Word Guess", "stats_wordguess"),
 				tgbotapi.NewInlineKeyboardButtonData("Wordle", "stats_wordle"),
+			),
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("Scramy", "stats_scramy"),
 			),
 		)
 		view.SendMessageWithButtons(bot, chatID, "🐊🇮🇳\n📊 Choose game stats to view:", buttons)
@@ -585,6 +596,9 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		// }
 	case "wordle":
 		wordlebot.HandleWordleCommand(bot, chatID, message.From.FirstName)
+		return
+	case "scramy":
+		scramybot.HandleScramyCommand(bot, chatID, message.From.FirstName)
 		return
 	case "word":
 		chatState.RLock()
@@ -698,6 +712,10 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			wordlebot.HandleGuess(bot, message, client, chatID, message.Text)
 		}
 
+		if scramybot.IsScramyActive(chatID) {
+			scramybot.HandleGuess(bot, message, client, chatID, message.Text)
+		}
+
 		chatState.RLock()
 		word := chatState.Word
 		user := chatState.User
@@ -753,6 +771,15 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		}
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
 		return
+	case "statsglobal_scramy":
+		markup := service.LeaderBoardListButtons(client, "ScramyEn", 0)
+		err := view.SendMessageWithStyledButtons(bot.Token, chatID, "🏆 <b>Top 10 Players Leaderboard</b> 🏆\n\n✨ <b>Keep it up and aim for the top!</b> ✨", markup)
+		if err != nil {
+			log.Printf("Failed to send styled buttons message: %v", err)
+			view.SendMessagehtml(bot, chatID, "Failed to load leaderboard.")
+		}
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
+		return
 	case "statsgroup_wordguess":
 		markup := service.LeaderBoardListButtons(client, "CrocEn", chatID)
 		err := view.SendMessageWithStyledButtons(bot.Token, chatID, "🏆 <b>Top 10 Players Leaderboard</b> 🏆\n\n✨ <b>Keep it up and aim for the top!</b> ✨", markup)
@@ -771,6 +798,15 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		}
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
 		return
+	case "statsgroup_scramy":
+		markup := service.LeaderBoardListButtons(client, "ScramyEn", chatID)
+		err := view.SendMessageWithStyledButtons(bot.Token, chatID, "🏆 <b>Top 10 Players Leaderboard</b> 🏆\n\n✨ <b>Keep it up and aim for the top!</b> ✨", markup)
+		if err != nil {
+			log.Printf("Failed to send styled buttons message: %v", err)
+			view.SendMessagehtml(bot, chatID, "Failed to load leaderboard.")
+		}
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
+		return
 	case "stats_wordguess":
 		result := service.GetUserStatsByID(client, callback.From.ID)
 		view.SendMessage(bot, chatID, result)
@@ -781,6 +817,11 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		view.SendMessage(bot, chatID, result)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
 		return
+	case "stats_scramy":
+		result := service.GetScramyUserStatsByID(client, callback.From.ID)
+		view.SendMessage(bot, chatID, result)
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
+		return
 	case "wordle_start":
 		wordlebot.HandleWordleCommand(bot, chatID, callback.From.FirstName)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Wordle Started!"))
@@ -788,6 +829,17 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 	case "cancel_new_wordle":
 		if wordlebot.CancelPendingGame(bot, chatID, callback.From.FirstName) {
 			bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Cancelled new game request."))
+		} else {
+			bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "No pending game request to cancel."))
+		}
+		return
+	case "scramy_start":
+		scramybot.HandleScramyCommand(bot, chatID, callback.From.FirstName)
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Scramy Started!"))
+		return
+	case "cancel_new_scramy":
+		if scramybot.CancelPendingGame(bot, chatID, callback.From.FirstName) {
+			bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Cancelled new Scramy game request."))
 		} else {
 			bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "No pending game request to cancel."))
 		}
