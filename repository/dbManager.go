@@ -185,6 +185,12 @@ func CountIDOccurrences(client *mongo.Client, collection string, chatID int64) (
 			{Key: "count", Value: bson.D{{Key: "$sum", Value: bson.D{{Key: "$ifNull", Value: bson.A{"$Points", 25}}}}}},
 			{Key: "Name", Value: bson.D{{Key: "$first", Value: "$Name"}}},
 		}}}
+	} else if collection == "ScramyEn" {
+		groupStage = bson.D{{"$group", bson.D{
+			{Key: "_id", Value: "$ID"},
+			{Key: "count", Value: bson.D{{Key: "$sum", Value: "$Points"}}},
+			{Key: "Name", Value: bson.D{{Key: "$first", Value: "$Name"}}},
+		}}}
 	} else {
 		groupStage = bson.D{{"$group", bson.D{
 			{Key: "_id", Value: "$ID"},
@@ -240,6 +246,12 @@ func GetUserStatsByID(client *mongo.Client, collection string, userID int) (map[
 		groupStage = bson.D{{"$group", bson.D{
 			{Key: "_id", Value: "$ID"},
 			{Key: "count", Value: bson.D{{Key: "$sum", Value: bson.D{{Key: "$ifNull", Value: bson.A{"$Points", 25}}}}}},
+			{Key: "Name", Value: bson.D{{Key: "$first", Value: "$Name"}}},
+		}}}
+	} else if collection == "ScramyEn" {
+		groupStage = bson.D{{"$group", bson.D{
+			{Key: "_id", Value: "$ID"},
+			{Key: "count", Value: bson.D{{Key: "$sum", Value: "$Points"}}},
 			{Key: "Name", Value: bson.D{{Key: "$first", Value: "$Name"}}},
 		}}}
 	} else {
