@@ -375,7 +375,7 @@ func HandleGuess(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.
 		go repository.InsertWordleDoc(message.From.ID, message.From.FirstName, chatID, client, "WordleEn", ws.Attempts)
 	} else if ws.Attempts >= ws.MaxAttempts {
 		ws.Active = false
-		msg := fmt.Sprintf("%s\n\n❌ Out of attempts! The word was %s.", board, strings.ToUpper(ws.Word))
+		msg := fmt.Sprintf("%s\n\n❌ Out of attempts, %s! The word was %s.", board, message.From.FirstName, strings.ToUpper(ws.Word))
 
 		buttons := tgbotapi.NewInlineKeyboardMarkup(
 			tgbotapi.NewInlineKeyboardRow(
