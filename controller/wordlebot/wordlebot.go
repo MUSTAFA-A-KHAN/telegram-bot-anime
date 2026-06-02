@@ -175,12 +175,31 @@ func validateWordleGuess(guess, target string) string {
 	return strings.Join(result, " ")
 }
 
+// getSuperscript returns the given number as a string of superscript characters
+func getSuperscript(num int) string {
+	superscripts := map[rune]rune{
+		'0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴',
+		'5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹',
+	}
+	strNum := fmt.Sprintf("%d", num)
+	var result []rune
+	for _, r := range strNum {
+		if sup, ok := superscripts[r]; ok {
+			result = append(result, sup)
+		} else {
+			result = append(result, r)
+		}
+	}
+	return string(result)
+}
+
 // buildWordleBoard generates the string representation of the current Wordle board
 func buildWordleBoard(ws *WordleState) string {
 	var sb strings.Builder
-	for _, guess := range ws.Guesses {
+	for i, guess := range ws.Guesses {
 		feedback := validateWordleGuess(guess, ws.Word)
-		sb.WriteString(fmt.Sprintf("%s  %s\n", feedback, strings.ToUpper(guess)))
+		attemptNum := getSuperscript(i + 1)
+		sb.WriteString(fmt.Sprintf("%s  %s %s\n", feedback, strings.ToUpper(guess), attemptNum))
 	}
 	return sb.String()
 }
