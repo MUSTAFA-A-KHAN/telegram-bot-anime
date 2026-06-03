@@ -91,7 +91,7 @@ func LoadScramyWords() error {
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		word := strings.TrimSpace(strings.ToLower(scanner.Text()))
-		if len(word) == 5 {
+		if len(word) >= 4 && len(word) <= 8 {
 			validWordsMap[word] = true
 			validWordsList = append(validWordsList, word)
 		}
@@ -117,11 +117,8 @@ func LoadScramyWords() error {
 		allowedScanner := bufio.NewScanner(allowedFile)
 		for allowedScanner.Scan() {
 			word := strings.TrimSpace(strings.ToLower(allowedScanner.Text()))
-			if len(word) == 5 {
-				if !validWordsMap[word] {
-					validWordsMap[word] = true
-					validWordsList = append(validWordsList, word)
-				}
+			if len(word) >= 4 && len(word) <= 8 {
+				validWordsMap[word] = true
 			}
 		}
 	}
@@ -195,18 +192,18 @@ func getLetterString(letters string) string {
 	return strings.ReplaceAll(letters, ",", "")
 }
 
-func getPoints(wordsFoundCount int) int {
-	// wordsFoundCount is the index of the word found (1-based)
+func getPoints(wordsFoundCount int, wordLength int) int {
+	bonus := 0
 	if wordsFoundCount >= 1 && wordsFoundCount <= 4 {
-		return 5
+		bonus = 0
 	} else if wordsFoundCount >= 5 && wordsFoundCount <= 8 {
-		return 7
+		bonus = 2
 	} else if wordsFoundCount == 9 {
-		return 8
+		bonus = 3
 	} else if wordsFoundCount == 10 {
-		return 10
+		bonus = 5
 	}
-	return 0
+	return wordLength + bonus
 }
 
 // IsScramyActive checks if the Scramy game is active for a given chat ID
@@ -265,7 +262,7 @@ func HandleScramyCommand(bot *tgbotapi.BotAPI, chatID int64, username string) {
 					bot.Send(deleteMsg)
 				}
 
-				msg := fmt.Sprintf("📝 *WORD SCRAMBLE*\n\n🦴 Make words using these letters\n\n%s\n\n🔎 5-letter words are accepted\n\nTotal: 0/10", ss.Letters)
+				msg := fmt.Sprintf("📝 *WORD SCRAMBLE*\n\n🦴 Make words using these letters\n\n%s\n\n🔎 4 to 8-letter words are accepted. Longer words give more points!\n\nTotal: 0/10", ss.Letters)
 				view.SendMessage(bot, chatID, msg)
 			case <-ss.CancelChan:
 				if err == nil {
@@ -285,7 +282,7 @@ func HandleScramyCommand(bot *tgbotapi.BotAPI, chatID int64, username string) {
 	ss.UserNames = make(map[int]string)
 	ss.Unlock()
 
-	msg := fmt.Sprintf("📝 *WORD SCRAMBLE*\n\n🦴 Make words using these letters\n\n%s\n\n🔎 5-letter words are accepted\n\nTotal: 0/10", ss.Letters)
+	msg := fmt.Sprintf("📝 *WORD SCRAMBLE*\n\n🦴 Make words using these letters\n\n%s\n\n🔎 4 to 8-letter words are accepted. Longer words give more points!\n\nTotal: 0/10", ss.Letters)
 	view.SendMessage(bot, chatID, msg)
 }
 
@@ -344,7 +341,7 @@ func HandleGuess(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.
 
 	guess := strings.ToLower(strings.TrimSpace(text))
 
-	if len(guess) != 5 {
+	if len(guess) < 4 || len(guess) > 8 {
 		return // Not a valid guess format, ignore
 	}
 
@@ -375,7 +372,7 @@ func HandleGuess(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.
 	ss.FoundWords = append(ss.FoundWords, guess)
 	ss.UserWords[message.From.ID] = append(ss.UserWords[message.From.ID], guess)
 
-	points := getPoints(len(ss.FoundWords))
+	points := getPoints(len(ss.FoundWords), len(guess))
 	ss.UserScores[message.From.ID] += points
 	ss.UserNames[message.From.ID] = message.From.FirstName
 
