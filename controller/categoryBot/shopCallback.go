@@ -16,6 +16,9 @@ func handleShopCallback(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery, 
 	if data == "inventory" {
 		showInventory(bot, callback, client)
 		return true
+	} else if data == "shop_main" {
+		editShopMain(bot, callback)
+		return true
 	} else if strings.HasPrefix(data, "buy_emoji_") {
 		emoji := strings.TrimPrefix(data, "buy_emoji_")
 		handleBuyEmoji(bot, callback, client, emoji)
@@ -27,6 +30,39 @@ func handleShopCallback(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery, 
 	}
 
 	return false
+}
+
+func editShopMain(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery) {
+	var rows [][]tgbotapi.InlineKeyboardButton
+
+	// Add inventory button
+	rows = append(rows, tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("🎒 My Inventory", "inventory"),
+	))
+
+	// Group emojis into rows of 3
+	var currentRow []tgbotapi.InlineKeyboardButton
+	for i, item := range service.ShopItems {
+		btn := tgbotapi.NewInlineKeyboardButtonData(
+			fmt.Sprintf("%s - %d 🪙", item.Emoji, item.Price),
+			fmt.Sprintf("buy_emoji_%s", item.Emoji),
+		)
+		currentRow = append(currentRow, btn)
+
+		if (i+1)%3 == 0 || i == len(service.ShopItems)-1 {
+			rows = append(rows, tgbotapi.NewInlineKeyboardRow(currentRow...))
+			currentRow = nil
+		}
+	}
+
+	markup := tgbotapi.NewInlineKeyboardMarkup(rows...)
+
+	editMsg := tgbotapi.NewEditMessageText(callback.Message.Chat.ID, callback.Message.MessageID, "🛒 *Welcome to the Emoji Shop!*\n\nSpend your Wordle Points here to buy custom emojis that will appear next to your name on leaderboards.")
+	editMsg.ReplyMarkup = &markup
+	editMsg.ParseMode = "Markdown"
+	bot.Send(editMsg)
+
+	bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
 }
 
 func showInventory(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery, client *mongo.Client) {
@@ -68,6 +104,10 @@ func showInventory(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery, clien
 			currentRow = nil
 		}
 	}
+
+	rows = append(rows, tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("🔙 Back to Shop", "shop_main"),
+	))
 
 	markup := tgbotapi.NewInlineKeyboardMarkup(rows...)
 
