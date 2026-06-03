@@ -1,0 +1,3 @@
+## 2024-06-03 - [Back Button Navigation in Telegram Bot UIs]
+**Learning:** Conversational interfaces like Telegram bots often trap users in deep sub-menus (e.g., an "Inventory" menu branching off a "Shop" main menu) if explicit backwards navigation is not provided. Furthermore, modifying the current active menu by editing the message `tgbotapi.NewEditMessageText` creates a cleaner, more intuitive interaction flow compared to sending entirely new messages that clutter the chat feed.
+**Action:** Always include a "🔙 Back" button in inline keyboards for deeper navigational menus to let users return to the parent context seamlessly. Combine this with message editing rather than resending to prevent feed spamming and keep the UX responsive.
