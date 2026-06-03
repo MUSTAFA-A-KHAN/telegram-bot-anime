@@ -92,6 +92,10 @@ func EditMessageTextWithStyledButtons(botToken string, chatID int64, messageID i
 
 	if resp.StatusCode != http.StatusOK {
 		bodyBytes, _ := io.ReadAll(resp.Body)
+		// Ignore "message is not modified" error which happens when user clicks active tab
+		if bytes.Contains(bodyBytes, []byte("message is not modified")) {
+			return nil
+		}
 		log.Printf("Telegram API responded with status: %s, body: %s", resp.Status, string(bodyBytes))
 		return fmt.Errorf("Telegram API responded with status: %s", resp.Status)
 	}
