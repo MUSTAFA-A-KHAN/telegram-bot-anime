@@ -69,9 +69,9 @@ func LoadScramyWords() error {
 	validWordsMap = make(map[string]bool)
 
 	paths := []string{
-		"controller/translator/words.txt",
-		"../translator/words.txt",
-		"../../controller/translator/words.txt",
+		"controller/translator/scramy_words.txt",
+		"../translator/scramy_words.txt",
+		"../../controller/translator/scramy_words.txt",
 	}
 
 	var file *os.File
@@ -91,16 +91,16 @@ func LoadScramyWords() error {
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		word := strings.TrimSpace(strings.ToLower(scanner.Text()))
-		if len(word) >= 4 && len(word) <= 8 {
+		if len(word) >= 4 {
 			validWordsMap[word] = true
 			validWordsList = append(validWordsList, word)
 		}
 	}
 
 	allowedPaths := []string{
-		"controller/translator/allowed_words.txt",
-		"../translator/allowed_words.txt",
-		"../../controller/translator/allowed_words.txt",
+		"controller/translator/scramy_allowed_words.txt",
+		"../translator/scramy_allowed_words.txt",
+		"../../controller/translator/scramy_allowed_words.txt",
 	}
 
 	var allowedFile *os.File
@@ -117,14 +117,14 @@ func LoadScramyWords() error {
 		allowedScanner := bufio.NewScanner(allowedFile)
 		for allowedScanner.Scan() {
 			word := strings.TrimSpace(strings.ToLower(allowedScanner.Text()))
-			if len(word) >= 4 && len(word) <= 8 {
+			if len(word) >= 4 {
 				validWordsMap[word] = true
 			}
 		}
 	}
 
 	wordsLoaded = true
-	log.Printf("Loaded %d valid 5-letter words for SCRAMY", len(validWordsList))
+	log.Printf("Loaded %d valid 4+ letter words for SCRAMY", len(validWordsList))
 	return nil
 }
 
@@ -262,7 +262,7 @@ func HandleScramyCommand(bot *tgbotapi.BotAPI, chatID int64, username string) {
 					bot.Send(deleteMsg)
 				}
 
-				msg := fmt.Sprintf("📝 *WORD SCRAMBLE*\n\n🦴 Make words using these letters\n\n%s\n\n🔎 4 to 8-letter words are accepted. Longer words give more points!\n\nTotal: 0/10", ss.Letters)
+				msg := fmt.Sprintf("📝 *WORD SCRAMBLE*\n\n🦴 Make words using these letters\n\n%s\n\n🔎 Words with 4 or more letters are accepted. Longer words give more points!\n\nTotal: 0/10", ss.Letters)
 				view.SendMessage(bot, chatID, msg)
 			case <-ss.CancelChan:
 				if err == nil {
@@ -282,7 +282,7 @@ func HandleScramyCommand(bot *tgbotapi.BotAPI, chatID int64, username string) {
 	ss.UserNames = make(map[int]string)
 	ss.Unlock()
 
-	msg := fmt.Sprintf("📝 *WORD SCRAMBLE*\n\n🦴 Make words using these letters\n\n%s\n\n🔎 4 to 8-letter words are accepted. Longer words give more points!\n\nTotal: 0/10", ss.Letters)
+	msg := fmt.Sprintf("📝 *WORD SCRAMBLE*\n\n🦴 Make words using these letters\n\n%s\n\n🔎 Words with 4 or more letters are accepted. Longer words give more points!\n\nTotal: 0/10", ss.Letters)
 	view.SendMessage(bot, chatID, msg)
 }
 
@@ -341,7 +341,7 @@ func HandleGuess(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.
 
 	guess := strings.ToLower(strings.TrimSpace(text))
 
-	if len(guess) < 4 || len(guess) > 8 {
+	if len(guess) < 4 {
 		return // Not a valid guess format, ignore
 	}
 
