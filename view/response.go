@@ -24,6 +24,17 @@ func ReplyToMessage(bot *tgbotapi.BotAPI, mesgID int, chatID int64, text string)
 	res, err := bot.Send(msg)
 	return res, err
 }
+
+func ReplyToMessageWithButtonsHTML(bot *tgbotapi.BotAPI, mesgID int, chatID int64, text string, buttons tgbotapi.InlineKeyboardMarkup) (tgbotapi.Message, error) {
+	msg := tgbotapi.NewMessage(chatID, text)
+	msg.ReplyToMessageID = mesgID
+	msg.ParseMode = tgbotapi.ModeHTML
+	if len(buttons.InlineKeyboard) > 0 {
+		msg.ReplyMarkup = buttons
+	}
+	res, err := bot.Send(msg)
+	return res, err
+}
 func SendMessage(bot *tgbotapi.BotAPI, chatID int64, text string) (tgbotapi.Message, error) {
 	msg := tgbotapi.NewMessage(chatID, text)
 	res, err := bot.Send(msg)
