@@ -10,7 +10,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func LeaderBoardListButtons(client *mongo.Client, collection string, chatID int64) *view.CustomInlineKeyboardMarkup {
+func LeaderBoardListButtons(client *mongo.Client, collection string, chatID int64, callbackData string) *view.CustomInlineKeyboardMarkup {
 	idCounts, err := repository.CountIDOccurrences(client, collection, chatID)
 	if err != nil {
 		log.Printf("Error getting leaderboard: %v", err)
@@ -21,14 +21,18 @@ func LeaderBoardListButtons(client *mongo.Client, collection string, chatID int6
 		limit = len(idCounts)
 	}
 
+	var buttons [][]view.CustomInlineKeyboardButton
+
 	if limit == 0 {
-		return nil
+		btn := view.CustomInlineKeyboardButton{
+			Text:         "No stats found yet!",
+			CallbackData: "ignore",
+		}
+		buttons = append(buttons, []view.CustomInlineKeyboardButton{btn})
 	}
 
 	rankEmojis := []string{"🥇", "🥈", "🥉"}
 	styles := []string{"primary", "success", "danger"}
-
-	var buttons [][]view.CustomInlineKeyboardButton
 
 	for i := 0; i < limit; i++ {
 		count := idCounts[i]
@@ -78,6 +82,45 @@ func LeaderBoardListButtons(client *mongo.Client, collection string, chatID int6
 
 		buttons = append(buttons, []view.CustomInlineKeyboardButton{btn})
 	}
+
+	// Add navigation buttons based on the type of stats
+	isGlobal := strings.HasPrefix(callbackData, "statsglobal")
+
+	wordGuessLabel := "Word Guess"
+	wordleLabel := "Wordle"
+	scramyLabel := "Scramy"
+
+	if strings.HasSuffix(callbackData, "wordguess") {
+		wordGuessLabel = "✅ " + wordGuessLabel
+	} else if strings.HasSuffix(callbackData, "wordle") {
+		wordleLabel = "✅ " + wordleLabel
+	} else if strings.HasSuffix(callbackData, "scramy") {
+		scramyLabel = "✅ " + scramyLabel
+	}
+
+	var navPrefix string
+	if isGlobal {
+		navPrefix = "statsglobal_"
+		wordGuessLabel += " Global"
+		wordleLabel += " Global"
+		scramyLabel += " Global"
+	} else {
+		navPrefix = "statsgroup_"
+		wordGuessLabel += " Group"
+		wordleLabel += " Group"
+		scramyLabel += " Group"
+	}
+
+	navRow1 := []view.CustomInlineKeyboardButton{
+		{Text: wordGuessLabel, CallbackData: navPrefix + "wordguess"},
+		{Text: wordleLabel, CallbackData: navPrefix + "wordle"},
+	}
+	navRow2 := []view.CustomInlineKeyboardButton{
+		{Text: scramyLabel, CallbackData: navPrefix + "scramy"},
+	}
+
+	buttons = append(buttons, navRow1)
+	buttons = append(buttons, navRow2)
 
 	return &view.CustomInlineKeyboardMarkup{
 		InlineKeyboard: buttons,
