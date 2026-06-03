@@ -3,9 +3,11 @@ package scramybot
 import (
 	"bufio"
 	"fmt"
+	"html"
 	"log"
 	"math/rand"
 	"os"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -381,16 +383,37 @@ func HandleGuess(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.
 	if len(ss.FoundWords) >= ss.MaxWords {
 		ss.Active = false
 
-		msg := fmt.Sprintf("%s found \"%s\"\n+%d 💎\n\n🪟 %s\n\nTotal words found: %d/10\n\n◐ Game over ◑\n\n🏆 Scores\n\n",
-			message.From.FirstName, capitalizeWord(guess), points, letterStr, len(ss.FoundWords))
+		msg := fmt.Sprintf("<b>%s</b> found \"<b>%s</b>\"\n+%d 💎\n\n🪟 %s\n\nTotal words found: %d/10\n\n◐ <b>Game over</b> ◑\n\n🏆 <b>Scores</b>\n\n",
+			html.EscapeString(message.From.FirstName), html.EscapeString(capitalizeWord(guess)), points, letterStr, len(ss.FoundWords))
 
+		type userScoreEntry struct {
+			ID    int
+			Name  string
+			Score int
+		}
+
+		var scores []userScoreEntry
 		for userID, score := range ss.UserScores {
 			name := ss.UserNames[userID]
 			if name == "" {
-			    name = fmt.Sprintf("User %d", userID) // Fallback if somehow not found
+				name = fmt.Sprintf("User %d", userID) // Fallback if somehow not found
 			}
-			msg += fmt.Sprintf("%s - %d points 💎\n", name, score)
+			scores = append(scores, userScoreEntry{ID: userID, Name: name, Score: score})
 			go repository.InsertWordleBonusDoc(userID, name, chatID, client, "ScramyEn", score) // reusing logic since it just inserts Score/Points
+		}
+
+		sort.SliceStable(scores, func(i, j int) bool {
+			return scores[i].Score > scores[j].Score
+		})
+
+		if len(scores) > 0 {
+			msg += fmt.Sprintf("<pre><code class=\"language-Winner\">%s - %d 💎</code></pre>\n", html.EscapeString(scores[0].Name), scores[0].Score)
+			if len(scores) > 1 {
+				msg += "👥 <b>Participants:</b>\n"
+				for i := 1; i < len(scores); i++ {
+					msg += fmt.Sprintf("<blockquote>%s - %d 💎</blockquote>\n", html.EscapeString(scores[i].Name), scores[i].Score)
+				}
+			}
 		}
 
 		buttons := tgbotapi.NewInlineKeyboardMarkup(
@@ -400,7 +423,7 @@ func HandleGuess(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.
 			),
 		)
 
-		view.ReplyToMessageWithButtons(bot, message.MessageID, chatID, msg, buttons)
+		view.ReplyToMessageWithButtonsHTML(bot, message.MessageID, chatID, msg, buttons)
 	} else {
 		msg := fmt.Sprintf("%s found \"%s\"\n+%d 💎\n\n🪟 %s\n\nTotal words found: %d/10",
 			message.From.FirstName, capitalizeWord(guess), points, letterStr, len(ss.FoundWords))
