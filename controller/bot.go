@@ -727,6 +727,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			buttons := createMultiButtonKeyboard([][]string{
 				{" 🗣️ Explain ", "explain"},
 				{"Wordle 🟩🟨", "wordle_start"},
+				{"Scramy 𒅒𒈔𒅒", "scramy_start"},
 			})
 
 			chatState.Lock()
@@ -744,6 +745,13 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			sentMsg, err := view.SendMessage(bot, message.Chat.ID, "A game is currently in progress.")
 			deleteWarningMessage(bot, message, sentMsg, err)
 		}
+	case "game":
+		buttons := createMultiButtonKeyboard([][]string{
+			{" 🗣️ Explain ", "explain"},
+			{"Wordle 🟩🟨", "wordle_start"},
+			{"Scramy 𒅒𒈔𒅒", "scramy_start"},
+		})
+		view.SendMessageWithButtons(bot, chatID, "🐊 *The Crocodile peeks from the reeds, waiting...*", buttons)
 	case "hint":
 		chatState.RLock()
 		wordEmpty := chatState.Word == ""
