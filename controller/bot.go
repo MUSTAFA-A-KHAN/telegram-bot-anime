@@ -148,6 +148,12 @@ func StartBot(token string) error {
 	if client == nil {
 		return fmt.Errorf("failed to connect to MongoDB")
 	}
+	if err := wordlebot.LoadWordleWords(); err != nil {
+		log.Printf("failed to load Wordle words: %v", err)
+	}
+	if err := scramybot.LoadScramyWords(); err != nil {
+		log.Printf("failed to load Scramy words: %v", err)
+	}
 
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
