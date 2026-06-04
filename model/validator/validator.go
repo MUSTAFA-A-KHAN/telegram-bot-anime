@@ -15,6 +15,8 @@ func init() {
 	ValidCustomWords = make(map[string]bool)
 	loadWords("controller/translator/words.txt")
 	loadWords("controller/translator/allowed_words.txt")
+	loadWords("controller/translator/scramy_words.txt")
+	loadWords("controller/translator/scramy_allowed_words.txt")
 }
 
 func loadWords(filePath string) {
