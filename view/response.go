@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
+	"strconv"
 
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/model"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
@@ -35,10 +37,35 @@ func ReplyToMessageWithButtonsHTML(bot *tgbotapi.BotAPI, mesgID int, chatID int6
 	res, err := bot.Send(msg)
 	return res, err
 }
+
+const CustomWordMessageEffectID = "5066576334143095943"
+
 func SendMessage(bot *tgbotapi.BotAPI, chatID int64, text string) (tgbotapi.Message, error) {
 	msg := tgbotapi.NewMessage(chatID, text)
 	res, err := bot.Send(msg)
 	return res, err
+}
+
+// Only works  with telegram premium accounts and the effect ID must be valid and available to the bot. If the effect ID is invalid or not available, the message will be sent without the effect.
+func SendMessageWithEffectID(bot *tgbotapi.BotAPI, chatID int64, text string, effectID string) (tgbotapi.Message, error) {
+	params := url.Values{}
+	params.Add("chat_id", strconv.FormatInt(chatID, 10))
+	params.Add("text", text)
+	if effectID != "" {
+		params.Add("message_effect_id", effectID)
+	}
+
+	apiResp, err := bot.MakeRequest("sendMessage", params)
+	if err != nil {
+		return tgbotapi.Message{}, err
+	}
+
+	var msg tgbotapi.Message
+	if err := json.Unmarshal(apiResp.Result, &msg); err != nil {
+		return tgbotapi.Message{}, err
+	}
+
+	return msg, nil
 }
 
 // SendMessageWithButtons sends a message with inline keyboard buttons to the user
