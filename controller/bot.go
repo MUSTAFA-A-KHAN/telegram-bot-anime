@@ -231,6 +231,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			args := message.CommandArguments()
 			if args == "shop" {
 				showShop(bot, message.Chat.ID)
+				return
 			} else if strings.HasPrefix(args, "custom_word_") {
 				parts := strings.Split(args, "_")
 				if len(parts) == 3 {
@@ -251,10 +252,12 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 						}
 					}
 				}
+				return
 			} else {
 				buttons := tgbotapi.NewInlineKeyboardMarkup(
 					tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Get Hint"+telegramReactions[20], "hint")))
 				view.SendMessageWithButtons(bot, message.Chat.ID, "Heyyy! Got a word for ya 😏 Tap the button below if you need a lil hint 👇", buttons)
+				return
 			}
 		case "exportdata":
 			if message.From.ID != int(adminID) {
@@ -495,34 +498,37 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		groupChatID, ok := customWordState[int64(message.From.ID)]
 		customWordMutex.Unlock()
 		if ok && message.Chat.IsPrivate() {
-			if message.Text == "/cancel" {
+			if message.Command() == "cancel" {
 				customWordMutex.Lock()
 				delete(customWordState, int64(message.From.ID))
 				customWordMutex.Unlock()
 				view.SendMessage(bot, chatID, "Custom word entry cancelled.")
 				return
 			}
-			cleanWord := strings.TrimSpace(message.Text)
-			if validator.IsValidWord(cleanWord) {
-				groupState := getOrCreateChatState(groupChatID)
-				groupState.Lock()
-				if groupState.User == message.From.ID {
-					groupState.Word = strings.ToUpper(cleanWord)
-					customWordMutex.Lock()
-					delete(customWordState, int64(message.From.ID))
-					customWordMutex.Unlock()
-					view.SendMessage(bot, chatID, fmt.Sprintf("Your custom word '%s' has been set for the group!", cleanWord))
+
+			if !message.IsCommand() {
+				cleanWord := strings.TrimSpace(message.Text)
+				if validator.IsValidWord(cleanWord) {
+					groupState := getOrCreateChatState(groupChatID)
+					groupState.Lock()
+					if groupState.User == message.From.ID {
+						groupState.Word = strings.ToUpper(cleanWord)
+						customWordMutex.Lock()
+						delete(customWordState, int64(message.From.ID))
+						customWordMutex.Unlock()
+						view.SendMessage(bot, chatID, fmt.Sprintf("Your custom word '%s' has been set for the group!", cleanWord))
+					} else {
+						customWordMutex.Lock()
+						delete(customWordState, int64(message.From.ID))
+						customWordMutex.Unlock()
+						view.SendMessage(bot, chatID, "You are no longer the leader of the group, so you cannot set the word.")
+					}
+					groupState.Unlock()
 				} else {
-					customWordMutex.Lock()
-					delete(customWordState, int64(message.From.ID))
-					customWordMutex.Unlock()
-					view.SendMessage(bot, chatID, "You are no longer the leader of the group, so you cannot set the word.")
+					view.SendMessage(bot, chatID, "Invalid word. Please send a valid English word. Or type /cancel to abort.")
 				}
-				groupState.Unlock()
-			} else {
-				view.SendMessage(bot, chatID, "Invalid word. Please send a valid English word. Or type /cancel to abort.")
+				return
 			}
-			return
 		}
 
 		// Check if Wordle is active for DM
