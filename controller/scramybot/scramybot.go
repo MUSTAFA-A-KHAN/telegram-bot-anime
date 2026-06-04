@@ -383,8 +383,31 @@ func HandleGuess(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.
 	if len(ss.FoundWords) >= ss.MaxWords {
 		ss.Active = false
 
-		msg := fmt.Sprintf("<b>%s</b> found \"<b>%s</b>\"\n+%d 💎\n\n🪟 %s\n\nTotal words found: %d/10\n\n◐ <b>Game over</b> ◑\n\n🏆 <b>Scores</b>\n\n",
+		msg := fmt.Sprintf("<b>%s</b> found \"<b>%s</b>\"\n+%d 💎\n\n🪟 %s\n\nTotal words found: %d/10\n\n◐ <b>Game over</b> ◑\n\n",
 			html.EscapeString(message.From.FirstName), html.EscapeString(capitalizeWord(guess)), points, letterStr, len(ss.FoundWords))
+
+		longestWord := ""
+		longestWordUserID := 0
+		for userID, words := range ss.UserWords {
+			for _, w := range words {
+				if len(w) > len(longestWord) {
+					longestWord = w
+					longestWordUserID = userID
+				}
+			}
+		}
+
+		if longestWord != "" {
+			longestWordBonus := 10
+			ss.UserScores[longestWordUserID] += longestWordBonus
+			longestWordUserName := ss.UserNames[longestWordUserID]
+			if longestWordUserName == "" {
+				longestWordUserName = fmt.Sprintf("User %d", longestWordUserID)
+			}
+			msg += fmt.Sprintf("🏆 <b>Largest Word Found</b>\n%s found \"<b>%s</b>\" and received +%d 💎\n\n", html.EscapeString(longestWordUserName), html.EscapeString(capitalizeWord(longestWord)), longestWordBonus)
+		}
+
+		msg += "🏆 <b>Scores</b>\n\n"
 
 		type userScoreEntry struct {
 			ID    int
