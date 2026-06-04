@@ -831,6 +831,13 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		// } else {
 		// 	view.SendMessage(bot, chatID, "Please provide a message with your report. Usage: /report [your message]")
 		// }
+	case "game":
+		buttons := createMultiButtonKeyboard([][]string{
+			{" 🗣️ Explain ", "explain"},
+			{"Wordle 🟩🟨", "wordle_start"},
+			{"Scramy 🟩🟨", "scramy_start"},
+		})
+		view.SendMessageWithButtons(bot, chatID, "🐊 *The Crocodile peeks from the reeds, waiting...*", buttons)
 	case "word":
 		chatState.RLock()
 		wordEmpty := chatState.Word == ""
@@ -1387,4 +1394,17 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		}
 	}
 	bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
+}
+
+// createMultiButtonKeyboard creates an inline keyboard markup with multiple buttons
+func createMultiButtonKeyboard(buttonsData [][]string) tgbotapi.InlineKeyboardMarkup {
+	var rows [][]tgbotapi.InlineKeyboardButton
+	for _, rowData := range buttonsData {
+		var row []tgbotapi.InlineKeyboardButton
+		for i := 0; i < len(rowData); i += 2 {
+			row = append(row, tgbotapi.NewInlineKeyboardButtonData(rowData[i], rowData[i+1]))
+		}
+		rows = append(rows, tgbotapi.NewInlineKeyboardRow(row...))
+	}
+	return tgbotapi.NewInlineKeyboardMarkup(rows...)
 }
