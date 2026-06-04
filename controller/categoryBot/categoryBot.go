@@ -335,8 +335,12 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		case "leaderstats":
 			view.SendMessage(bot, chatID, "Group stats are not available in a DM. You can view global stats using /statsglobal or /leaderstatsglobal.")
 		case "statsglobal":
-			buttons := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Word Guess Global", "statsglobal_wordguess"), tgbotapi.NewInlineKeyboardButtonData("Wordle Global", "statsglobal_wordle")), tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Scramy Global", "statsglobal_scramy")))
-			view.SendMessageWithButtons(bot, chatID, "🐊🇮🇳\n📊 Choose global stats to view:", buttons)
+			markup := service.LeaderBoardListButtons(client, "CrocEn", 0, "statsglobal_wordguess")
+			err := view.SendMessageWithStyledButtons(bot.Token, chatID, "🏆 <b>Top 10 Players Leaderboard</b> 🏆\n\n✨ <b>Keep it up and aim for the top!</b> ✨", markup)
+			if err != nil {
+				log.Printf("Failed to send styled buttons message: %v", err)
+				view.SendMessagehtml(bot, chatID, "Failed to load leaderboard.")
+			}
 		case "leaderstatsglobal":
 			result := service.LeaderBoardList(client, "CrocEnLeader", 0)
 			view.SendMessagehtml(bot, message.Chat.ID, result)
@@ -560,9 +564,9 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			wordlebot.HandleGuess(bot, message, client, chatID, message.Text)
 		}
 
-			if scramybot.IsScramyActive(chatID) {
-				scramybot.HandleGuess(bot, message, client, chatID, message.Text)
-			}
+		if scramybot.IsScramyActive(chatID) {
+			scramybot.HandleGuess(bot, message, client, chatID, message.Text)
+		}
 
 		// Check user's guess in DM
 		chatState.RLock()
@@ -666,8 +670,12 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		scramybot.HandleScramyCommand(bot, chatID, message.From.FirstName)
 		return
 	case "stats":
-		buttons := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Word Guess Group", "statsgroup_wordguess"), tgbotapi.NewInlineKeyboardButtonData("Wordle Group", "statsgroup_wordle")), tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Scramy Group", "statsgroup_scramy")))
-		view.SendMessageWithButtons(bot, chatID, "🐊🇮🇳\n📊 Choose group stats to view:", buttons)
+		markup := service.LeaderBoardListButtons(client, "CrocEn", chatID, "statsgroup_wordguess")
+		err := view.SendMessageWithStyledButtons(bot.Token, chatID, "🏆 <b>Top 10 Players Leaderboard</b> 🏆\n\n✨ <b>Keep it up and aim for the top!</b> ✨", markup)
+		if err != nil {
+			log.Printf("Failed to send styled buttons message: %v", err)
+			view.SendMessagehtml(bot, chatID, "Failed to load leaderboard.")
+		}
 	case "leaderstats":
 		result := service.LeaderBoardList(client, "CrocEnLeader", message.Chat.ID)
 		view.SendMessagehtml(bot, message.Chat.ID, result)
@@ -687,8 +695,12 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			view.SendMessageWithButtons(bot, message.Chat.ID, "Click the button below to visit the Emoji Shop!", markup)
 		}
 	case "statsglobal":
-		buttons := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Word Guess Global", "statsglobal_wordguess"), tgbotapi.NewInlineKeyboardButtonData("Wordle Global", "statsglobal_wordle")), tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Scramy Global", "statsglobal_scramy")))
-		view.SendMessageWithButtons(bot, chatID, "🐊🇮🇳\n📊 Choose global stats to view:", buttons)
+		markup := service.LeaderBoardListButtons(client, "CrocEn", 0, "statsglobal_wordguess")
+		err := view.SendMessageWithStyledButtons(bot.Token, chatID, "🏆 <b>Top 10 Players Leaderboard</b> 🏆\n\n✨ <b>Keep it up and aim for the top!</b> ✨", markup)
+		if err != nil {
+			log.Printf("Failed to send styled buttons message: %v", err)
+			view.SendMessagehtml(bot, chatID, "Failed to load leaderboard.")
+		}
 	case "leaderstatsglobal":
 		result := service.LeaderBoardList(client, "CrocEnLeader", 0)
 		view.SendMessagehtml(bot, message.Chat.ID, result)
@@ -910,9 +922,9 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			wordlebot.HandleGuess(bot, message, client, chatID, message.Text)
 		}
 
-			if scramybot.IsScramyActive(chatID) {
-				scramybot.HandleGuess(bot, message, client, chatID, message.Text)
-			}
+		if scramybot.IsScramyActive(chatID) {
+			scramybot.HandleGuess(bot, message, client, chatID, message.Text)
+		}
 
 		chatState.RLock()
 		word := chatState.Word

@@ -1,16 +1,14 @@
-1. **Add `EditMessageTextWithStyledButtons` to `view/custom_http.go`**
-   - Create a new struct `EditMessageRequest` with `ChatID`, `MessageID`, `Text`, `ParseMode`, and `ReplyMarkup`.
-   - Implement `EditMessageTextWithStyledButtons` similarly to `SendMessageWithStyledButtons` but targeting the `/editMessageText` Telegram API endpoint.
+1. **Understand the Wordle dictionary bug**
+   - User says wordle accepts "Rider" via `categorybot` but NOT via `controller/bot`.
+   - Searching the code reveals `wordlebot.LoadWordleWords()` is called in `controller/categoryBot/categoryBot.go` but NOT in `controller/bot.go` (or `main.go` / wherever `bot.go` initializes).
+   - This means `validWordleWords` is not populated when running `controller/bot.go`, so ANY valid guess gets rejected as "not a valid word" (or falls back to an empty map) because `validWordleWords[guess]` is false.
 
-2. **Update `handleCallbackQuery` in `controller/bot.go`**
-   - For callback data cases `statsglobal_*` and `statsgroup_*`, replace `view.SendMessageWithStyledButtons` with `view.EditMessageTextWithStyledButtons`.
-   - Pass `callback.Message.MessageID` to the new function.
+2. **Add `wordlebot.LoadWordleWords()` call to `controller/bot.go`**
+   - Find the initialization function in `controller/bot.go` (e.g. `InitBot`, `StartBot`, or `main` equivalent inside `controller/bot.go`).
+   - Call `wordlebot.LoadWordleWords()` and log any error, similar to what's done in `categoryBot.go`.
 
-3. **Update `handleCallbackQuery` in `controller/categoryBot/categoryBot.go`**
-   - Apply the same changes as above for consistency across bot controllers.
+3. **Verify Pre-Commit steps**
+   - Run tests (`go test -v ./...`).
+   - Re-build the application (`go build -v ./...`).
 
-4. **Run Pre-Commit Checks**
-   - Execute all checks to ensure proper testing, verification, review, and reflection are done.
-
-5. **Commit and Submit**
-   - Submit the changes using the `submit` tool.
+4. **Submit the changes**
