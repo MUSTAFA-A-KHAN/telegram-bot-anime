@@ -609,6 +609,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 						delete(customWordState, int64(message.From.ID))
 						customWordMutex.Unlock()
 						view.SendMessage(bot, chatID, fmt.Sprintf("Your custom word '%s' has been set for the group!", cleanWord))
+						// view.SendMessageWithEffectID(bot, chatID, fmt.Sprintf("Your custom word '%s' has been set for the group!", cleanWord), view.CustomWordMessageEffectID)
 					} else {
 						customWordMutex.Lock()
 						delete(customWordState, int64(message.From.ID))
@@ -628,9 +629,9 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			wordlebot.HandleGuess(bot, message, client, chatID, message.Text)
 		}
 
-			if scramybot.IsScramyActive(chatID) {
-				scramybot.HandleGuess(bot, message, client, chatID, message.Text)
-			}
+		if scramybot.IsScramyActive(chatID) {
+			scramybot.HandleGuess(bot, message, client, chatID, message.Text)
+		}
 
 		// Check user's guess in DM
 		chatState.RLock()
@@ -978,9 +979,9 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			wordlebot.HandleGuess(bot, message, client, chatID, message.Text)
 		}
 
-			if scramybot.IsScramyActive(chatID) {
-				scramybot.HandleGuess(bot, message, client, chatID, message.Text)
-			}
+		if scramybot.IsScramyActive(chatID) {
+			scramybot.HandleGuess(bot, message, client, chatID, message.Text)
+		}
 
 		chatState.RLock()
 		word := chatState.Word

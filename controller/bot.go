@@ -523,6 +523,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 						delete(customWordState, int64(message.From.ID))
 						customWordMutex.Unlock()
 						view.SendMessage(bot, chatID, fmt.Sprintf("Your custom word '%s' has been set for the group!", cleanWord))
+						// view.SendMessageWithEffectID(bot, chatID, fmt.Sprintf("Your custom word '%s' has been set for the group!", cleanWord), view.CustomWordMessageEffectID)
 					} else {
 						customWordMutex.Lock()
 						delete(customWordState, int64(message.From.ID))
