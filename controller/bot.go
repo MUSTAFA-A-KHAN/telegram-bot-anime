@@ -13,6 +13,7 @@ import (
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/scramybot"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/wordlebot"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/model"
+	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/model/validator"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/repository"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/service"
 	installOllama "github.com/MUSTAFA-A-KHAN/telegram-bot-anime/service/installOllama"
@@ -173,6 +174,9 @@ func StartBot(token string) error {
 var aiModeUsers = make(map[int64]bool)
 var aiModeMutex = &sync.Mutex{}
 
+var customWordState = make(map[int64]int64)
+var customWordMutex = &sync.Mutex{}
+
 // handleMessage processes incoming messages and handles commands and guesses.
 func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.Client) {
 	chatID := message.Chat.ID
@@ -224,8 +228,29 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			button := tgbotapi.NewInlineKeyboardButtonURL("add to group", "https://t.me/Croco_rebirth_bot?startgroup=true")
 			view.SendMessageWithKeyboardButton(bot, chatID, "Unlock my full potential by adding me to a group chat!", button)
 		case "start":
-			if message.CommandArguments() == "shop" {
+			args := message.CommandArguments()
+			if args == "shop" {
 				showShop(bot, message.Chat.ID)
+			} else if strings.HasPrefix(args, "custom_word_") {
+				parts := strings.Split(args, "_")
+				if len(parts) == 3 {
+					groupChatIDStr := parts[2]
+					var groupChatID int64
+					if _, err := fmt.Sscanf(groupChatIDStr, "%d", &groupChatID); err == nil {
+						groupState := getOrCreateChatState(groupChatID)
+						groupState.RLock()
+						isLeader := groupState.User == message.From.ID
+						groupState.RUnlock()
+						if isLeader {
+							customWordMutex.Lock()
+							customWordState[int64(message.From.ID)] = groupChatID
+							customWordMutex.Unlock()
+							view.SendMessage(bot, chatID, "Type the word you want the group to guess (must be a valid English word):")
+						} else {
+							view.SendMessage(bot, chatID, "You are not the current leader in that group.")
+						}
+					}
+				}
 			} else {
 				buttons := tgbotapi.NewInlineKeyboardMarkup(
 					tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Get Hint"+telegramReactions[20], "hint")))
@@ -461,6 +486,41 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			} else {
 				sentMsg, err := view.SendMessage(bot, chatID, "Please try to read the hint before revealing the word.")
 				deleteWarningMessage(bot, message, sentMsg, err)
+			}
+			return
+		}
+
+		// Check if user is in custom word state
+		customWordMutex.Lock()
+		groupChatID, ok := customWordState[int64(message.From.ID)]
+		customWordMutex.Unlock()
+		if ok && message.Chat.IsPrivate() {
+			if message.Text == "/cancel" {
+				customWordMutex.Lock()
+				delete(customWordState, int64(message.From.ID))
+				customWordMutex.Unlock()
+				view.SendMessage(bot, chatID, "Custom word entry cancelled.")
+				return
+			}
+			cleanWord := strings.TrimSpace(message.Text)
+			if validator.IsValidWord(cleanWord) {
+				groupState := getOrCreateChatState(groupChatID)
+				groupState.Lock()
+				if groupState.User == message.From.ID {
+					groupState.Word = strings.ToUpper(cleanWord)
+					customWordMutex.Lock()
+					delete(customWordState, int64(message.From.ID))
+					customWordMutex.Unlock()
+					view.SendMessage(bot, chatID, fmt.Sprintf("Your custom word '%s' has been set for the group!", cleanWord))
+				} else {
+					customWordMutex.Lock()
+					delete(customWordState, int64(message.From.ID))
+					customWordMutex.Unlock()
+					view.SendMessage(bot, chatID, "You are no longer the leader of the group, so you cannot set the word.")
+				}
+				groupState.Unlock()
+			} else {
+				view.SendMessage(bot, chatID, "Invalid word. Please send a valid English word. Or type /cancel to abort.")
 			}
 			return
 		}
@@ -911,9 +971,13 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 				chatState.Unlock()
 				return
 			}
+			customWordLink := fmt.Sprintf("https://t.me/%s?start=custom_word_%d", bot.Self.UserName, chatID)
 			buttons := tgbotapi.NewInlineKeyboardMarkup(
 				tgbotapi.NewInlineKeyboardRow(
 					tgbotapi.NewInlineKeyboardButtonData("See word 👀", "explain"),
+				),
+				tgbotapi.NewInlineKeyboardRow(
+					tgbotapi.NewInlineKeyboardButtonURL("Custom Word ✍️", customWordLink),
 				),
 				tgbotapi.NewInlineKeyboardRow(
 					tgbotapi.NewInlineKeyboardButtonData("Next ⏭️", "next"),
