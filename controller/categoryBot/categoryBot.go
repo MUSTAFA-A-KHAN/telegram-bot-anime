@@ -833,9 +833,9 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		// }
 	case "game":
 		buttons := createMultiButtonKeyboard([][]string{
-			{" 🗣️ Explain ", "explain"},
+			{"Lead Croc 🗣️  ", "explain"},
 			{"Wordle 🟩🟨", "wordle_start"},
-			{"Scramy 🟩🟨", "scramy_start"},
+			{"Scramy 𒅒𒈔𒅒", "scramy_start"},
 		})
 		view.SendMessageWithButtons(bot, chatID, "🐊 *The Crocodile peeks from the reeds, waiting...*", buttons)
 	case "word":
