@@ -13,3 +13,6 @@
 ## 2024-06-03 - Safe Double-Checked Locking in Go
 **Learning:** Standard double-checked locking using a simple pointer check (`if ptr != nil`) and a `sync.Mutex` is structurally unsafe in Go due to the memory model. The compiler can reorder instructions, causing a reading goroutine to observe a non-nil pointer *before* the underlying struct is fully initialized, leading to a data race and potential panic.
 **Action:** Always implement Double-Checked Locking safely in Go by using the `sync/atomic` package (e.g., `atomic.Pointer[T]`). This provides the necessary memory barriers for safe, lock-free reads while allowing the ability to retry failed initializations (unlike `sync.Once`).
+## 2024-06-05 - Optimize string escaping by avoiding multiple ReplaceAll calls
+**Learning:** Calling `strings.ReplaceAll` in a loop for multiple characters creates numerous intermediate string allocations and iterates over the string multiple times, becoming a performance bottleneck in frequently called functions like Markdown escaping.
+**Action:** Replace multiple `strings.ReplaceAll` calls with a single pass over the string using `strings.Builder` and a `switch` statement to handle special characters. This reduces time complexity from O(M*N) to O(N) and significantly reduces allocations.
