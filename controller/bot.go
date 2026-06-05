@@ -22,6 +22,39 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+// ChatStateDoc is the MongoDB-serializable version of ChatState
+type ChatStateDoc struct {
+	ChatID            int64     `bson:"_id"`
+	Word              string    `bson:"word"`
+	User              int       `bson:"user"`
+	LeadTimestamp     time.Time `bson:"lead_timestamp"`
+	Leader            string    `bson:"leader"`
+	LastHintTimestamp time.Time `bson:"last_hint_timestamp"`
+	LastHintTypeSent  int       `bson:"last_hint_type_sent"`
+}
+
+// saveChatStateAsync asynchronously saves a chat state to MongoDB.
+func saveChatStateAsync(chatID int64, state *ChatState) {
+	state.RLock()
+	doc := ChatStateDoc{
+		ChatID:            chatID,
+		Word:              state.Word,
+		User:              state.User,
+		LeadTimestamp:     state.LeadTimestamp,
+		Leader:            state.Leader,
+		LastHintTimestamp: state.LastHintTimestamp,
+		LastHintTypeSent:  state.LastHintTypeSent,
+	}
+	state.RUnlock()
+
+	go func() {
+		client := repository.DbManager()
+		if client != nil {
+			repository.SaveGameState(client, "ChatStates", chatID, doc)
+		}
+	}()
+}
+
 // ChatState holds the state for a specific chat, including the current word and user explaining it.
 type ChatState struct {
 	sync.RWMutex
@@ -123,13 +156,40 @@ func (cs *ChatState) isLeaderActive(duration time.Duration) bool {
 }
 
 // reset resets the chat state.
-func (cs *ChatState) reset() {
+func (cs *ChatState) reset(chatID int64) {
 	cs.Lock()
-	defer cs.Unlock()
 	cs.Word = ""
 	cs.User = 0
 	cs.LeadTimestamp = time.Time{}
 	cs.Leader = ""
+	cs.Unlock()
+	saveChatStateAsync(chatID, cs)
+}
+
+// loadSavedChatStates loads states from MongoDB into the chatStates map
+func loadSavedChatStates(client *mongo.Client) {
+	var results []ChatStateDoc
+	err := repository.LoadAllGameStates(client, "ChatStates", &results)
+	if err != nil {
+		log.Printf("Failed to load saved chat states: %v", err)
+		return
+	}
+
+	stateMutex.Lock()
+	defer stateMutex.Unlock()
+
+	for _, doc := range results {
+		cs := &ChatState{
+			Word:              doc.Word,
+			User:              doc.User,
+			LeadTimestamp:     doc.LeadTimestamp,
+			Leader:            doc.Leader,
+			LastHintTimestamp: doc.LastHintTimestamp,
+			LastHintTypeSent:  doc.LastHintTypeSent,
+		}
+		chatStates[doc.ChatID] = cs
+	}
+	log.Printf("Loaded %d active Word Guess games from MongoDB", len(results))
 }
 
 // StartBot initializes and starts the bot
@@ -148,6 +208,11 @@ func StartBot(token string) error {
 	if client == nil {
 		return fmt.Errorf("failed to connect to MongoDB")
 	}
+
+	loadSavedChatStates(client)
+	wordlebot.LoadSavedStates(client)
+	scramybot.LoadSavedStates(client)
+
 	if err := wordlebot.LoadWordleWords(); err != nil {
 		log.Printf("failed to load Wordle words: %v", err)
 	}
@@ -456,6 +521,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			chatState.LastHintTimestamp = time.Time{}
 			chatState.LastHintTypeSent = 0
 			chatState.Unlock()
+			saveChatStateAsync(chatID, chatState)
 			return
 		}
 
@@ -484,6 +550,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			chatState.LastHintTimestamp = time.Now()
 			chatState.LastHintTypeSent = 1 - lastHintType
 			chatState.Unlock()
+			saveChatStateAsync(chatID, chatState)
 			return
 		}
 
@@ -491,7 +558,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		if message.Command() == "reveal" {
 			if time.Since(chatState.LeadTimestamp) >= 6*time.Second {
 				view.SendMessage(bot, chatID, fmt.Sprintf("The word was: %s", chatState.Word))
-				chatState.reset()
+				chatState.reset(chatID)
 			} else {
 				sentMsg, err := view.SendMessage(bot, chatID, "Please try to read the hint before revealing the word.")
 				deleteWarningMessage(bot, message, sentMsg, err)
@@ -568,11 +635,11 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 				}()
 				repository.InsertDoc(message.From.ID, message.From.FirstName, chatID, client, "CrocEn")
 			}()
-			chatState.reset()
+			chatState.reset(chatID)
 			word, err := model.GetRandomWord()
 			if err != nil {
 				view.SendMessage(bot, chatID, "Failed to load next word.")
-				chatState.reset()
+				chatState.reset(chatID)
 				return
 			}
 
@@ -583,6 +650,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			chatState.LastHintTimestamp = time.Time{}
 			chatState.LastHintTypeSent = 0
 			chatState.Unlock()
+			saveChatStateAsync(chatID, chatState)
 
 			return
 		}
@@ -735,6 +803,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			chatState.User = 0
 			chatState.Leader = ""
 			chatState.Unlock()
+			saveChatStateAsync(chatID, chatState)
 
 			// THE CHARACTER UPGRADE:
 			sendCharacterAction(bot, chatID, StickerOwlWatching,
@@ -807,6 +876,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		chatState.LastHintTimestamp = time.Now()
 		chatState.LastHintTypeSent = 1 - lastHintType
 		chatState.Unlock()
+			saveChatStateAsync(chatID, chatState)
 	case "reveal":
 		chatState.RLock()
 		word := chatState.Word
@@ -820,7 +890,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			})
 			view.SendMessageWithButtons(bot, message.Chat.ID, fmt.Sprintf("The word was: %s", word), buttons)
 
-			chatState.reset()
+			chatState.reset(chatID)
 		} else {
 			sentMsg, err := view.SendMessage(bot, message.Chat.ID, "Please wait for 10 minutes before revealing the word.")
 			deleteWarningMessage(bot, message, sentMsg, err)
@@ -842,7 +912,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		chatState.RUnlock()
 
 		if user != 0 && service.NormalizeAndCompare(message.Text, word) && message.From.ID != user {
-			chatState.reset()
+			chatState.reset(chatID)
 
 			// THE CHARACTER UPGRADE:
 			victoryText := fmt.Sprintf("🎊 *The forest erupts in cheers!*\n\n🦉 \"Correct. The word was indeed **%s**.\"\n🐊 \"WOW! [%s](tg://user?id=%d) is a genius! Can we play again? Can we?!\"",
@@ -972,11 +1042,13 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		if chatState.User != callback.From.ID && chatState.User != 0 && time.Since(chatState.LeadTimestamp) < 600*time.Second {
 			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("%s is already explaining the word. Please wait for your turn, %s.", chatState.Leader, callback.From.UserName)))
 			chatState.Unlock()
+			saveChatStateAsync(chatID, chatState)
 			return
 		}
 		if chatState.User == callback.From.ID {
 			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, chatState.Word))
 			chatState.Unlock()
+			saveChatStateAsync(chatID, chatState)
 			return
 		}
 		if chatState.User == 0 || (time.Since(chatState.LeadTimestamp) >= 600*time.Second && chatState.User != callback.From.ID) {
@@ -990,6 +1062,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 			word, err := model.GetRandomWord()
 			if err != nil {
 				chatState.Unlock()
+			saveChatStateAsync(chatID, chatState)
 				return
 			}
 			customWordLink := fmt.Sprintf("https://t.me/%s?start=custom_word_%d", bot.Self.UserName, chatID)
@@ -1032,6 +1105,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		chatState.Leader = callback.From.FirstName
 		chatState.LeadTimestamp = time.Now()
 		chatState.Unlock()
+			saveChatStateAsync(chatID, chatState)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, chatState.Word))
 
 	case "next":
@@ -1039,17 +1113,20 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		if chatState.User != callback.From.ID && chatState.User != 0 {
 			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("%s is already explaining the word. %s", chatState.Leader, callback.From.UserName)))
 			chatState.Unlock()
+			saveChatStateAsync(chatID, chatState)
 			return
 		}
 		if chatState.User == 0 {
 			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("%s Please click on see word/claim Leadership", callback.From.FirstName)))
 			chatState.Unlock()
+			saveChatStateAsync(chatID, chatState)
 			return
 		}
 		chatState.User = callback.From.ID
 		chatState.Leader = callback.From.FirstName
-		chatState.Unlock()
 		chatState.Word, _ = model.GetRandomWord()
+		chatState.Unlock()
+		saveChatStateAsync(chatID, chatState)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, chatState.Word))
 
 	case "droplead":
@@ -1057,6 +1134,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		if chatState.User != callback.From.ID {
 			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, "You are not the current leader, so you cannot drop the lead!"))
 			chatState.Unlock()
+			saveChatStateAsync(chatID, chatState)
 			return
 		}
 		// Delete the callback message when user selects "Changed my mind"
@@ -1066,9 +1144,10 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 			log.Printf("Failed to delete message on droplead: %v", err)
 		}
 		chatState.Unlock()
+			saveChatStateAsync(chatID, chatState)
 		buttons := createSingleButtonKeyboard("🌟 Claim Leadership 🙋", "explain")
 		view.SendMessageWithButtons(bot, callback.Message.Chat.ID, fmt.Sprintf("%s refused to lead -> %s \n", callback.From.FirstName, chatState.Word), buttons)
-		chatState.reset()
+		chatState.reset(chatID)
 
 	case "hint":
 		chatState.RLock()
@@ -1082,7 +1161,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 				word, err := model.GetRandomWord()
 				if err != nil {
 					view.SendMessage(bot, chatID, "Failed to load next word.")
-					chatState.reset()
+					chatState.reset(chatID)
 					return
 				}
 
@@ -1093,6 +1172,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 				chatState.LastHintTimestamp = time.Time{}
 				chatState.LastHintTypeSent = 0
 				chatState.Unlock()
+			saveChatStateAsync(chatID, chatState)
 			} else {
 				buttons := createMultiButtonKeyboard([][]string{
 					{" 🗣️ Explain ", "explain"},
@@ -1139,6 +1219,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		chatState.LastHintTimestamp = time.Now()
 		chatState.LastHintTypeSent = 1 - lastHintType
 		chatState.Unlock()
+			saveChatStateAsync(chatID, chatState)
 
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
 	default:
@@ -1148,9 +1229,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		if service.NormalizeAndCompare(callback.Message.Text, word) {
 			buttons := createSingleButtonKeyboard("🌟 Claim Leadership 🙋", "explain")
 			view.SendMessageWithButtons(bot, callback.Message.Chat.ID, fmt.Sprintf("%s! %s guessed the word correctly.", telegramReactions[0], callback.From.FirstName), buttons)
-			chatState.Lock()
-			chatState.reset()
-			chatState.Unlock()
+			chatState.reset(chatID)
 		}
 	}
 	bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))

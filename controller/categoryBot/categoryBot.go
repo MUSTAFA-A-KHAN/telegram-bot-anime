@@ -67,6 +67,65 @@ func replaceWord(original, word string) string {
 	return strings.Join(words, " ")
 }
 
+// CategoryChatStateDoc is the MongoDB-serializable version of ChatState
+type CategoryChatStateDoc struct {
+	ChatID            int64     `bson:"_id"`
+	Word              string    `bson:"word"`
+	User              int       `bson:"user"`
+	LeadTimestamp     time.Time `bson:"lead_timestamp"`
+	Leader            string    `bson:"leader"`
+	LastHintTimestamp time.Time `bson:"last_hint_timestamp"`
+	LastHintTypeSent  int       `bson:"last_hint_type_sent"`
+}
+
+// saveCategoryChatStateAsync asynchronously saves a chat state to MongoDB.
+func saveCategoryChatStateAsync(chatID int64, state *ChatState) {
+	state.RLock()
+	doc := CategoryChatStateDoc{
+		ChatID:            chatID,
+		Word:              state.Word,
+		User:              state.User,
+		LeadTimestamp:     state.LeadTimestamp,
+		Leader:            state.Leader,
+		LastHintTimestamp: state.LastHintTimestamp,
+		LastHintTypeSent:  state.LastHintTypeSent,
+	}
+	state.RUnlock()
+
+	go func() {
+		client := repository.DbManager()
+		if client != nil {
+			repository.SaveGameState(client, "CategoryChatStates", chatID, doc)
+		}
+	}()
+}
+
+// loadSavedCategoryChatStates loads states from MongoDB into the chatStates map
+func loadSavedCategoryChatStates(client *mongo.Client) {
+	var results []CategoryChatStateDoc
+	err := repository.LoadAllGameStates(client, "CategoryChatStates", &results)
+	if err != nil {
+		log.Printf("Failed to load saved category chat states: %v", err)
+		return
+	}
+
+	stateMutex.Lock()
+	defer stateMutex.Unlock()
+
+	for _, doc := range results {
+		cs := &ChatState{
+			Word:              doc.Word,
+			User:              doc.User,
+			LeadTimestamp:     doc.LeadTimestamp,
+			Leader:            doc.Leader,
+			LastHintTimestamp: doc.LastHintTimestamp,
+			LastHintTypeSent:  doc.LastHintTypeSent,
+		}
+		chatStates[doc.ChatID] = cs
+	}
+	log.Printf("Loaded %d active Word Guess games from MongoDB (Category Bot)", len(results))
+}
+
 // ChatState holds the state for a specific chat, including the current word and user explaining it.
 type ChatState struct {
 	sync.RWMutex
@@ -182,17 +241,28 @@ func (cs *ChatState) isLeaderActive(duration time.Duration) bool {
 }
 
 // reset resets the chat state.
-func (cs *ChatState) reset() {
+func (cs *ChatState) reset(chatID int64) {
 	cs.Lock()
-	defer cs.Unlock()
 	cs.Word = ""
 	cs.User = 0
 	cs.LeadTimestamp = time.Time{}
 	cs.Leader = ""
+	cs.Unlock()
+	saveCategoryChatStateAsync(chatID, cs)
 }
 
 // StartBot initializes and starts the bot
 func StartBot(token string) error {
+	// Create a single MongoDB client instance once
+	client := repository.DbManager()
+	if client == nil {
+		return fmt.Errorf("failed to connect to MongoDB")
+	}
+
+	loadSavedCategoryChatStates(client)
+	wordlebot.LoadSavedStates(client)
+	scramybot.LoadSavedStates(client)
+
 	if err := wordlebot.LoadWordleWords(); err != nil {
 		log.Printf("Warning: failed to load Wordle words: %v", err)
 	}
@@ -208,12 +278,6 @@ func StartBot(token string) error {
 
 	bot.Debug = true
 	log.Printf("Authorized on account %s", bot.Self.UserName)
-
-	// Create a single MongoDB client instance once
-	client := repository.DbManager()
-	if client == nil {
-		return fmt.Errorf("failed to connect to MongoDB")
-	}
 
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
@@ -494,6 +558,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			chatState.LastHintTimestamp = time.Time{}
 			chatState.LastHintTypeSent = 0
 			chatState.Unlock()
+			saveCategoryChatStateAsync(chatID, chatState)
 			return
 		}
 
@@ -570,6 +635,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			chatState.LastHintTimestamp = time.Now()
 			chatState.LastHintTypeSent = 1 - lastHintType
 			chatState.Unlock()
+			saveCategoryChatStateAsync(chatID, chatState)
 			return
 		}
 
@@ -577,7 +643,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		if message.Command() == "reveal" {
 			if time.Since(chatState.LeadTimestamp) >= 6*time.Second {
 				view.SendMessage(bot, chatID, fmt.Sprintf("The word was: %s", chatState.Word))
-				chatState.reset()
+				chatState.reset(chatID)
 			} else {
 				sentMsg, err := view.SendMessage(bot, chatID, "Please try to read the hint before revealing the word.")
 				deleteWarningMessage(bot, message, sentMsg, err)
@@ -651,7 +717,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 				repository.InsertDoc(message.From.ID, message.From.FirstName, chatID, client, "CrocEn")
 			}()
 
-			chatState.reset()
+			chatState.reset(chatID)
 			return
 		}
 		aiModeMutex.Lock()
@@ -858,6 +924,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			chatState.User = 0
 			chatState.Leader = ""
 			chatState.Unlock()
+			saveCategoryChatStateAsync(chatID, chatState)
 
 			view.SendSticker(bot, chatID, "CAACAgUAAxkBAAEwCnNnYW-OkgV7Odt9osVwoBSzLC6vsAACMhMAAj45CFdCstMoIYiPfjYE")
 			view.SendMessageWithButtons(bot, message.Chat.ID, "The word is ready! Click 'Explain' to start explaining it.", buttons)
@@ -965,6 +1032,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		chatState.LastHintTimestamp = time.Now()
 		chatState.LastHintTypeSent = 1 - lastHintType
 		chatState.Unlock()
+			saveCategoryChatStateAsync(chatID, chatState)
 	case "reveal":
 		chatState.RLock()
 		word := chatState.Word
@@ -975,7 +1043,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			buttons := createSingleButtonKeyboard(" 🗣️ Explain ", "explain")
 			view.SendMessageWithButtons(bot, message.Chat.ID, fmt.Sprintf("The word was: %s", word), buttons)
 
-			chatState.reset()
+			chatState.reset(chatID)
 		} else {
 			sentMsg, err := view.SendMessage(bot, message.Chat.ID, "Please wait for 10 minutes before revealing the word.")
 			deleteWarningMessage(bot, message, sentMsg, err)
@@ -997,7 +1065,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		chatState.RUnlock()
 
 		if user != 0 && service.NormalizeAndCompare(message.Text, word) && message.From.ID != user {
-			chatState.reset()
+			chatState.reset(chatID)
 			buttons := createSingleButtonKeyboard("🌟 Claim Leadership 🙋", "explain")
 			view.SendMessageWithButtons(bot, message.Chat.ID, fmt.Sprintf("%s! %s guessed the word %s.\n /word", telegramReactions[7], message.From.FirstName, word), buttons)
 			go view.ReactToMessage(bot.Token, chatID, message.MessageID, telegramReactions[rand.Intn(8)+13], true)
@@ -1138,11 +1206,13 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		if chatState.User != callback.From.ID && chatState.User != 0 && time.Since(chatState.LeadTimestamp) < 600*time.Second {
 			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("%s is already explaining the word. Please wait for your turn, %s.", chatState.Leader, callback.From.UserName)))
 			chatState.Unlock()
+			saveCategoryChatStateAsync(chatID, chatState)
 			return
 		}
 		if chatState.User == callback.From.ID {
 			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, chatState.Word))
 			chatState.Unlock()
+			saveCategoryChatStateAsync(chatID, chatState)
 			return
 		}
 		if chatState.User == 0 || (time.Since(chatState.LeadTimestamp) >= 600*time.Second && chatState.User != callback.From.ID) {
@@ -1150,6 +1220,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 			word, err := model.GetRandomWord()
 			if err != nil {
 				chatState.Unlock()
+			saveCategoryChatStateAsync(chatID, chatState)
 				return
 			}
 			buttons := createCategoryBotKeyboard(bot.Self.UserName, chatID)
@@ -1166,6 +1237,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		chatState.Leader = callback.From.FirstName
 		chatState.LeadTimestamp = time.Now()
 		chatState.Unlock()
+			saveCategoryChatStateAsync(chatID, chatState)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, chatState.Word))
 	case "wordle_start":
 		wordlebot.HandleWordleCommand(bot, chatID, callback.From.FirstName)
@@ -1244,21 +1316,26 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		if chatState.User != callback.From.ID && chatState.User != 0 {
 			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("someone is already explaining the word. %s", callback.From.UserName)))
 			chatState.Unlock()
+			saveCategoryChatStateAsync(chatID, chatState)
 			return
 		}
 		if chatState.User == 0 {
 			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("%s Please click on see word/claim Leadership", callback.From.FirstName)))
 			chatState.Unlock()
+			saveCategoryChatStateAsync(chatID, chatState)
 			return
 		}
 		chatState.User = callback.From.ID
-		chatState.Unlock()
 		word, err := model.GetRandomAnimal()
 		if err != nil {
 			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, "Failed to get an animal word. Please try again later."))
+			chatState.Unlock()
+			saveCategoryChatStateAsync(chatID, chatState)
 			return
 		}
 		chatState.Word = word
+		chatState.Unlock()
+		saveCategoryChatStateAsync(chatID, chatState)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, chatState.Word))
 
 	case "next":
@@ -1266,17 +1343,20 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		if chatState.User != callback.From.ID && chatState.User != 0 {
 			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("%s is already explaining the word. %s", chatState.Leader, callback.From.UserName)))
 			chatState.Unlock()
+			saveCategoryChatStateAsync(chatID, chatState)
 			return
 		}
 		if chatState.User == 0 {
 			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("%s Please click on see word/claim Leadership", callback.From.FirstName)))
 			chatState.Unlock()
+			saveCategoryChatStateAsync(chatID, chatState)
 			return
 		}
 		chatState.User = callback.From.ID
 		chatState.Leader = callback.From.FirstName
-		chatState.Unlock()
 		chatState.Word, _ = model.GetRandomWord()
+		chatState.Unlock()
+		saveCategoryChatStateAsync(chatID, chatState)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, chatState.Word))
 
 	case "flower":
@@ -1284,16 +1364,19 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		if chatState.User != callback.From.ID && chatState.User != 0 {
 			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("someone is already explaining the word. %s", callback.From.UserName)))
 			chatState.Unlock()
+			saveCategoryChatStateAsync(chatID, chatState)
 			return
 		}
 		if chatState.User == 0 {
 			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("%s Please click on see word/claim Leadership", callback.From.FirstName)))
 			chatState.Unlock()
+			saveCategoryChatStateAsync(chatID, chatState)
 			return
 		}
 		chatState.User = callback.From.ID
-		chatState.Unlock()
 		chatState.Word, _ = model.GetRandomFlower()
+		chatState.Unlock()
+		saveCategoryChatStateAsync(chatID, chatState)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, chatState.Word))
 
 	case "car":
@@ -1301,16 +1384,19 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		if chatState.User != callback.From.ID && chatState.User != 0 {
 			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("someone is already explaining the word. %s", callback.From.UserName)))
 			chatState.Unlock()
+			saveCategoryChatStateAsync(chatID, chatState)
 			return
 		}
 		if chatState.User == 0 {
 			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("%s Please click on see word/claim Leadership", callback.From.FirstName)))
 			chatState.Unlock()
+			saveCategoryChatStateAsync(chatID, chatState)
 			return
 		}
 		chatState.User = callback.From.ID
-		chatState.Unlock()
 		chatState.Word, _ = model.GetRandomCar()
+		chatState.Unlock()
+		saveCategoryChatStateAsync(chatID, chatState)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, chatState.Word))
 
 	case "droplead":
@@ -1318,6 +1404,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		if chatState.User != callback.From.ID {
 			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, "You are not the current leader, so you cannot drop the lead!"))
 			chatState.Unlock()
+			saveCategoryChatStateAsync(chatID, chatState)
 			return
 		}
 		// Delete the callback message when user selects "Changed my mind"
@@ -1327,9 +1414,10 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 			log.Printf("Failed to delete message on droplead: %v", err)
 		}
 		chatState.Unlock()
+			saveCategoryChatStateAsync(chatID, chatState)
 		buttons := createSingleButtonKeyboard("🌟 Claim Leadership 🙋", "explain")
 		view.SendMessageWithButtons(bot, callback.Message.Chat.ID, fmt.Sprintf("%s refused to lead -> %s \n", callback.From.FirstName, chatState.Word), buttons)
-		chatState.reset()
+		chatState.reset(chatID)
 
 	case "hint":
 		chatState.RLock()
@@ -1379,6 +1467,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		chatState.LastHintTimestamp = time.Now()
 		chatState.LastHintTypeSent = 1 - lastHintType
 		chatState.Unlock()
+			saveCategoryChatStateAsync(chatID, chatState)
 
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
 	default:
@@ -1388,9 +1477,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		if service.NormalizeAndCompare(callback.Message.Text, word) {
 			buttons := createSingleButtonKeyboard("🌟 Claim Leadership 🙋", "explain")
 			view.SendMessageWithButtons(bot, callback.Message.Chat.ID, fmt.Sprintf("%s! %s guessed the word correctly.", telegramReactions[0], callback.From.FirstName), buttons)
-			chatState.Lock()
-			chatState.reset()
-			chatState.Unlock()
+			chatState.reset(chatID)
 		}
 	}
 	bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))

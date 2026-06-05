@@ -265,6 +265,40 @@ func InsertUserInfo(userInfo model.UserInfo, client *mongo.Client) {
 	commentCollection.InsertOne(context.TODO(), userInfo)
 }
 
+// SaveGameState saves a game state to the database asynchronously or synchronously.
+func SaveGameState(client *mongo.Client, collectionName string, chatID int64, state interface{}) error {
+	if client == nil {
+		return fmt.Errorf("MongoDB client is nil")
+	}
+
+	collection := client.Database("Telegram").Collection(collectionName)
+	filter := bson.M{"_id": chatID}
+	update := bson.M{"$set": state}
+	opts := options.Update().SetUpsert(true)
+
+	_, err := collection.UpdateOne(context.TODO(), filter, update, opts)
+	if err != nil {
+		log.Printf("Error saving game state for chat %d in %s: %v", chatID, collectionName, err)
+	}
+	return err
+}
+
+// LoadAllGameStates retrieves all game states from the specified collection into the provided target slice pointer.
+func LoadAllGameStates(client *mongo.Client, collectionName string, target interface{}) error {
+	if client == nil {
+		return fmt.Errorf("MongoDB client is nil")
+	}
+
+	collection := client.Database("Telegram").Collection(collectionName)
+	cursor, err := collection.Find(context.TODO(), bson.M{})
+	if err != nil {
+		return err
+	}
+	defer cursor.Close(context.TODO())
+
+	return cursor.All(context.TODO(), target)
+}
+
 // GetUserStatsByID returns the count and name for a specific user ID from the given collection
 func GetUserStatsByID(client *mongo.Client, collection string, userID int) (map[string]interface{}, error) {
 	database := client.Database("Telegram")
