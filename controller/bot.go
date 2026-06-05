@@ -1245,12 +1245,18 @@ func MessageToJSONString(message *tgbotapi.Message) (string, error) {
 
 // escapeMarkdownV2 escapes special characters for Telegram MarkdownV2 formatting
 func escapeMarkdownV2(text string) string {
-	specialChars := []string{"_", "*", "[", "]", "(", ")", "~", "`", ">", "#", "+", "-", "=", "|", "{", "}", ".", "!"}
-	escaped := text
-	for _, char := range specialChars {
-		escaped = strings.ReplaceAll(escaped, char, "\\"+char)
+	var builder strings.Builder
+	builder.Grow(len(text) + len(text)/4) // Rough estimate for escaped string
+	for _, char := range text {
+		switch char {
+		case '_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!':
+			builder.WriteByte('\\')
+			builder.WriteRune(char)
+		default:
+			builder.WriteRune(char)
+		}
 	}
-	return escaped
+	return builder.String()
 }
 
 // handleInlineQuery processes incoming inline queries for text formatting
