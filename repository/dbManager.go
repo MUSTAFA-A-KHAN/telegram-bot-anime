@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/url"
 	"sync"
+	"sync/atomic"
 
 	"time"
 
@@ -16,7 +17,7 @@ import (
 )
 
 var (
-	clientInstance *mongo.Client
+	clientInstance atomic.Pointer[mongo.Client]
 	clientMutex    sync.Mutex
 )
 
@@ -28,16 +29,16 @@ var (
 // Impact: Double-Checked Locking provides the fast-path (lock-free) performance of sync.Once while maintaining the ability to retry on transient failures.
 func DbManager() *mongo.Client {
 	// First check: Fast path without lock
-	if clientInstance != nil {
-		return clientInstance
+	if client := clientInstance.Load(); client != nil {
+		return client
 	}
 
 	clientMutex.Lock()
 	defer clientMutex.Unlock()
 
 	// Second check: Ensure another goroutine hasn't already initialized it
-	if clientInstance != nil {
-		return clientInstance
+	if client := clientInstance.Load(); client != nil {
+		return client
 	}
 
 	fmt.Print("into DBmanager")
@@ -58,9 +59,9 @@ func DbManager() *mongo.Client {
 		return nil
 	}
 	fmt.Println("Connected to MongoDB successfully!")
-	clientInstance = client
+	clientInstance.Store(client)
 
-	return clientInstance
+	return client
 }
 func InsertDoc(ID int, Name string, chatID int64, client *mongo.Client, collection string) {
 	defer func() {
