@@ -16,6 +16,66 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+// WordleStateDoc is the MongoDB-serializable version of WordleState
+type WordleStateDoc struct {
+	ChatID         int64    `bson:"_id"`
+	Active         bool     `bson:"active"`
+	Word           string   `bson:"word"`
+	Guesses        []string `bson:"guesses"`
+	Attempts       int      `bson:"attempts"`
+	MaxAttempts    int      `bson:"max_attempts"`
+	PendingNewGame bool     `bson:"pending_new_game"`
+}
+
+// saveWordleStateAsync asynchronously saves the Wordle state to MongoDB
+func saveWordleStateAsync(chatID int64, state *WordleState) {
+	state.RLock()
+	doc := WordleStateDoc{
+		ChatID:         chatID,
+		Active:         state.Active,
+		Word:           state.Word,
+		Guesses:        state.Guesses,
+		Attempts:       state.Attempts,
+		MaxAttempts:    state.MaxAttempts,
+		PendingNewGame: state.PendingNewGame,
+	}
+	state.RUnlock()
+
+	go func() {
+		client := repository.DbManager()
+		if client != nil {
+			repository.SaveGameState(client, "WordleStates", chatID, doc)
+		}
+	}()
+}
+
+// LoadSavedStates loads the persisted Wordle states from MongoDB into the memory map
+func LoadSavedStates(client *mongo.Client) {
+	var results []WordleStateDoc
+	err := repository.LoadAllGameStates(client, "WordleStates", &results)
+	if err != nil {
+		log.Printf("Failed to load saved Wordle states: %v", err)
+		return
+	}
+
+	wordleMutex.Lock()
+	defer wordleMutex.Unlock()
+
+	for _, doc := range results {
+		ws := &WordleState{
+			Active:         doc.Active,
+			Word:           doc.Word,
+			Guesses:        doc.Guesses,
+			Attempts:       doc.Attempts,
+			MaxAttempts:    doc.MaxAttempts,
+			PendingNewGame: doc.PendingNewGame,
+			CancelChan:     make(chan bool, 1),
+		}
+		wordleStates[doc.ChatID] = ws
+	}
+	log.Printf("Loaded %d active Wordle games from MongoDB", len(results))
+}
+
 // WordleState holds the state for a Wordle game in a specific chat.
 type WordleState struct {
 	sync.RWMutex
@@ -224,11 +284,13 @@ func HandleWordleCommand(bot *tgbotapi.BotAPI, chatID int64, username string) {
 	if ws.Active {
 		if ws.PendingNewGame {
 			ws.Unlock()
+			saveWordleStateAsync(chatID, ws)
 			return // Already a pending request
 		}
 		ws.PendingNewGame = true
 		ws.CancelChan = make(chan bool, 1)
 		ws.Unlock()
+			saveWordleStateAsync(chatID, ws)
 
 		markup := tgbotapi.NewInlineKeyboardMarkup(
 			tgbotapi.NewInlineKeyboardRow(
@@ -249,6 +311,7 @@ func HandleWordleCommand(bot *tgbotapi.BotAPI, chatID int64, username string) {
 				if !ws.PendingNewGame {
 					// It was cancelled
 					ws.Unlock()
+			saveWordleStateAsync(chatID, ws)
 					return
 				}
 				ws.PendingNewGame = false
@@ -257,6 +320,7 @@ func HandleWordleCommand(bot *tgbotapi.BotAPI, chatID int64, username string) {
 				ws.Guesses = make([]string, 0)
 				ws.Attempts = 0
 				ws.Unlock()
+			saveWordleStateAsync(chatID, ws)
 
 				if err == nil {
 					deleteMsg := tgbotapi.NewDeleteMessage(chatID, sentMsg.MessageID)
@@ -281,6 +345,7 @@ func HandleWordleCommand(bot *tgbotapi.BotAPI, chatID int64, username string) {
 	ws.Guesses = make([]string, 0)
 	ws.Attempts = 0
 	ws.Unlock()
+			saveWordleStateAsync(chatID, ws)
 
 	msg := fmt.Sprintf("🐊 🖼 *Wordle started!* ✨\n\n• The word consists of 5 letters.\n• You have %d attempts.\n\n💡 Hints:\n🟩 Correct letter in the right spot\n🟨 Correct letter but in the wrong spot\n🟥 Letter is not in the word\n\nSend a 5-letter word to guess.", ws.MaxAttempts)
 	view.SendMessage(bot, chatID, msg)
@@ -290,7 +355,10 @@ func HandleWordleCommand(bot *tgbotapi.BotAPI, chatID int64, username string) {
 func CancelPendingGame(bot *tgbotapi.BotAPI, chatID int64, username string) bool {
 	ws := GetOrCreateWordleState(chatID)
 	ws.Lock()
-	defer ws.Unlock()
+	defer func() {
+		ws.Unlock()
+		saveWordleStateAsync(chatID, ws)
+	}()
 
 	if ws.PendingNewGame {
 		ws.PendingNewGame = false
@@ -308,7 +376,10 @@ func CancelPendingGame(bot *tgbotapi.BotAPI, chatID int64, username string) bool
 func HandleGuess(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.Client, chatID int64, text string) {
 	ws := GetOrCreateWordleState(chatID)
 	ws.Lock()
-	defer ws.Unlock()
+	defer func() {
+		ws.Unlock()
+		saveWordleStateAsync(chatID, ws)
+	}()
 
 	if !ws.Active {
 		return

@@ -18,6 +18,108 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+// ScramyStateDoc is the MongoDB-serializable version of ScramyState
+type ScramyStateDoc struct {
+	ChatID         int64            `bson:"_id"`
+	Active         bool             `bson:"active"`
+	Letters        string           `bson:"letters"`
+	FoundWords     []string         `bson:"found_words"`
+	UserWords      map[string][]string `bson:"user_words"`
+	UserScores     map[string]int   `bson:"user_scores"`
+	UserNames      map[string]string `bson:"user_names"`
+	MaxWords       int              `bson:"max_words"`
+	PendingNewGame bool             `bson:"pending_new_game"`
+}
+
+// saveScramyStateAsync asynchronously saves the Scramy state to MongoDB
+func saveScramyStateAsync(chatID int64, state *ScramyState) {
+	state.RLock()
+
+	// Convert int keys to string keys for MongoDB BSON compatibility
+	userWordsStr := make(map[string][]string)
+	for k, v := range state.UserWords {
+		userWordsStr[fmt.Sprintf("%d", k)] = v
+	}
+
+	userScoresStr := make(map[string]int)
+	for k, v := range state.UserScores {
+		userScoresStr[fmt.Sprintf("%d", k)] = v
+	}
+
+	userNamesStr := make(map[string]string)
+	for k, v := range state.UserNames {
+		userNamesStr[fmt.Sprintf("%d", k)] = v
+	}
+
+	doc := ScramyStateDoc{
+		ChatID:         chatID,
+		Active:         state.Active,
+		Letters:        state.Letters,
+		FoundWords:     state.FoundWords,
+		UserWords:      userWordsStr,
+		UserScores:     userScoresStr,
+		UserNames:      userNamesStr,
+		MaxWords:       state.MaxWords,
+		PendingNewGame: state.PendingNewGame,
+	}
+	state.RUnlock()
+
+	go func() {
+		client := repository.DbManager()
+		if client != nil {
+			repository.SaveGameState(client, "ScramyStates", chatID, doc)
+		}
+	}()
+}
+
+// LoadSavedStates loads the persisted Scramy states from MongoDB into the memory map
+func LoadSavedStates(client *mongo.Client) {
+	var results []ScramyStateDoc
+	err := repository.LoadAllGameStates(client, "ScramyStates", &results)
+	if err != nil {
+		log.Printf("Failed to load saved Scramy states: %v", err)
+		return
+	}
+
+	scramyMutex.Lock()
+	defer scramyMutex.Unlock()
+
+	for _, doc := range results {
+		ss := &ScramyState{
+			Active:         doc.Active,
+			Letters:        doc.Letters,
+			MaxWords:       doc.MaxWords,
+			PendingNewGame: doc.PendingNewGame,
+			FoundWords:     doc.FoundWords,
+			UserWords:      make(map[int][]string),
+			UserScores:     make(map[int]int),
+			UserNames:      make(map[int]string),
+			CancelChan:     make(chan bool, 1),
+		}
+
+		for kStr, v := range doc.UserWords {
+			var k int
+			fmt.Sscanf(kStr, "%d", &k)
+			ss.UserWords[k] = v
+		}
+
+		for kStr, v := range doc.UserScores {
+			var k int
+			fmt.Sscanf(kStr, "%d", &k)
+			ss.UserScores[k] = v
+		}
+
+		for kStr, v := range doc.UserNames {
+			var k int
+			fmt.Sscanf(kStr, "%d", &k)
+			ss.UserNames[k] = v
+		}
+
+		scramyStates[doc.ChatID] = ss
+	}
+	log.Printf("Loaded %d active Scramy games from MongoDB", len(results))
+}
+
 // ScramyState holds the state for a Scramy game in a specific chat.
 type ScramyState struct {
 	sync.RWMutex
@@ -224,11 +326,13 @@ func HandleScramyCommand(bot *tgbotapi.BotAPI, chatID int64, username string) {
 	if ss.Active {
 		if ss.PendingNewGame {
 			ss.Unlock()
+			saveScramyStateAsync(chatID, ss)
 			return
 		}
 		ss.PendingNewGame = true
 		ss.CancelChan = make(chan bool, 1)
 		ss.Unlock()
+			saveScramyStateAsync(chatID, ss)
 
 		markup := tgbotapi.NewInlineKeyboardMarkup(
 			tgbotapi.NewInlineKeyboardRow(
@@ -248,6 +352,7 @@ func HandleScramyCommand(bot *tgbotapi.BotAPI, chatID int64, username string) {
 				ss.Lock()
 				if !ss.PendingNewGame {
 					ss.Unlock()
+			saveScramyStateAsync(chatID, ss)
 					return
 				}
 				ss.PendingNewGame = false
@@ -258,6 +363,7 @@ func HandleScramyCommand(bot *tgbotapi.BotAPI, chatID int64, username string) {
 				ss.UserScores = make(map[int]int)
 				ss.UserNames = make(map[int]string)
 				ss.Unlock()
+			saveScramyStateAsync(chatID, ss)
 
 				if err == nil {
 					deleteMsg := tgbotapi.NewDeleteMessage(chatID, sentMsg.MessageID)
@@ -283,6 +389,7 @@ func HandleScramyCommand(bot *tgbotapi.BotAPI, chatID int64, username string) {
 	ss.UserScores = make(map[int]int)
 	ss.UserNames = make(map[int]string)
 	ss.Unlock()
+			saveScramyStateAsync(chatID, ss)
 
 	msg := fmt.Sprintf("📝 *WORD SCRAMBLE*\n\n🦴 Make words using these letters\n\n%s\n\n🔎 Words with 4 or more letters are accepted. Longer words give more points!\n\nTotal: 0/10", ss.Letters)
 	view.SendMessage(bot, chatID, msg)
@@ -292,7 +399,10 @@ func HandleScramyCommand(bot *tgbotapi.BotAPI, chatID int64, username string) {
 func CancelPendingGame(bot *tgbotapi.BotAPI, chatID int64, username string) bool {
 	ss := GetOrCreateScramyState(chatID)
 	ss.Lock()
-	defer ss.Unlock()
+	defer func() {
+		ss.Unlock()
+		saveScramyStateAsync(chatID, ss)
+	}()
 
 	if ss.PendingNewGame {
 		ss.PendingNewGame = false
@@ -335,7 +445,10 @@ func capitalizeWord(word string) string {
 func HandleGuess(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.Client, chatID int64, text string) {
 	ss := GetOrCreateScramyState(chatID)
 	ss.Lock()
-	defer ss.Unlock()
+	defer func() {
+		ss.Unlock()
+		saveScramyStateAsync(chatID, ss)
+	}()
 
 	if !ss.Active {
 		return
