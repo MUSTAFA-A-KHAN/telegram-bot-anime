@@ -10,3 +10,6 @@
 ## 2024-05-15 - Optimize Regexp Compilation
 **Learning:** Found dynamic `regexp.MustCompile` in multiple files inside frequently executed loops/functions throughout this Go codebase (e.g. `service/StringUtilsService.go`, `controller/translator/handlers.go`). Compiling regex at runtime is an expensive operation in Go and significantly degrades performance.
 **Action:** Always declare `*regexp.Regexp` variables globally at the package level instead of inside functions or loops. Recompilation overhead should be strictly avoided.
+## 2024-06-03 - Safe Double-Checked Locking in Go
+**Learning:** Standard double-checked locking using a simple pointer check (`if ptr != nil`) and a `sync.Mutex` is structurally unsafe in Go due to the memory model. The compiler can reorder instructions, causing a reading goroutine to observe a non-nil pointer *before* the underlying struct is fully initialized, leading to a data race and potential panic.
+**Action:** Always implement Double-Checked Locking safely in Go by using the `sync/atomic` package (e.g., `atomic.Pointer[T]`). This provides the necessary memory barriers for safe, lock-free reads while allowing the ability to retry failed initializations (unlike `sync.Once`).
