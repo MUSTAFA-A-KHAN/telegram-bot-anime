@@ -1000,19 +1000,45 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		}
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
 		return
+	case "mystats_main":
+		buttons := tgbotapi.NewInlineKeyboardMarkup(
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("Word Guess", "stats_wordguess"),
+				tgbotapi.NewInlineKeyboardButtonData("Wordle", "stats_wordle"),
+			),
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("Scramy", "stats_scramy"),
+			),
+		)
+		editMsg := tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, "🐊🇮🇳\n📊 Choose game stats to view:")
+		editMsg.ReplyMarkup = &buttons
+		bot.Send(editMsg)
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
+		return
 	case "stats_wordguess":
 		result := service.GetUserStatsByID(client, callback.From.ID)
-		view.SendMessage(bot, chatID, result)
+		buttons := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("🔙 Back", "mystats_main")))
+		editMsg := tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, result)
+		editMsg.ReplyMarkup = &buttons
+		bot.Send(editMsg)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
 		return
 	case "stats_wordle":
 		result := service.GetWordleUserStatsByID(client, callback.From.ID)
-		view.SendMessage(bot, chatID, result)
+		buttons := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("🔙 Back", "mystats_main")))
+		editMsg := tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, result)
+		editMsg.ReplyMarkup = &buttons
+		editMsg.ParseMode = tgbotapi.ModeMarkdown
+		bot.Send(editMsg)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
 		return
 	case "stats_scramy":
 		result := service.GetScramyUserStatsByID(client, callback.From.ID)
-		view.SendMessage(bot, chatID, result)
+		buttons := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("🔙 Back", "mystats_main")))
+		editMsg := tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, result)
+		editMsg.ReplyMarkup = &buttons
+		editMsg.ParseMode = tgbotapi.ModeMarkdown
+		bot.Send(editMsg)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
 		return
 	case "wordle_start":
