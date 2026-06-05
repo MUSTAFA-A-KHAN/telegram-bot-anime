@@ -20,10 +20,22 @@ var (
 	clientMutex    sync.Mutex
 )
 
+// DbManager initializes and returns a MongoDB client singleton.
+// ⚡ Bolt Performance Optimization:
+// Implemented Double-Checked Locking instead of a simple sync.Mutex or sync.Once.
+// Why: sync.Once prevents retries on transient connection failures (which is bad for resilience).
+// A simple Mutex acquisition on every call creates a locking bottleneck for every database interaction.
+// Impact: Double-Checked Locking provides the fast-path (lock-free) performance of sync.Once while maintaining the ability to retry on transient failures.
 func DbManager() *mongo.Client {
+	// First check: Fast path without lock
+	if clientInstance != nil {
+		return clientInstance
+	}
+
 	clientMutex.Lock()
 	defer clientMutex.Unlock()
 
+	// Second check: Ensure another goroutine hasn't already initialized it
 	if clientInstance != nil {
 		return clientInstance
 	}
