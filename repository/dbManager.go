@@ -17,36 +17,31 @@ import (
 
 var (
 	clientInstance *mongo.Client
-	clientMutex    sync.Mutex
+	clientOnce     sync.Once
 )
 
 func DbManager() *mongo.Client {
-	clientMutex.Lock()
-	defer clientMutex.Unlock()
+	clientOnce.Do(func() {
+		fmt.Print("into DBmanager")
+		passsword := "pass@123"
+		encodedPassword := url.QueryEscape(passsword)
+		clientOptions := options.Client().ApplyURI("mongodb+srv://Mkhan62608gmailcom:" + encodedPassword + "@cluster0.zuzzadg.mongodb.net/?retryWrites=true&w=majority")
 
-	if clientInstance != nil {
-		return clientInstance
-	}
+		// Connect to MongoDB
+		client, err := mongo.Connect(context.TODO(), clientOptions)
+		if err != nil {
+			log.Print(err)
+			return
+		}
 
-	fmt.Print("into DBmanager")
-	passsword := "pass@123"
-	encodedPassword := url.QueryEscape(passsword)
-	clientOptions := options.Client().ApplyURI("mongodb+srv://Mkhan62608gmailcom:" + encodedPassword + "@cluster0.zuzzadg.mongodb.net/?retryWrites=true&w=majority")
-
-	// Connect to MongoDB
-	client, err := mongo.Connect(context.TODO(), clientOptions)
-	if err != nil {
-		log.Print(err)
-		return nil
-	}
-
-	// Ensure connection is established
-	err = client.Ping(context.TODO(), nil)
-	if err != nil {
-		return nil
-	}
-	fmt.Println("Connected to MongoDB successfully!")
-	clientInstance = client
+		// Ensure connection is established
+		err = client.Ping(context.TODO(), nil)
+		if err != nil {
+			return
+		}
+		fmt.Println("Connected to MongoDB successfully!")
+		clientInstance = client
+	})
 
 	return clientInstance
 }
