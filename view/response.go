@@ -161,3 +161,18 @@ func ReplyToMessageWithButtons(bot *tgbotapi.BotAPI, mesgID int, chatID int64, t
 	res, err := bot.Send(msg)
 	return res, err
 }
+
+func ReplyToMessageWithPhotoAndButtons(bot *tgbotapi.BotAPI, mesgID int, chatID int64, photoData []byte, caption string, buttons tgbotapi.InlineKeyboardMarkup) (tgbotapi.Message, error) {
+	file := tgbotapi.FileBytes{
+		Name:  "wordle.png",
+		Bytes: photoData,
+	}
+	msg := tgbotapi.NewPhotoUpload(chatID, file)
+	msg.ReplyToMessageID = mesgID
+	msg.Caption = caption
+	if len(buttons.InlineKeyboard) > 0 {
+		msg.ReplyMarkup = buttons
+	}
+	res, err := bot.Send(msg)
+	return res, err
+}

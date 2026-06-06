@@ -12,6 +12,7 @@ import (
 
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/repository"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/view"
+	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/wordlebot/image_generator"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -424,7 +425,22 @@ func HandleGuess(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.
 	ws.Guesses = append(ws.Guesses, guess)
 	ws.Attempts++
 
-	board := buildWordleBoard(ws)
+	settings := GetChatSettings(chatID, client)
+	isImage := settings.WordleViewType == "image"
+	var board string
+	var imgData []byte
+
+	if isImage {
+		var err error
+		imgData, err = image_generator.GenerateWordleImage(ws.Guesses, ws.Word)
+		if err != nil {
+			log.Printf("Failed to generate wordle image: %v", err)
+			isImage = false
+			board = buildWordleBoard(ws)
+		}
+	} else {
+		board = buildWordleBoard(ws)
+	}
 
 	if guess == ws.Word {
 		ws.Active = false
@@ -432,8 +448,6 @@ func HandleGuess(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.
 		if points < 1 {
 			points = 1 // Ensure minimum 1 point for winning
 		}
-		msg := fmt.Sprintf("%s\n\n🟩 🟩 🟩 🟩 🟩  %s   [+%d💎]\n🎉 [%s](tg://user?id=%d) guessed it in %d attempts!",
-			board, strings.ToUpper(ws.Word), points, message.From.FirstName, message.From.ID, ws.Attempts)
 
 		buttons := tgbotapi.NewInlineKeyboardMarkup(
 			tgbotapi.NewInlineKeyboardRow(
@@ -442,11 +456,19 @@ func HandleGuess(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.
 			),
 		)
 
-		view.ReplyToMessageWithButtons(bot, message.MessageID, chatID, msg, buttons)
+		if isImage {
+			msg := fmt.Sprintf("🟩 🟩 🟩 🟩 🟩  %s   [+%d💎]\n🎉 [%s](tg://user?id=%d) guessed it in %d attempts!",
+				strings.ToUpper(ws.Word), points, message.From.FirstName, message.From.ID, ws.Attempts)
+			view.ReplyToMessageWithPhotoAndButtons(bot, message.MessageID, chatID, imgData, msg, buttons)
+		} else {
+			msg := fmt.Sprintf("%s\n\n🟩 🟩 🟩 🟩 🟩  %s   [+%d💎]\n🎉 [%s](tg://user?id=%d) guessed it in %d attempts!",
+				board, strings.ToUpper(ws.Word), points, message.From.FirstName, message.From.ID, ws.Attempts)
+			view.ReplyToMessageWithButtons(bot, message.MessageID, chatID, msg, buttons)
+		}
+
 		go repository.InsertWordleDoc(message.From.ID, message.From.FirstName, chatID, client, "WordleEn", ws.Attempts)
 	} else if ws.Attempts >= ws.MaxAttempts {
 		ws.Active = false
-		msg := fmt.Sprintf("%s\n\n❌ Out of attempts! The word was %s.", board, strings.ToUpper(ws.Word))
 
 		buttons := tgbotapi.NewInlineKeyboardMarkup(
 			tgbotapi.NewInlineKeyboardRow(
@@ -455,8 +477,18 @@ func HandleGuess(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.
 			),
 		)
 
-		view.ReplyToMessageWithButtons(bot, message.MessageID, chatID, msg, buttons)
+		if isImage {
+			msg := fmt.Sprintf("❌ Out of attempts! The word was %s.", strings.ToUpper(ws.Word))
+			view.ReplyToMessageWithPhotoAndButtons(bot, message.MessageID, chatID, imgData, msg, buttons)
+		} else {
+			msg := fmt.Sprintf("%s\n\n❌ Out of attempts! The word was %s.", board, strings.ToUpper(ws.Word))
+			view.ReplyToMessageWithButtons(bot, message.MessageID, chatID, msg, buttons)
+		}
 	} else {
-		view.ReplyToMessage(bot, message.MessageID, chatID, board)
+		if isImage {
+			view.ReplyToMessageWithPhotoAndButtons(bot, message.MessageID, chatID, imgData, "", tgbotapi.InlineKeyboardMarkup{})
+		} else {
+			view.ReplyToMessage(bot, message.MessageID, chatID, board)
+		}
 	}
 }

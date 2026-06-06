@@ -676,6 +676,13 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		} else {
 			view.SendMessage(bot, message.Chat.ID, "Welcome! Type /word to start a new game.")
 		}
+	case "setting":
+		buttons := tgbotapi.NewInlineKeyboardMarkup(
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("Wordle View 🖼️", "setting_wordle_view"),
+			),
+		)
+		view.SendMessageWithButtons(bot, message.Chat.ID, "⚙️ **Settings**\nChoose a setting to configure:", buttons)
 	case "stats":
 		buttons := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Word Guess Group", "statsgroup_wordguess"), tgbotapi.NewInlineKeyboardButtonData("Wordle Group", "statsgroup_wordle")), tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Scramy Group", "statsgroup_scramy")))
 		view.SendMessageWithButtons(bot, chatID, "🐊🇮🇳\n📊 Choose group stats to view:", buttons)
@@ -1040,6 +1047,33 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		editMsg.ParseMode = tgbotapi.ModeMarkdown
 		bot.Send(editMsg)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
+		return
+	case "setting_wordle_view":
+		buttons := tgbotapi.NewInlineKeyboardMarkup(
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("Text View 📝", "set_wordle_view_text"),
+				tgbotapi.NewInlineKeyboardButtonData("Image View 🖼️", "set_wordle_view_image"),
+			),
+		)
+		editMsg := tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, "⚙️ **Wordle View Setting**\nChoose how you want Wordle results to be displayed:")
+		editMsg.ReplyMarkup = &buttons
+		editMsg.ParseMode = tgbotapi.ModeMarkdown
+		bot.Send(editMsg)
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
+		return
+	case "set_wordle_view_text":
+		wordlebot.UpdateWordleViewType(chatID, "text", client)
+		editMsg := tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, "✅ Wordle view updated to **Text**.")
+		editMsg.ParseMode = tgbotapi.ModeMarkdown
+		bot.Send(editMsg)
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "View set to Text"))
+		return
+	case "set_wordle_view_image":
+		wordlebot.UpdateWordleViewType(chatID, "image", client)
+		editMsg := tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, "✅ Wordle view updated to **Image**.")
+		editMsg.ParseMode = tgbotapi.ModeMarkdown
+		bot.Send(editMsg)
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "View set to Image"))
 		return
 	case "wordle_start":
 		wordlebot.HandleWordleCommand(bot, chatID, callback.From.FirstName)
