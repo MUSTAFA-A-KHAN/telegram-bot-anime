@@ -157,8 +157,8 @@ func handleBuyEmoji(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery, clie
 
 	bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("Successfully bought %s for %d points!", emoji, price)))
 
-	// Refresh shop view to potentially show new points or just state
-	showShop(bot, callback.Message.Chat.ID)
+	// Show inventory so the user can immediately equip their new emoji
+	showInventory(bot, callback, client)
 }
 
 func handleEquipEmoji(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery, client *mongo.Client, emoji string) {
