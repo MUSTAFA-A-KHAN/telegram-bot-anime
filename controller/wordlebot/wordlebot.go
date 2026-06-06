@@ -330,7 +330,7 @@ func HandleWordleCommand(bot *tgbotapi.BotAPI, chatID int64, username string) {
 
 				buttons := tgbotapi.NewInlineKeyboardMarkup(
 					tgbotapi.NewInlineKeyboardRow(
-						tgbotapi.NewInlineKeyboardButtonData("Change Layout ⚙️", "setting_wordle_view"),
+						tgbotapi.NewInlineKeyboardButtonData("Change Layout ⚙️", "setting_wordle_view_new"),
 					),
 				)
 
@@ -356,7 +356,7 @@ func HandleWordleCommand(bot *tgbotapi.BotAPI, chatID int64, username string) {
 
 	buttons := tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("Change Layout ⚙️", "setting_wordle_view"),
+			tgbotapi.NewInlineKeyboardButtonData("Change Layout ⚙️", "setting_wordle_view_new"),
 		),
 	)
 

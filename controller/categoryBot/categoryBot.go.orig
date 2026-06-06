@@ -1,14 +1,15 @@
-package controller
+package categorybot
 
 import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"net/http"
+	"math/rand"
 	"os"
 	"strings"
 	"sync"
 	"time"
+	"unicode"
 
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/scramybot"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/wordlebot"
@@ -19,11 +20,61 @@ import (
 	installOllama "github.com/MUSTAFA-A-KHAN/telegram-bot-anime/service/installOllama"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/view"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	lev "github.com/texttheater/golang-levenshtein/levenshtein"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-// ChatStateDoc is the MongoDB-serializable version of ChatState
-type ChatStateDoc struct {
+func MessageToJSONString(message *tgbotapi.Message) (string, error) {
+	jsonBytes, err := json.MarshalIndent(message, "", "  ")
+	if err != nil {
+		return "", err
+	}
+	return string(jsonBytes), nil
+}
+
+// escapeMarkdownV2 escapes special characters for Telegram MarkdownV2 formatting
+func escapeMarkdownV2(text string) string {
+	var builder strings.Builder
+	builder.Grow(len(text) + len(text)/4) // Rough estimate for escaped string
+	for _, char := range text {
+		switch char {
+		case '_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!':
+			builder.WriteByte('\\')
+			builder.WriteRune(char)
+		default:
+			builder.WriteRune(char)
+		}
+	}
+	return builder.String()
+}
+func cleanWord(word string) string {
+	return strings.TrimFunc(word, func(r rune) bool {
+		return unicode.IsPunct(r)
+	})
+}
+
+func replaceWord(original, word string) string {
+	maxDistance := 2 // allow 2-character fuzzy difference
+
+	words := strings.Fields(original)
+	for i, w := range words {
+		cleaned := cleanWord(w)
+		distance := lev.DistanceForStrings(
+			[]rune(strings.ToLower(cleaned)),
+			[]rune(strings.ToLower(word)),
+			lev.DefaultOptions,
+		)
+		if distance <= maxDistance {
+			replacement := strings.Repeat("_", len(cleaned))
+			words[i] = strings.Replace(w, cleaned, replacement, 1)
+		}
+	}
+
+	return strings.Join(words, " ")
+}
+
+// CategoryChatStateDoc is the MongoDB-serializable version of ChatState
+type CategoryChatStateDoc struct {
 	ChatID            int64     `bson:"_id"`
 	Word              string    `bson:"word"`
 	User              int       `bson:"user"`
@@ -33,10 +84,10 @@ type ChatStateDoc struct {
 	LastHintTypeSent  int       `bson:"last_hint_type_sent"`
 }
 
-// saveChatStateAsync asynchronously saves a chat state to MongoDB.
-func saveChatStateAsync(chatID int64, state *ChatState) {
+// saveCategoryChatStateAsync asynchronously saves a chat state to MongoDB.
+func saveCategoryChatStateAsync(chatID int64, state *ChatState) {
 	state.RLock()
-	doc := ChatStateDoc{
+	doc := CategoryChatStateDoc{
 		ChatID:            chatID,
 		Word:              state.Word,
 		User:              state.User,
@@ -50,9 +101,35 @@ func saveChatStateAsync(chatID int64, state *ChatState) {
 	go func() {
 		client := repository.DbManager()
 		if client != nil {
-			repository.SaveGameState(client, "ChatStates", chatID, doc)
+			repository.SaveGameState(client, "CategoryChatStates", chatID, doc)
 		}
 	}()
+}
+
+// loadSavedCategoryChatStates loads states from MongoDB into the chatStates map
+func loadSavedCategoryChatStates(client *mongo.Client) {
+	var results []CategoryChatStateDoc
+	err := repository.LoadAllGameStates(client, "CategoryChatStates", &results)
+	if err != nil {
+		log.Printf("Failed to load saved category chat states: %v", err)
+		return
+	}
+
+	stateMutex.Lock()
+	defer stateMutex.Unlock()
+
+	for _, doc := range results {
+		cs := &ChatState{
+			Word:              doc.Word,
+			User:              doc.User,
+			LeadTimestamp:     doc.LeadTimestamp,
+			Leader:            doc.Leader,
+			LastHintTimestamp: doc.LastHintTimestamp,
+			LastHintTypeSent:  doc.LastHintTypeSent,
+		}
+		chatStates[doc.ChatID] = cs
+	}
+	log.Printf("Loaded %d active Word Guess games from MongoDB (Category Bot)", len(results))
 }
 
 // ChatState holds the state for a specific chat, including the current word and user explaining it.
@@ -71,24 +148,11 @@ var (
 	chatStates = make(map[int64]*ChatState)
 	// stateMutex ensures safe access to the chatStates map.
 	stateMutex = &sync.RWMutex{}
-)
 
-const (
-	StickerOwlWatching = "CAACAgUAAxkBAAEwCnNnYW-OkgV7Odt9osVwoBSzLC6vsAACMhMAAj45CFdCstMoIYiPfjYE" // Using the existing ID
-	StickerCrocHappy   = ""
-	StickerCrocCurious = ""
-	StickerOwlNodding  = ""
+	// aiLastResponse stores the last AI response per chat for follow-up hints
+	aiLastResponse  = make(map[int64]string)
+	aiResponseMutex = &sync.RWMutex{}
 )
-
-// Helper to send a character message with a sticker
-func sendCharacterAction(bot *tgbotapi.BotAPI, chatID int64, stickerID string, text string) {
-	if stickerID != "" {
-		view.SendSticker(bot, chatID, stickerID)
-	}
-	msg := tgbotapi.NewMessage(chatID, text)
-	msg.ParseMode = "Markdown"
-	bot.Send(msg)
-}
 
 // telegramReactions is a map that holds the reactions for each chat, identified by chat ID.
 var telegramReactions = []string{
@@ -148,6 +212,33 @@ func createSingleButtonKeyboard(text, data string) tgbotapi.InlineKeyboardMarkup
 	)
 }
 
+func createCategoryBotKeyboard(botUsername string, chatID int64) tgbotapi.InlineKeyboardMarkup {
+	customWordLink := fmt.Sprintf("https://t.me/%s?start=custom_word_%d", botUsername, chatID)
+	return tgbotapi.NewInlineKeyboardMarkup(
+		// First line with a single button
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("See word 👀", "explain"),
+			tgbotapi.NewInlineKeyboardButtonURL("Custom Word ✍️", customWordLink),
+		),
+		// Second line with multiple buttons
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("nxt⏭️", "next"),
+			// tgbotapi.NewInlineKeyboardButtonData("flower❀", "flower"),
+			tgbotapi.NewInlineKeyboardButtonData("car🏎️𖦹 ׂ 𓈒", "car"),
+			// tgbotapi.NewInlineKeyboardButtonData("animal🐾", "animal"),
+			tgbotapi.NewInlineKeyboardButtonData("AI Hint 💡", "ai_hint"),
+		),
+		// Third line with a single button
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Wordle 🟩🟨", "wordle_start"),
+		),
+		// Fourth line with a single button
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Changed my mind ❌", "droplead"),
+		),
+	)
+}
+
 // isLeaderActive checks if the current leader is active within the given duration.
 func (cs *ChatState) isLeaderActive(duration time.Duration) bool {
 	cs.RLock()
@@ -163,38 +254,29 @@ func (cs *ChatState) reset(chatID int64) {
 	cs.LeadTimestamp = time.Time{}
 	cs.Leader = ""
 	cs.Unlock()
-	saveChatStateAsync(chatID, cs)
-}
-
-// loadSavedChatStates loads states from MongoDB into the chatStates map
-func loadSavedChatStates(client *mongo.Client) {
-	var results []ChatStateDoc
-	err := repository.LoadAllGameStates(client, "ChatStates", &results)
-	if err != nil {
-		log.Printf("Failed to load saved chat states: %v", err)
-		return
-	}
-
-	stateMutex.Lock()
-	defer stateMutex.Unlock()
-
-	for _, doc := range results {
-		cs := &ChatState{
-			Word:              doc.Word,
-			User:              doc.User,
-			LeadTimestamp:     doc.LeadTimestamp,
-			Leader:            doc.Leader,
-			LastHintTimestamp: doc.LastHintTimestamp,
-			LastHintTypeSent:  doc.LastHintTypeSent,
-		}
-		chatStates[doc.ChatID] = cs
-	}
-	log.Printf("Loaded %d active Word Guess games from MongoDB", len(results))
+	saveCategoryChatStateAsync(chatID, cs)
 }
 
 // StartBot initializes and starts the bot
 func StartBot(token string) error {
-	go startHTTPServer() //start http server with go routine
+	// Create a single MongoDB client instance once
+	client := repository.DbManager()
+	if client == nil {
+		return fmt.Errorf("failed to connect to MongoDB")
+	}
+
+	loadSavedCategoryChatStates(client)
+	wordlebot.LoadSavedStates(client)
+	scramybot.LoadSavedStates(client)
+
+	if err := wordlebot.LoadWordleWords(); err != nil {
+		log.Printf("Warning: failed to load Wordle words: %v", err)
+	}
+
+	if err := scramybot.LoadScramyWords(); err != nil {
+		log.Printf("Warning: failed to load Scramy words: %v", err)
+	}
+
 	bot, err := tgbotapi.NewBotAPI(token)
 	if err != nil {
 		return err
@@ -202,23 +284,6 @@ func StartBot(token string) error {
 
 	bot.Debug = true
 	log.Printf("Authorized on account %s", bot.Self.UserName)
-
-	// Create a single MongoDB client instance once
-	client := repository.DbManager()
-	if client == nil {
-		return fmt.Errorf("failed to connect to MongoDB")
-	}
-
-	loadSavedChatStates(client)
-	wordlebot.LoadSavedStates(client)
-	scramybot.LoadSavedStates(client)
-
-	if err := wordlebot.LoadWordleWords(); err != nil {
-		log.Printf("failed to load Wordle words: %v", err)
-	}
-	if err := scramybot.LoadScramyWords(); err != nil {
-		log.Printf("failed to load Scramy words: %v", err)
-	}
 
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
@@ -234,8 +299,6 @@ func StartBot(token string) error {
 			go handleMessage(bot, update.Message, client)
 		} else if update.CallbackQuery != nil {
 			go handleCallbackQuery(bot, update.CallbackQuery, client)
-		} else if update.InlineQuery != nil {
-			go handleInlineQuery(bot, update.InlineQuery)
 		}
 	}
 
@@ -330,6 +393,12 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 				view.SendMessageWithButtons(bot, message.Chat.ID, "Heyyy! Got a word for ya 😏 Tap the button below if you need a lil hint 👇", buttons)
 				return
 			}
+		case "wordle":
+			wordlebot.HandleWordleCommand(bot, chatID, message.From.FirstName)
+			return
+		case "scramy":
+			scramybot.HandleScramyCommand(bot, chatID, message.From.FirstName)
+			return
 		case "exportdata":
 			if message.From.ID != int(adminID) {
 				log.Printf("not an admin")
@@ -454,51 +523,25 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 				return
 			}
 			view.SendMessage(bot, chatID, "Log file sent to admin successfully.")
-		}
-
-		aiModeMutex.Lock()
-		aiOn := aiModeUsers[chatID]
-		aiModeMutex.Unlock()
-
-		if aiOn {
-			// AI processing here
-			wordChannel, errChannel := installOllama.RunOllama(text)
-
-			// Send the initial message (could be an empty string or placeholder)
-			initialMsg := tgbotapi.NewMessage(chatID, "Thinking...")
-			initialMessage, err := bot.Send(initialMsg)
-			if err != nil {
-				log.Println("Failed to send initial message:", err)
-				return
-			}
-
-			// Start a variable to accumulate the text as we receive each word
-			var accumulatedText string
-
-			// Process words as they arrive
-			for word := range wordChannel {
-				// Accumulate the word and append it to the message content
-				accumulatedText += word + " "
-
-				// Update the same message with the accumulated text
-				editedMsg := tgbotapi.NewEditMessageText(chatID, initialMessage.MessageID, strings.TrimSpace(accumulatedText))
-				_, err := bot.Send(editedMsg)
-				if err != nil {
-					log.Println("Failed to update message:", err)
+		case "getButton":
+			Announcement := strings.Split(message.Text, "  ")
+			if len(Announcement) > 1 {
+				parts := strings.Split(Announcement[2], " ")
+				if len(parts) > 2 {
+					url := parts[0]
+					messageText := strings.Join(parts[1:], " ")
+					button := tgbotapi.NewInlineKeyboardButtonURL(messageText, url)
+					view.SendMessageWithKeyboardButton(bot, message.Chat.ID, Announcement[1], button)
 				}
 			}
-
-			// If an error occurs during execution, send it to the user
-			if err := <-errChannel; err != nil {
-				// Send an error message if something goes wrong
-				errorMsg := tgbotapi.NewMessage(chatID, err.Error())
-				_, err := bot.Send(errorMsg)
-				if err != nil {
-					log.Println("Failed to send error message:", err)
-				}
-				return
-			}
-			//
+		case "hint":
+			break
+		case "reveal":
+			break
+		case "":
+			break
+		default:
+			view.SendMessage(bot, chatID, "OOPS! not supported in DM.")
 		}
 
 		chatState.RLock()
@@ -507,7 +550,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		lastHintType := chatState.LastHintTypeSent
 		chatState.RUnlock()
 		// Start a new game if no word or lead expired
-		if wordEmpty || time.Since(chatState.LeadTimestamp) >= 640*time.Second {
+		if wordEmpty || !chatState.isLeaderActive(640*time.Second) {
 			word, err := model.GetRandomWord()
 			if err != nil {
 				view.SendMessage(bot, chatID, "Oops! Unable to fetch a word right now. Please try again later.")
@@ -521,7 +564,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			chatState.LastHintTimestamp = time.Time{}
 			chatState.LastHintTypeSent = 0
 			chatState.Unlock()
-			saveChatStateAsync(chatID, chatState)
+			saveCategoryChatStateAsync(chatID, chatState)
 			return
 		}
 
@@ -533,6 +576,54 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 				return
 			}
 
+			aiModeMutex.Lock()
+			aiOn := aiModeUsers[chatID]
+			aiModeMutex.Unlock()
+
+			if aiOn {
+				// Use AI to generate hint based on current word
+				word := chatState.Word
+				if word == "" {
+					view.SendMessage(bot, chatID, "No active word to provide a hint for.")
+					return
+				}
+
+				wordChannel, errChannel := installOllama.RunOllama("Explain the word: " + word)
+
+				initialMsg := tgbotapi.NewMessage(chatID, "Thinking...")
+				initialMessage, err := bot.Send(initialMsg)
+				if err != nil {
+					log.Println("Failed to send initial message:", err)
+					return
+				}
+
+				var accumulatedText string
+				for word := range wordChannel {
+					accumulatedText += word + " "
+
+					aiResponseMutex.Lock()
+					aiLastResponse[chatID] = accumulatedText
+					aiResponseMutex.Unlock()
+
+					editedMsg := tgbotapi.NewEditMessageText(chatID, initialMessage.MessageID, strings.TrimSpace(accumulatedText))
+					_, err := bot.Send(editedMsg)
+					if err != nil {
+						log.Println("Failed to update message:", err)
+					}
+				}
+
+				if err := <-errChannel; err != nil {
+					errorMsg := tgbotapi.NewMessage(chatID, err.Error())
+					_, err := bot.Send(errorMsg)
+					if err != nil {
+						log.Println("Failed to send error message:", err)
+					}
+					return
+				}
+				return
+			}
+
+			// Fallback to existing hint logic if AI mode is off
 			chatState.RLock()
 			var hint string
 			if lastHintType == 0 {
@@ -550,7 +641,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			chatState.LastHintTimestamp = time.Now()
 			chatState.LastHintTypeSent = 1 - lastHintType
 			chatState.Unlock()
-			saveChatStateAsync(chatID, chatState)
+			saveCategoryChatStateAsync(chatID, chatState)
 			return
 		}
 
@@ -620,13 +711,9 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		chatState.RUnlock()
 
 		if service.NormalizeAndCompare(message.Text, word) && message.From.ID == chatState.User {
-			view.SendMessage(bot, chatID, fmt.Sprintf("🦉 Correct! %s ! You guessed the word '%s' correctly!", telegramReactions[7], word))
-			view.ReactToMessage(bot.Token, chatID, message.MessageID, telegramReactions[17], true)
-			view.ReactToMessage(bot.Token, chatID, message.MessageID, "⚡", true)
-			buttons := tgbotapi.NewInlineKeyboardMarkup(
-				tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Get Hint"+telegramReactions[20], "hint")))
-			view.SendMessageWithButtons(bot, message.Chat.ID, "Get  Another Hint👇", buttons)
-
+			view.SendMessage(bot, chatID, fmt.Sprintf("%s ! You guessed the word '%s' correctly!", telegramReactions[7], word))
+			view.ReactToMessage(bot.Token, chatID, message.MessageID, telegramReactions[rand.Intn(8)+13], true)
+			view.ReactToMessage(bot.Token, chatID, message.MessageID, telegramReactions[rand.Intn(8)+13], true)
 			go func() {
 				defer func() {
 					if r := recover(); r != nil {
@@ -635,29 +722,59 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 				}()
 				repository.InsertDoc(message.From.ID, message.From.FirstName, chatID, client, "CrocEn")
 			}()
+
 			chatState.reset(chatID)
-			word, err := model.GetRandomWord()
+			return
+		}
+		aiModeMutex.Lock()
+		aiOn := aiModeUsers[chatID]
+		aiModeMutex.Unlock()
+		if aiOn && strings.Contains(text, "Jarvis") {
+			// AI processing here
+			wordChannel, errChannel := installOllama.RunOllama(text)
+
+			// Send the initial message (could be an empty string or placeholder)
+			initialMsg := tgbotapi.NewMessage(chatID, "Thinking...")
+			initialMessage, err := bot.Send(initialMsg)
 			if err != nil {
-				view.SendMessage(bot, chatID, "Failed to load next word.")
-				chatState.reset(chatID)
+				log.Println("Failed to send initial message:", err)
 				return
 			}
 
-			chatState.Lock()
-			chatState.Word = word
-			chatState.User = message.From.ID
-			chatState.LeadTimestamp = time.Now()
-			chatState.LastHintTimestamp = time.Time{}
-			chatState.LastHintTypeSent = 0
-			chatState.Unlock()
-			saveChatStateAsync(chatID, chatState)
+			// Start a variable to accumulate the text as we receive each word
+			var accumulatedText string
 
-			return
+			// Process words as they arrive
+			for word := range wordChannel {
+				// Accumulate the word and append it to the message content
+				accumulatedText += word + " "
+
+				// Update the same message with the accumulated text
+				editedMsg := tgbotapi.NewEditMessageText(chatID, initialMessage.MessageID, strings.TrimSpace(accumulatedText))
+				_, err := bot.Send(editedMsg)
+				if err != nil {
+					log.Println("Failed to update message:", err)
+				}
+			}
+
+			// If an error occurs during execution, send it to the user
+			if err := <-errChannel; err != nil {
+				// Send an error message if something goes wrong
+				errorMsg := tgbotapi.NewMessage(chatID, err.Error())
+				_, err := bot.Send(errorMsg)
+				if err != nil {
+					log.Println("Failed to send error message:", err)
+				}
+				return
+			}
+			//
 		}
+		fmt.Print(text, "escaped jarvis-----------------------------------------")
 		return
 	}
 
 	// Existing group chat handling
+	text := message.Text
 	switch message.Command() {
 	case "getButton":
 		Announcement := strings.Split(message.Text, "  ")
@@ -670,6 +787,13 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 				view.SendMessageWithKeyboardButton(bot, message.Chat.ID, Announcement[1], button)
 			}
 		}
+	case "ai_on":
+		view.SendMessage(bot, chatID, "AI mode is now enabled! Enjoy the smart responses.")
+		aiModeMutex.Lock()
+		aiModeUsers[chatID] = true
+		aiModeMutex.Unlock()
+		view.SendMessage(bot, chatID, "AI mode is now enabled! Enjoy the smart responses.")
+		return
 	case "start":
 		if message.CommandArguments() == "shop" {
 			showShop(bot, message.Chat.ID)
@@ -684,6 +808,13 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			),
 		)
 		view.SendMessageWithButtons(bot, message.Chat.ID, "⚙️ **Settings**\nChoose a setting to configure:", buttons)
+		return
+	case "wordle":
+		wordlebot.HandleWordleCommand(bot, chatID, message.From.FirstName)
+		return
+	case "scramy":
+		scramybot.HandleScramyCommand(bot, chatID, message.From.FirstName)
+		return
 	case "stats":
 		buttons := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Word Guess Group", "statsgroup_wordguess"), tgbotapi.NewInlineKeyboardButtonData("Wordle Group", "statsgroup_wordle")), tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Scramy Group", "statsgroup_scramy")))
 		view.SendMessageWithButtons(bot, chatID, "🐊🇮🇳\n📊 Choose group stats to view:", buttons)
@@ -781,12 +912,13 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		// } else {
 		// 	view.SendMessage(bot, chatID, "Please provide a message with your report. Usage: /report [your message]")
 		// }
-	case "wordle":
-		wordlebot.HandleWordleCommand(bot, chatID, message.From.FirstName)
-		return
-	case "scramy":
-		scramybot.HandleScramyCommand(bot, chatID, message.From.FirstName)
-		return
+	case "game":
+		buttons := createMultiButtonKeyboard([][]string{
+			{"Lead Croc 🗣️  ", "explain"},
+			{"Wordle 🟩🟨", "wordle_start"},
+			{"Scramy 𒅒𒈔𒅒", "scramy_start"},
+		})
+		view.SendMessageWithButtons(bot, chatID, "🐊 *The Crocodile peeks from the reeds, waiting...*", buttons)
 	case "word":
 		chatState.RLock()
 		wordEmpty := chatState.Word == ""
@@ -800,35 +932,21 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 				return
 			}
 
-			buttons := createMultiButtonKeyboard([][]string{
-				{" 🗣️ Explain ", "explain"},
-				{"Wordle 🟩🟨", "wordle_start"},
-				{"Scramy 𒅒𒈔𒅒", "scramy_start"},
-			})
+			buttons := createSingleButtonKeyboard(" 🗣️ Explain ", "explain")
 
 			chatState.Lock()
 			chatState.Word = word
 			chatState.User = 0
 			chatState.Leader = ""
 			chatState.Unlock()
-			saveChatStateAsync(chatID, chatState)
+			saveCategoryChatStateAsync(chatID, chatState)
 
-			// THE CHARACTER UPGRADE:
-			sendCharacterAction(bot, chatID, StickerOwlWatching,
-				"🦉 *The Owl ruffles its feathers in the moonlight.*\n\"A new secret has been placed in the forest. Who will step forward to explain?\"")
-
-			view.SendMessageWithButtons(bot, chatID, "🐊 *The Crocodile peeks from the reeds, waiting...*", buttons)
+			view.SendSticker(bot, chatID, "CAACAgUAAxkBAAEwCnNnYW-OkgV7Odt9osVwoBSzLC6vsAACMhMAAj45CFdCstMoIYiPfjYE")
+			view.SendMessageWithButtons(bot, message.Chat.ID, "The word is ready! Click 'Explain' to start explaining it.", buttons)
 		} else {
 			sentMsg, err := view.SendMessage(bot, message.Chat.ID, "A game is currently in progress.")
 			deleteWarningMessage(bot, message, sentMsg, err)
 		}
-	case "game":
-		buttons := createMultiButtonKeyboard([][]string{
-			{" 🗣️ Explain ", "explain"},
-			{"Wordle 🟩🟨", "wordle_start"},
-			{"Scramy 𒅒𒈔𒅒", "scramy_start"},
-		})
-		view.SendMessageWithButtons(bot, chatID, "🐊 *The Crocodile peeks from the reeds, waiting...*", buttons)
 	case "hint":
 		chatState.RLock()
 		wordEmpty := chatState.Word == ""
@@ -847,6 +965,52 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			deleteWarningMessage(bot, message, sentMsg, err)
 			return
 		}
+		aiModeMutex.Lock()
+		aiOn := aiModeUsers[chatID]
+		aiModeMutex.Unlock()
+
+		if aiOn {
+			// Use AI to generate hint based on current word
+			word := chatState.Word
+			if word == "" {
+				view.SendMessage(bot, chatID, "No active word to provide a hint for.")
+				return
+			}
+
+			wordChannel, errChannel := installOllama.RunOllama("Give me a riddle about a " + word)
+
+			initialMsg := tgbotapi.NewMessage(chatID, "Thinking...")
+			initialMessage, err := bot.Send(initialMsg)
+			if err != nil {
+				log.Println("Failed to send initial message:", err)
+				return
+			}
+
+			var accumulatedText string
+			for word := range wordChannel {
+				accumulatedText += word + " "
+
+				aiResponseMutex.Lock()
+				aiLastResponse[chatID] = accumulatedText
+				aiResponseMutex.Unlock()
+
+				editedMsg := tgbotapi.NewEditMessageText(chatID, initialMessage.MessageID, strings.TrimSpace(accumulatedText))
+				_, err := bot.Send(editedMsg)
+				if err != nil {
+					log.Println("Failed to update message:", err)
+				}
+			}
+
+			if err := <-errChannel; err != nil {
+				errorMsg := tgbotapi.NewMessage(chatID, err.Error())
+				_, err := bot.Send(errorMsg)
+				if err != nil {
+					log.Println("Failed to send error message:", err)
+				}
+				return
+			}
+			return
+		}
 
 		chatState.RLock()
 		var hint string
@@ -859,10 +1023,9 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		}
 		chatState.RUnlock()
 
-		// THE CHARACTER UPGRADE:
-		sendCharacterAction(bot, chatID, StickerCrocCurious, "🐊 *The Crocodile tilts his head.*\n\"Stuck already? I thought humans were supposed to be the smart ones!\"")
-
-		time.Sleep(1 * time.Second) // Let the Croc's joke land
+		// Send chat action "typing" before sending hint
+		// chatAction := tgbotapi.NewChatAction(message.Chat.ID, tgbotapi.ChatTyping)
+		// bot.Send(chatAction)
 
 		// Send chat action "typing" before sending hint
 		chatAction := tgbotapi.NewChatAction(chatID, tgbotapi.ChatTyping)
@@ -884,7 +1047,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		chatState.LastHintTimestamp = time.Now()
 		chatState.LastHintTypeSent = 1 - lastHintType
 		chatState.Unlock()
-			saveChatStateAsync(chatID, chatState)
+			saveCategoryChatStateAsync(chatID, chatState)
 	case "reveal":
 		chatState.RLock()
 		word := chatState.Word
@@ -892,10 +1055,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		chatState.RUnlock()
 
 		if time.Since(leadTime) >= 600*time.Second {
-			buttons := createMultiButtonKeyboard([][]string{
-				{" 🗣️ Explain ", "explain"},
-				{"Wordle 🟩🟨", "wordle_start"},
-			})
+			buttons := createSingleButtonKeyboard(" 🗣️ Explain ", "explain")
 			view.SendMessageWithButtons(bot, message.Chat.ID, fmt.Sprintf("The word was: %s", word), buttons)
 
 			chatState.reset(chatID)
@@ -921,26 +1081,59 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 
 		if user != 0 && service.NormalizeAndCompare(message.Text, word) && message.From.ID != user {
 			chatState.reset(chatID)
-
-			// THE CHARACTER UPGRADE:
-			victoryText := fmt.Sprintf("🎊 *The forest erupts in cheers!*\n\n🦉 \"Correct. The word was indeed **%s**.\"\n🐊 \"WOW! [%s](tg://user?id=%d) is a genius! Can we play again? Can we?!\"",
-				word, message.From.FirstName, message.From.ID)
-
-			if StickerCrocHappy != "" {
-				view.SendSticker(bot, chatID, StickerCrocHappy)
-			}
-			buttons := createMultiButtonKeyboard([][]string{
-				{"🌟 Claim Leadership 🙋", "explain"},
-				{"Start Wordle! 🟩🟨", "wordle_start"},
-			})
-			view.SendMessageWithButtons(bot, chatID, victoryText, buttons)
-
-			go view.ReactToMessage(bot.Token, chatID, message.MessageID, "🔥", true)
-			go view.ReactToMessage(bot.Token, chatID, message.MessageID, "⚡", true)
+			buttons := createSingleButtonKeyboard("🌟 Claim Leadership 🙋", "explain")
+			view.SendMessageWithButtons(bot, message.Chat.ID, fmt.Sprintf("%s! %s guessed the word %s.\n /word", telegramReactions[7], message.From.FirstName, word), buttons)
+			go view.ReactToMessage(bot.Token, chatID, message.MessageID, telegramReactions[rand.Intn(8)+13], true)
+			go view.ReactToMessage(bot.Token, chatID, message.MessageID, telegramReactions[rand.Intn(8)+13], true)
 			go repository.InsertDoc(message.From.ID, message.From.FirstName, message.Chat.ID, client, "CrocEn")
 			go repository.InsertDoc(user, leader, message.Chat.ID, client, "CrocEnLeader")
 
 		}
+		aiModeMutex.Lock()
+		aiOn := aiModeUsers[chatID]
+		aiModeMutex.Unlock()
+		if aiOn && strings.Contains(text, "Jarvis") {
+			// AI processing here
+			wordChannel, errChannel := installOllama.RunOllama(text)
+
+			// Send the initial message (could be an empty string or placeholder)
+			initialMsg := tgbotapi.NewMessage(chatID, "Thinking...")
+			initialMessage, err := bot.Send(initialMsg)
+			if err != nil {
+				log.Println("Failed to send initial message:", err)
+				return
+			}
+
+			// Start a variable to accumulate the text as we receive each word
+			var accumulatedText string
+
+			// Process words as they arrive
+			for word := range wordChannel {
+				// Accumulate the word and append it to the message content
+				accumulatedText += word + " "
+
+				// Update the same message with the accumulated text
+				editedMsg := tgbotapi.NewEditMessageText(chatID, initialMessage.MessageID, strings.TrimSpace(accumulatedText))
+				_, err := bot.Send(editedMsg)
+				if err != nil {
+					log.Println("Failed to update message:", err)
+				}
+			}
+
+			// If an error occurs during execution, send it to the user
+			if err := <-errChannel; err != nil {
+				// Send an error message if something goes wrong
+				errorMsg := tgbotapi.NewMessage(chatID, err.Error())
+				_, err := bot.Send(errorMsg)
+				if err != nil {
+					log.Println("Failed to send error message:", err)
+				}
+				return
+			}
+			//
+		}
+		fmt.Print(text, "escaped jarvis-----------------------------------------")
+		return
 	}
 }
 
@@ -1036,16 +1229,6 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		bot.Send(editMsg)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
 		return
-	case "setting_scramy_letters_new":
-		buttons := tgbotapi.NewInlineKeyboardMarkup(
-			tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonData("Squared 🔠", "set_scramy_squared"),
-				tgbotapi.NewInlineKeyboardButtonData("Normal abc", "set_scramy_normal"),
-			),
-		)
-		view.SendMessageWithButtons(bot, chatID, "⚙️ **Scramy Letters Setting**\nChoose the letter style for Scramy:", buttons)
-		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
-		return
 	case "set_scramy_squared":
 		scramybot.UpdateScramyLetterView(chatID, "squared", client)
 		editMsg := tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, "✅ Scramy letters updated to **Squared**.")
@@ -1068,15 +1251,6 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		bot.Send(editMsg)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
 		return
-	case "stats_wordle":
-		result := service.GetWordleUserStatsByID(client, callback.From.ID)
-		buttons := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("🔙 Back", "mystats_main")))
-		editMsg := tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, result)
-		editMsg.ReplyMarkup = &buttons
-		editMsg.ParseMode = tgbotapi.ModeMarkdown
-		bot.Send(editMsg)
-		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
-		return
 	case "stats_scramy":
 		result := service.GetScramyUserStatsByID(client, callback.From.ID)
 		buttons := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("🔙 Back", "mystats_main")))
@@ -1086,6 +1260,53 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		bot.Send(editMsg)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
 		return
+	case "stats_wordle":
+		result := service.GetWordleUserStatsByID(client, callback.From.ID)
+		buttons := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("🔙 Back", "mystats_main")))
+		editMsg := tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, result)
+		editMsg.ReplyMarkup = &buttons
+		editMsg.ParseMode = tgbotapi.ModeMarkdown
+		bot.Send(editMsg)
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
+		return
+	case "explain":
+		chatState.Lock()
+		if chatState.User != callback.From.ID && chatState.User != 0 && time.Since(chatState.LeadTimestamp) < 600*time.Second {
+			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("%s is already explaining the word. Please wait for your turn, %s.", chatState.Leader, callback.From.UserName)))
+			chatState.Unlock()
+			saveCategoryChatStateAsync(chatID, chatState)
+			return
+		}
+		if chatState.User == callback.From.ID {
+			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, chatState.Word))
+			chatState.Unlock()
+			saveCategoryChatStateAsync(chatID, chatState)
+			return
+		}
+		if chatState.User == 0 || (time.Since(chatState.LeadTimestamp) >= 600*time.Second && chatState.User != callback.From.ID) {
+			chatState.User = callback.From.ID
+			word, err := model.GetRandomWord()
+			if err != nil {
+				chatState.Unlock()
+			saveCategoryChatStateAsync(chatID, chatState)
+				return
+			}
+			buttons := createCategoryBotKeyboard(bot.Self.UserName, chatID)
+			chatState.Word = word
+			view.SendMessageWithButtons(bot, callback.Message.Chat.ID, fmt.Sprintf(" [%s](tg://user?id=%d) is explaining the word!", callback.From.FirstName, callback.From.ID), buttons)
+
+			// Remove the inline keyboard (buttons) from the "claim leadership" message when someone starts leading
+			editMarkup := tgbotapi.NewEditMessageReplyMarkup(callback.Message.Chat.ID, callback.Message.MessageID, tgbotapi.InlineKeyboardMarkup{InlineKeyboard: [][]tgbotapi.InlineKeyboardButton{}})
+			_, err = bot.Send(editMarkup)
+			if err != nil {
+				log.Printf("Failed to remove inline keyboard: %v", err)
+			}
+		}
+		chatState.Leader = callback.From.FirstName
+		chatState.LeadTimestamp = time.Now()
+		chatState.Unlock()
+			saveCategoryChatStateAsync(chatID, chatState)
+		bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, chatState.Word))
 	case "setting_wordle_view":
 		buttons := tgbotapi.NewInlineKeyboardMarkup(
 			tgbotapi.NewInlineKeyboardRow(
@@ -1097,16 +1318,6 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		editMsg.ReplyMarkup = &buttons
 		editMsg.ParseMode = tgbotapi.ModeMarkdown
 		bot.Send(editMsg)
-		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
-		return
-	case "setting_wordle_view_new":
-		buttons := tgbotapi.NewInlineKeyboardMarkup(
-			tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonData("Text View 📝", "set_wordle_view_text"),
-				tgbotapi.NewInlineKeyboardButtonData("Image View 🖼️", "set_wordle_view_image"),
-			),
-		)
-		view.SendMessageWithButtons(bot, chatID, "⚙️ **Wordle View Setting**\nChoose how you want Wordle results to be displayed:", buttons)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
 		return
 	case "set_wordle_view_text":
@@ -1145,75 +1356,81 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 			bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "No pending game request to cancel."))
 		}
 		return
-	case "explain":
+	case "ai_hint":
+		aiResponseMutex.RLock()
+		aiResponseMutex.RUnlock()
+		word := chatState.Word
+		if word == "" {
+			view.SendMessage(bot, chatID, "No active word to provide a hint for.")
+			return
+		}
+
+		wordChannel, errChannel := installOllama.RunOllama("Explain \"" + word + "\"")
+
+		initialMsg := tgbotapi.NewMessage(chatID, "Thinking...")
+		initialMessage, err := bot.Send(initialMsg)
+		if err != nil {
+			log.Println("Failed to send initial message:", err)
+			return
+		}
+
+		var accumulatedText string
+		for word := range wordChannel {
+			word = replaceWord(word, chatState.Word)
+			accumulatedText += word + " "
+
+			aiResponseMutex.Lock()
+			aiLastResponse[chatID] = accumulatedText
+			aiResponseMutex.Unlock()
+
+			editedMsg := tgbotapi.NewEditMessageText(chatID, initialMessage.MessageID, strings.TrimSpace(accumulatedText))
+			_, err := bot.Send(editedMsg)
+			if err != nil {
+				log.Println("Failed to update message:", err)
+			}
+		}
+
+		if err := <-errChannel; err != nil {
+			errorMsg := tgbotapi.NewMessage(chatID, err.Error())
+			_, err := bot.Send(errorMsg)
+			if err != nil {
+				log.Println("Failed to send error message:", err)
+			}
+			return
+		}
+
+		// Generate a simple follow-up hint by truncating or modifying the last AI response
+		hint := accumulatedText
+		if len(hint) > 100 {
+			hint = hint[:100] + "..."
+		}
+		view.SendMessage(bot, chatID, "💡 AI Hint: "+hint)
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
+	case "animal":
 		chatState.Lock()
-		if chatState.User != callback.From.ID && chatState.User != 0 && time.Since(chatState.LeadTimestamp) < 600*time.Second {
-			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("%s is already explaining the word. Please wait for your turn, %s.", chatState.Leader, callback.From.UserName)))
+		if chatState.User != callback.From.ID && chatState.User != 0 {
+			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("someone is already explaining the word. %s", callback.From.UserName)))
 			chatState.Unlock()
-			saveChatStateAsync(chatID, chatState)
+			saveCategoryChatStateAsync(chatID, chatState)
 			return
 		}
-		if chatState.User == callback.From.ID {
-			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, chatState.Word))
+		if chatState.User == 0 {
+			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("%s Please click on see word/claim Leadership", callback.From.FirstName)))
 			chatState.Unlock()
-			saveChatStateAsync(chatID, chatState)
+			saveCategoryChatStateAsync(chatID, chatState)
 			return
 		}
-		if chatState.User == 0 || (time.Since(chatState.LeadTimestamp) >= 600*time.Second && chatState.User != callback.From.ID) {
-			chatState.User = callback.From.ID
-
-			// THE CHARACTER UPGRADE: Owl nods in approval
-			if StickerOwlNodding != "" {
-				view.SendSticker(bot, chatID, StickerOwlNodding)
-			}
-
-			word, err := model.GetRandomWord()
-			if err != nil {
-				chatState.Unlock()
-			saveChatStateAsync(chatID, chatState)
-				return
-			}
-			customWordLink := fmt.Sprintf("https://t.me/%s?start=custom_word_%d", bot.Self.UserName, chatID)
-			buttons := tgbotapi.NewInlineKeyboardMarkup(
-				tgbotapi.NewInlineKeyboardRow(
-					tgbotapi.NewInlineKeyboardButtonData("See word 👀", "explain"),
-				),
-				tgbotapi.NewInlineKeyboardRow(
-					tgbotapi.NewInlineKeyboardButtonURL("Custom Word ✍️", customWordLink),
-				),
-				tgbotapi.NewInlineKeyboardRow(
-					tgbotapi.NewInlineKeyboardButtonData("Next ⏭️", "next"),
-				),
-				tgbotapi.NewInlineKeyboardRow(
-					tgbotapi.NewInlineKeyboardButtonData("Wordle 🟩🟨", "wordle_start"),
-				),
-				tgbotapi.NewInlineKeyboardRow(
-					tgbotapi.NewInlineKeyboardButtonData("Changed my mind ❌", "droplead"),
-				),
-			)
-			chatState.Word = word
-
-			// THE CHARACTER UPGRADE:
-			text := fmt.Sprintf("🐊 *The Crocodile splashes happily!*\n\"Look! [%s](tg://user?id=%d) is going to tell us a story! I'm all ears... and teeth!\"",
-				callback.From.FirstName, callback.From.ID)
-
-			view.SendMessageWithButtons(bot, chatID, text, buttons)
-
-			// The Owl gives a stern warning
-			time.Sleep(800 * time.Millisecond)
-			// view.SendMessage(bot, chatID, "🦉 *The Owl blinks slowly.*\n\"Be precise, traveler. Do not speak the word itself.\"")
-
-			// Remove the inline keyboard (buttons) from the "claim leadership" message when someone starts leading
-			editMarkup := tgbotapi.NewEditMessageReplyMarkup(callback.Message.Chat.ID, callback.Message.MessageID, tgbotapi.InlineKeyboardMarkup{InlineKeyboard: [][]tgbotapi.InlineKeyboardButton{}})
-			_, err = bot.Send(editMarkup)
-			if err != nil {
-				log.Printf("Failed to remove inline keyboard: %v", err)
-			}
+		chatState.User = callback.From.ID
+		word, err := model.GetRandomAnimal()
+		if err != nil {
+			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, "Failed to get an animal word. Please try again later."))
+			chatState.Unlock()
+			saveCategoryChatStateAsync(chatID, chatState)
+			return
 		}
-		chatState.Leader = callback.From.FirstName
-		chatState.LeadTimestamp = time.Now()
+		chatState.Word = word
 		chatState.Unlock()
-			saveChatStateAsync(chatID, chatState)
+		saveCategoryChatStateAsync(chatID, chatState)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, chatState.Word))
 
 	case "next":
@@ -1221,20 +1438,60 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		if chatState.User != callback.From.ID && chatState.User != 0 {
 			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("%s is already explaining the word. %s", chatState.Leader, callback.From.UserName)))
 			chatState.Unlock()
-			saveChatStateAsync(chatID, chatState)
+			saveCategoryChatStateAsync(chatID, chatState)
 			return
 		}
 		if chatState.User == 0 {
 			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("%s Please click on see word/claim Leadership", callback.From.FirstName)))
 			chatState.Unlock()
-			saveChatStateAsync(chatID, chatState)
+			saveCategoryChatStateAsync(chatID, chatState)
 			return
 		}
 		chatState.User = callback.From.ID
 		chatState.Leader = callback.From.FirstName
 		chatState.Word, _ = model.GetRandomWord()
 		chatState.Unlock()
-		saveChatStateAsync(chatID, chatState)
+		saveCategoryChatStateAsync(chatID, chatState)
+		bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, chatState.Word))
+
+	case "flower":
+		chatState.Lock()
+		if chatState.User != callback.From.ID && chatState.User != 0 {
+			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("someone is already explaining the word. %s", callback.From.UserName)))
+			chatState.Unlock()
+			saveCategoryChatStateAsync(chatID, chatState)
+			return
+		}
+		if chatState.User == 0 {
+			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("%s Please click on see word/claim Leadership", callback.From.FirstName)))
+			chatState.Unlock()
+			saveCategoryChatStateAsync(chatID, chatState)
+			return
+		}
+		chatState.User = callback.From.ID
+		chatState.Word, _ = model.GetRandomFlower()
+		chatState.Unlock()
+		saveCategoryChatStateAsync(chatID, chatState)
+		bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, chatState.Word))
+
+	case "car":
+		chatState.Lock()
+		if chatState.User != callback.From.ID && chatState.User != 0 {
+			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("someone is already explaining the word. %s", callback.From.UserName)))
+			chatState.Unlock()
+			saveCategoryChatStateAsync(chatID, chatState)
+			return
+		}
+		if chatState.User == 0 {
+			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, fmt.Sprintf("%s Please click on see word/claim Leadership", callback.From.FirstName)))
+			chatState.Unlock()
+			saveCategoryChatStateAsync(chatID, chatState)
+			return
+		}
+		chatState.User = callback.From.ID
+		chatState.Word, _ = model.GetRandomCar()
+		chatState.Unlock()
+		saveCategoryChatStateAsync(chatID, chatState)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, chatState.Word))
 
 	case "droplead":
@@ -1242,7 +1499,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		if chatState.User != callback.From.ID {
 			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, "You are not the current leader, so you cannot drop the lead!"))
 			chatState.Unlock()
-			saveChatStateAsync(chatID, chatState)
+			saveCategoryChatStateAsync(chatID, chatState)
 			return
 		}
 		// Delete the callback message when user selects "Changed my mind"
@@ -1252,7 +1509,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 			log.Printf("Failed to delete message on droplead: %v", err)
 		}
 		chatState.Unlock()
-			saveChatStateAsync(chatID, chatState)
+			saveCategoryChatStateAsync(chatID, chatState)
 		buttons := createSingleButtonKeyboard("🌟 Claim Leadership 🙋", "explain")
 		view.SendMessageWithButtons(bot, callback.Message.Chat.ID, fmt.Sprintf("%s refused to lead -> %s \n", callback.From.FirstName, chatState.Word), buttons)
 		chatState.reset(chatID)
@@ -1265,31 +1522,9 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		chatState.RUnlock()
 
 		if wordEmpty {
-			if callback.Message.Chat.IsPrivate() {
-				word, err := model.GetRandomWord()
-				if err != nil {
-					view.SendMessage(bot, chatID, "Failed to load next word.")
-					chatState.reset(chatID)
-					return
-				}
-
-				chatState.Lock()
-				chatState.Word = word
-				chatState.User = callback.From.ID
-				chatState.LeadTimestamp = time.Now()
-				chatState.LastHintTimestamp = time.Time{}
-				chatState.LastHintTypeSent = 0
-				chatState.Unlock()
-			saveChatStateAsync(chatID, chatState)
-			} else {
-				buttons := createMultiButtonKeyboard([][]string{
-					{" 🗣️ Explain ", "explain"},
-					{"Wordle 🟩🟨", "wordle_start"},
-				})
-				view.SendMessageWithButtons(bot, callback.Message.Chat.ID, "No active game right now. Click below to start one!", buttons)
-				bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
-				return
-			}
+			view.SendMessage(bot, callback.Message.Chat.ID, "No active game right now. Click below to start one! \n  __		/start		__")
+			bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
+			return
 		}
 
 		if !lastHint.IsZero() && time.Since(lastHint) < 1*time.Minute {
@@ -1327,7 +1562,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		chatState.LastHintTimestamp = time.Now()
 		chatState.LastHintTypeSent = 1 - lastHintType
 		chatState.Unlock()
-			saveChatStateAsync(chatID, chatState)
+			saveCategoryChatStateAsync(chatID, chatState)
 
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
 	default:
@@ -1341,108 +1576,6 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		}
 	}
 	bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
-}
-
-func MessageToJSONString(message *tgbotapi.Message) (string, error) {
-	jsonBytes, err := json.MarshalIndent(message, "", "  ")
-	if err != nil {
-		return "", err
-	}
-	return string(jsonBytes), nil
-}
-
-// escapeMarkdownV2 escapes special characters for Telegram MarkdownV2 formatting
-func escapeMarkdownV2(text string) string {
-	var builder strings.Builder
-	builder.Grow(len(text) + len(text)/4) // Rough estimate for escaped string
-	for _, char := range text {
-		switch char {
-		case '_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!':
-			builder.WriteByte('\\')
-			builder.WriteRune(char)
-		default:
-			builder.WriteRune(char)
-		}
-	}
-	return builder.String()
-}
-
-// handleInlineQuery processes incoming inline queries for text formatting
-func handleInlineQuery(bot *tgbotapi.BotAPI, inlineQuery *tgbotapi.InlineQuery) {
-	query := strings.TrimSpace(inlineQuery.Query)
-
-	// If query is empty, send a hint
-	if query == "" {
-		answer := tgbotapi.NewInlineQueryResultArticle(
-			"1",
-			"🎨 Text Formatter",
-			"Type some text after @BotName to see font style options!",
-		)
-		answer.Description = "Type text to format"
-		answer.InputMessageContent = tgbotapi.InputTextMessageContent{
-			Text: "🎨 *Text Formatter Bot*\n\n" +
-				"Use me in any chat by typing:\n" +
-				"`@YourBotName Your text here`\n\n" +
-				"I'll show you different font styles to choose from!",
-			ParseMode: "Markdown",
-		}
-
-		config := tgbotapi.InlineConfig{
-			InlineQueryID: inlineQuery.ID,
-			Results:       []interface{}{answer},
-		}
-		_, err := bot.AnswerInlineQuery(config)
-		if err != nil {
-			log.Printf("Failed to answer empty inline query: %v", err)
-		}
-		return
-	}
-
-	// Get all font styles and create inline results
-	styles := service.GetAllFontStyles()
-	results := make([]interface{}, 0, len(styles))
-
-	for i, style := range styles {
-		formattedText := style.Converter(query)
-
-		// Create a unique ID for each result
-		id := fmt.Sprintf("%d_%s", i, style.Name)
-
-		// Create inline query result
-		result := tgbotapi.NewInlineQueryResultArticle(
-			id,
-			fmt.Sprintf("%s %s", service.GetStyleEmoji(style.Name), style.Name),
-			formattedText,
-		)
-
-		result.Description = fmt.Sprintf("%s: %s", style.Description, service.TruncateString(formattedText, 50))
-
-		// Set the input message content to send the formatted text
-		result.InputMessageContent = tgbotapi.InputTextMessageContent{
-			Text:      formattedText,
-			ParseMode: "",
-		}
-
-		results = append(results, result)
-	}
-
-	// Answer the inline query with all results
-	config := tgbotapi.InlineConfig{
-		InlineQueryID: inlineQuery.ID,
-		Results:       results,
-	}
-	_, err := bot.AnswerInlineQuery(config)
-	if err != nil {
-		log.Printf("Failed to answer inline query: %v", err)
-	}
-}
-
-// startHTTPServer starts a simple HTTP server for health checks
-func startHTTPServer() {
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Bot is running!")
-	})
-	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
 // createMultiButtonKeyboard creates an inline keyboard markup with multiple buttons
