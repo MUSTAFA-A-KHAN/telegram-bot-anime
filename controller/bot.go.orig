@@ -1036,16 +1036,6 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		bot.Send(editMsg)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
 		return
-	case "setting_scramy_letters_new":
-		buttons := tgbotapi.NewInlineKeyboardMarkup(
-			tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonData("Squared 🔠", "set_scramy_squared"),
-				tgbotapi.NewInlineKeyboardButtonData("Normal abc", "set_scramy_normal"),
-			),
-		)
-		view.SendMessageWithButtons(bot, chatID, "⚙️ **Scramy Letters Setting**\nChoose the letter style for Scramy:", buttons)
-		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
-		return
 	case "set_scramy_squared":
 		scramybot.UpdateScramyLetterView(chatID, "squared", client)
 		editMsg := tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, "✅ Scramy letters updated to **Squared**.")
@@ -1097,16 +1087,6 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		editMsg.ReplyMarkup = &buttons
 		editMsg.ParseMode = tgbotapi.ModeMarkdown
 		bot.Send(editMsg)
-		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
-		return
-	case "setting_wordle_view_new":
-		buttons := tgbotapi.NewInlineKeyboardMarkup(
-			tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonData("Text View 📝", "set_wordle_view_text"),
-				tgbotapi.NewInlineKeyboardButtonData("Image View 🖼️", "set_wordle_view_image"),
-			),
-		)
-		view.SendMessageWithButtons(bot, chatID, "⚙️ **Wordle View Setting**\nChoose how you want Wordle results to be displayed:", buttons)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
 		return
 	case "set_wordle_view_text":
