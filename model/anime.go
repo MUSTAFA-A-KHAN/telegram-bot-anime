@@ -204,3 +204,29 @@ func GenerateAuroraHint(word string) string {
 
 	return strings.Join(result, " + ")
 }
+
+
+// GetWordMeaning fetches the meaning of a word from the cache or dictionary API.
+func GetWordMeaning(word string) string {
+	if len(word) == 0 {
+		return ""
+	}
+
+	meaningCache.RLock()
+	cachedMeaning, found := meaningCache.m[word]
+	meaningCache.RUnlock()
+	if found {
+		return strings.ReplaceAll(cachedMeaning, word, "_")
+	}
+
+	meaning, err := fetchMeaningFromAPI(word)
+	if err != nil {
+		return ""
+	}
+
+	meaningCache.Lock()
+	meaningCache.m[word] = meaning
+	meaningCache.Unlock()
+
+	return strings.ReplaceAll(meaning, word, "_")
+}

@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/model"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/repository"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/view"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/wordlebot/image_generator"
@@ -469,12 +470,22 @@ func HandleGuess(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.
 		)
 
 		if isImage {
-			msg := fmt.Sprintf("🟩 🟩 🟩 🟩 🟩  %s   [+%d💎]\n🎉 [%s](tg://user?id=%d) guessed it in %d attempts!",
-				strings.ToUpper(ws.Word), points, message.From.FirstName, message.From.ID, ws.Attempts)
+			meaning := model.GetWordMeaning(ws.Word)
+			if meaning != "" {
+				meaning = "\n\n```Meaning\n" + meaning + "\n```"
+			}
+
+			msg := fmt.Sprintf("🟩 🟩 🟩 🟩 🟩  %s   [+%d💎]\n🎉 [%s](tg://user?id=%d) guessed it in %d attempts!%s",
+				strings.ToUpper(ws.Word), points, message.From.FirstName, message.From.ID, ws.Attempts, meaning)
 			view.ReplyToMessageWithPhotoAndButtons(bot, message.MessageID, chatID, imgData, msg, buttons)
 		} else {
-			msg := fmt.Sprintf("%s\n\n🟩 🟩 🟩 🟩 🟩  %s   [+%d💎]\n🎉 [%s](tg://user?id=%d) guessed it in %d attempts!",
-				board, strings.ToUpper(ws.Word), points, message.From.FirstName, message.From.ID, ws.Attempts)
+			meaning := model.GetWordMeaning(ws.Word)
+			if meaning != "" {
+				meaning = "\n\n```Meaning\n" + meaning + "\n```"
+			}
+
+			msg := fmt.Sprintf("%s\n\n🟩 🟩 🟩 🟩 🟩  %s   [+%d💎]\n🎉 [%s](tg://user?id=%d) guessed it in %d attempts!%s",
+				board, strings.ToUpper(ws.Word), points, message.From.FirstName, message.From.ID, ws.Attempts, meaning)
 			view.ReplyToMessageWithButtons(bot, message.MessageID, chatID, msg, buttons)
 		}
 
@@ -490,10 +501,20 @@ func HandleGuess(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.
 		)
 
 		if isImage {
-			msg := fmt.Sprintf("❌ Out of attempts! The word was %s.", strings.ToUpper(ws.Word))
+			meaning := model.GetWordMeaning(ws.Word)
+			if meaning != "" {
+				meaning = "\n\n```Meaning\n" + meaning + "\n```"
+			}
+
+			msg := fmt.Sprintf("❌ Out of attempts! The word was %s.%s", strings.ToUpper(ws.Word), meaning)
 			view.ReplyToMessageWithPhotoAndButtons(bot, message.MessageID, chatID, imgData, msg, buttons)
 		} else {
-			msg := fmt.Sprintf("%s\n\n❌ Out of attempts! The word was %s.", board, strings.ToUpper(ws.Word))
+			meaning := model.GetWordMeaning(ws.Word)
+			if meaning != "" {
+				meaning = "\n\n```Meaning\n" + meaning + "\n```"
+			}
+
+			msg := fmt.Sprintf("%s\n\n❌ Out of attempts! The word was %s.%s", board, strings.ToUpper(ws.Word), meaning)
 			view.ReplyToMessageWithButtons(bot, message.MessageID, chatID, msg, buttons)
 		}
 	} else {
