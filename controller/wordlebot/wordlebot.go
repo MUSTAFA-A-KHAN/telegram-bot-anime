@@ -328,8 +328,14 @@ func HandleWordleCommand(bot *tgbotapi.BotAPI, chatID int64, username string) {
 					bot.Send(deleteMsg)
 				}
 
+				buttons := tgbotapi.NewInlineKeyboardMarkup(
+					tgbotapi.NewInlineKeyboardRow(
+						tgbotapi.NewInlineKeyboardButtonData("Change Layout ⚙️", "setting_wordle_view"),
+					),
+				)
+
 				msg := fmt.Sprintf("🐊 🖼 *Wordle started!* ✨\n\n• The word consists of 5 letters.\n• You have %d attempts.\n\n💡 Hints:\n🟩 Correct letter in the right spot\n🟨 Correct letter but in the wrong spot\n🟥 Letter is not in the word\n\nSend a 5-letter word to guess.", ws.MaxAttempts)
-				view.SendMessage(bot, chatID, msg)
+				view.SendMessageWithButtons(bot, chatID, msg, buttons)
 			case <-ws.CancelChan:
 				// Cancelled by a user
 				if err == nil {
@@ -348,8 +354,14 @@ func HandleWordleCommand(bot *tgbotapi.BotAPI, chatID int64, username string) {
 	ws.Unlock()
 			saveWordleStateAsync(chatID, ws)
 
+	buttons := tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Change Layout ⚙️", "setting_wordle_view"),
+		),
+	)
+
 	msg := fmt.Sprintf("🐊 🖼 *Wordle started!* ✨\n\n• The word consists of 5 letters.\n• You have %d attempts.\n\n💡 Hints:\n🟩 Correct letter in the right spot\n🟨 Correct letter but in the wrong spot\n🟥 Letter is not in the word\n\nSend a 5-letter word to guess.", ws.MaxAttempts)
-	view.SendMessage(bot, chatID, msg)
+	view.SendMessageWithButtons(bot, chatID, msg, buttons)
 }
 
 // CancelPendingGame cancels an ongoing new game request
