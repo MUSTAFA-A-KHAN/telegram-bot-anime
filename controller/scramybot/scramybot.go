@@ -293,7 +293,68 @@ func generateScramyLetters() string {
 
 // getLetterString returns letters with spaces
 func getLetterString(letters string) string {
-	return strings.ReplaceAll(letters, ",", "")
+	var formatted strings.Builder
+	for _, ch := range letters {
+		switch ch {
+		case 'A', 'a':
+			formatted.WriteString("🄰 ")
+		case 'B', 'b':
+			formatted.WriteString("🄱 ")
+		case 'C', 'c':
+			formatted.WriteString("🄲 ")
+		case 'D', 'd':
+			formatted.WriteString("🄳 ")
+		case 'E', 'e':
+			formatted.WriteString("🄴 ")
+		case 'F', 'f':
+			formatted.WriteString("🄵 ")
+		case 'G', 'g':
+			formatted.WriteString("🄶 ")
+		case 'H', 'h':
+			formatted.WriteString("🄷 ")
+		case 'I', 'i':
+			formatted.WriteString("🄸 ")
+		case 'J', 'j':
+			formatted.WriteString("🄹 ")
+		case 'K', 'k':
+			formatted.WriteString("🄺 ")
+		case 'L', 'l':
+			formatted.WriteString("🄻 ")
+		case 'M', 'm':
+			formatted.WriteString("🄼 ")
+		case 'N', 'n':
+			formatted.WriteString("🄽 ")
+		case 'O', 'o':
+			formatted.WriteString("🄾 ")
+		case 'P', 'p':
+			formatted.WriteString("🄿 ")
+		case 'Q', 'q':
+			formatted.WriteString("🅀 ")
+		case 'R', 'r':
+			formatted.WriteString("🅁 ")
+		case 'S', 's':
+			formatted.WriteString("🅂 ")
+		case 'T', 't':
+			formatted.WriteString("🅃 ")
+		case 'U', 'u':
+			formatted.WriteString("🅄 ")
+		case 'V', 'v':
+			formatted.WriteString("🅅 ")
+		case 'W', 'w':
+			formatted.WriteString("🅆 ")
+		case 'X', 'x':
+			formatted.WriteString("🅇 ")
+		case 'Y', 'y':
+			formatted.WriteString("🅈 ")
+		case 'Z', 'z':
+			formatted.WriteString("🅉 ")
+		case ',', ' ':
+			// Skip commas and spaces from the original string
+		default:
+			formatted.WriteRune(ch)
+		}
+	}
+	return strings.TrimSpace(formatted.String())
 }
 
 func getPoints(wordsFoundCount int, wordLength int) int {
@@ -370,7 +431,7 @@ func HandleScramyCommand(bot *tgbotapi.BotAPI, chatID int64, username string) {
 					bot.Send(deleteMsg)
 				}
 
-				msg := fmt.Sprintf("📝 *WORD SCRAMBLE*\n\n🦴 Make words using these letters\n\n%s\n\n🔎 Words with 4 or more letters are accepted. Longer words give more points!\n\nTotal: 0/10", ss.Letters)
+				msg := fmt.Sprintf("📝 *WORD SCRAMBLE*\n\n🦴 Make words using these letters\n\n%s\n\n🔎 Words with 4 or more letters are accepted. Longer words give more points!\n\nTotal: 0/10", getLetterString(ss.Letters))
 				view.SendMessage(bot, chatID, msg)
 			case <-ss.CancelChan:
 				if err == nil {
@@ -391,7 +452,7 @@ func HandleScramyCommand(bot *tgbotapi.BotAPI, chatID int64, username string) {
 	ss.Unlock()
 			saveScramyStateAsync(chatID, ss)
 
-	msg := fmt.Sprintf("📝 *WORD SCRAMBLE*\n\n🦴 Make words using these letters\n\n%s\n\n🔎 Words with 4 or more letters are accepted. Longer words give more points!\n\nTotal: 0/10", ss.Letters)
+	msg := fmt.Sprintf("📝 *WORD SCRAMBLE*\n\n🦴 Make words using these letters\n\n%s\n\n🔎 Words with 4 or more letters are accepted. Longer words give more points!\n\nTotal: 0/10", getLetterString(ss.Letters))
 	view.SendMessage(bot, chatID, msg)
 }
 
