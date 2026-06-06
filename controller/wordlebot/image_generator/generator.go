@@ -41,7 +41,7 @@ func GenerateWordleImage(guesses []string, targetWord string) ([]byte, error) {
 	emptyCellColor := color.RGBA{58, 58, 60, 255}
 	greenColor := color.RGBA{83, 141, 78, 255}
 	yellowColor := color.RGBA{181, 159, 59, 255}
-	grayColor := color.RGBA{58, 58, 60, 255}
+	redColor := color.RGBA{220, 53, 69, 255}
 	textColor := color.RGBA{255, 255, 255, 255}
 
 	// Fill background
@@ -105,7 +105,7 @@ func GenerateWordleImage(guesses []string, targetWord string) ([]byte, error) {
 				}
 
 				if !foundYellow {
-					colors[c] = grayColor
+					colors[c] = redColor
 				}
 			}
 		}
