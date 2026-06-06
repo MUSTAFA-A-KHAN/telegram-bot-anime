@@ -440,8 +440,14 @@ func HandleScramyCommand(bot *tgbotapi.BotAPI, chatID int64, username string) {
 
 				settings := GetChatSettings(chatID, nil)
 				isSquared := settings.ScramyLetterView == "squared"
+
+				buttons := tgbotapi.NewInlineKeyboardMarkup(
+					tgbotapi.NewInlineKeyboardRow(
+						tgbotapi.NewInlineKeyboardButtonData("Change Layout ⚙️", "setting_scramy_letters"),
+					),
+				)
 				msg := fmt.Sprintf("📝 *WORD SCRAMBLE*\n\n🦴 Make words using these letters\n\n%s\n\n🔎 Words with 4 or more letters are accepted. Longer words give more points!\n\nTotal: 0/10", getLetterString(ss.Letters, isSquared))
-				view.SendMessage(bot, chatID, msg)
+				view.SendMessageWithButtons(bot, chatID, msg, buttons)
 			case <-ss.CancelChan:
 				if err == nil {
 					deleteMsg := tgbotapi.NewDeleteMessage(chatID, sentMsg.MessageID)
@@ -463,8 +469,14 @@ func HandleScramyCommand(bot *tgbotapi.BotAPI, chatID int64, username string) {
 
 	settings := GetChatSettings(chatID, nil)
 	isSquared := settings.ScramyLetterView == "squared"
+
+	buttons := tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Change Layout ⚙️", "setting_scramy_letters"),
+		),
+	)
 	msg := fmt.Sprintf("📝 *WORD SCRAMBLE*\n\n🦴 Make words using these letters\n\n%s\n\n🔎 Words with 4 or more letters are accepted. Longer words give more points!\n\nTotal: 0/10", getLetterString(ss.Letters, isSquared))
-	view.SendMessage(bot, chatID, msg)
+	view.SendMessageWithButtons(bot, chatID, msg, buttons)
 }
 
 // CancelPendingGame cancels an ongoing new game request
