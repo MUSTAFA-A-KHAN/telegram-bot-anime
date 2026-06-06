@@ -292,9 +292,16 @@ func generateScramyLetters() string {
 }
 
 // getLetterString returns letters with spaces
-func getLetterString(letters string) string {
+func getLetterString(letters string, isSquared bool) string {
 	var formatted strings.Builder
 	for _, ch := range letters {
+		if !isSquared {
+			if ch != ',' && ch != ' ' {
+				formatted.WriteRune(ch)
+				formatted.WriteRune(' ')
+			}
+			continue
+		}
 		switch ch {
 		case 'A', 'a':
 			formatted.WriteString("🄰 ")
@@ -431,7 +438,9 @@ func HandleScramyCommand(bot *tgbotapi.BotAPI, chatID int64, username string) {
 					bot.Send(deleteMsg)
 				}
 
-				msg := fmt.Sprintf("📝 *WORD SCRAMBLE*\n\n🦴 Make words using these letters\n\n%s\n\n🔎 Words with 4 or more letters are accepted. Longer words give more points!\n\nTotal: 0/10", getLetterString(ss.Letters))
+				settings := GetChatSettings(chatID, nil)
+				isSquared := settings.ScramyLetterView == "squared"
+				msg := fmt.Sprintf("📝 *WORD SCRAMBLE*\n\n🦴 Make words using these letters\n\n%s\n\n🔎 Words with 4 or more letters are accepted. Longer words give more points!\n\nTotal: 0/10", getLetterString(ss.Letters, isSquared))
 				view.SendMessage(bot, chatID, msg)
 			case <-ss.CancelChan:
 				if err == nil {
@@ -452,7 +461,9 @@ func HandleScramyCommand(bot *tgbotapi.BotAPI, chatID int64, username string) {
 	ss.Unlock()
 			saveScramyStateAsync(chatID, ss)
 
-	msg := fmt.Sprintf("📝 *WORD SCRAMBLE*\n\n🦴 Make words using these letters\n\n%s\n\n🔎 Words with 4 or more letters are accepted. Longer words give more points!\n\nTotal: 0/10", getLetterString(ss.Letters))
+	settings := GetChatSettings(chatID, nil)
+	isSquared := settings.ScramyLetterView == "squared"
+	msg := fmt.Sprintf("📝 *WORD SCRAMBLE*\n\n🦴 Make words using these letters\n\n%s\n\n🔎 Words with 4 or more letters are accepted. Longer words give more points!\n\nTotal: 0/10", getLetterString(ss.Letters, isSquared))
 	view.SendMessage(bot, chatID, msg)
 }
 
@@ -552,7 +563,9 @@ func HandleGuess(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.
 	ss.UserScores[message.From.ID] += points
 	ss.UserNames[message.From.ID] = message.From.FirstName
 
-	letterStr := getLetterString(ss.Letters)
+	settings := GetChatSettings(chatID, client)
+	isSquared := settings.ScramyLetterView == "squared"
+	letterStr := getLetterString(ss.Letters, isSquared)
 
 	if len(ss.FoundWords) >= ss.MaxWords {
 		ss.Active = false

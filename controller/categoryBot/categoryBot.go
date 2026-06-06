@@ -804,6 +804,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		buttons := tgbotapi.NewInlineKeyboardMarkup(
 			tgbotapi.NewInlineKeyboardRow(
 				tgbotapi.NewInlineKeyboardButtonData("Wordle View 🖼️", "setting_wordle_view"),
+				tgbotapi.NewInlineKeyboardButtonData("Scramy Letters 🔠", "setting_scramy_letters"),
 			),
 		)
 		view.SendMessageWithButtons(bot, message.Chat.ID, "⚙️ **Settings**\nChoose a setting to configure:", buttons)
@@ -1214,6 +1215,33 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		editMsg.ReplyMarkup = &buttons
 		bot.Send(editMsg)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
+		return
+	case "setting_scramy_letters":
+		buttons := tgbotapi.NewInlineKeyboardMarkup(
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("Squared 🔠", "set_scramy_squared"),
+				tgbotapi.NewInlineKeyboardButtonData("Normal abc", "set_scramy_normal"),
+			),
+		)
+		editMsg := tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, "⚙️ **Scramy Letters Setting**\nChoose the letter style for Scramy:")
+		editMsg.ReplyMarkup = &buttons
+		editMsg.ParseMode = tgbotapi.ModeMarkdown
+		bot.Send(editMsg)
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
+		return
+	case "set_scramy_squared":
+		scramybot.UpdateScramyLetterView(chatID, "squared", client)
+		editMsg := tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, "✅ Scramy letters updated to **Squared**.")
+		editMsg.ParseMode = tgbotapi.ModeMarkdown
+		bot.Send(editMsg)
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Scramy set to Squared"))
+		return
+	case "set_scramy_normal":
+		scramybot.UpdateScramyLetterView(chatID, "normal", client)
+		editMsg := tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, "✅ Scramy letters updated to **Normal**.")
+		editMsg.ParseMode = tgbotapi.ModeMarkdown
+		bot.Send(editMsg)
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Scramy set to Normal"))
 		return
 	case "stats_wordguess":
 		result := service.GetUserStatsByID(client, callback.From.ID)
