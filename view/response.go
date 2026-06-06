@@ -170,6 +170,7 @@ func ReplyToMessageWithPhotoAndButtons(bot *tgbotapi.BotAPI, mesgID int, chatID 
 	msg := tgbotapi.NewPhotoUpload(chatID, file)
 	msg.ReplyToMessageID = mesgID
 	msg.Caption = caption
+	msg.ParseMode = tgbotapi.ModeMarkdown
 	if len(buttons.InlineKeyboard) > 0 {
 		msg.ReplyMarkup = buttons
 	}
