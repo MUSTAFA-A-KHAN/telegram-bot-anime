@@ -16,3 +16,6 @@
 ## 2024-06-05 - Optimize string escaping by avoiding multiple ReplaceAll calls
 **Learning:** Calling `strings.ReplaceAll` in a loop for multiple characters creates numerous intermediate string allocations and iterates over the string multiple times, becoming a performance bottleneck in frequently called functions like Markdown escaping.
 **Action:** Replace multiple `strings.ReplaceAll` calls with a single pass over the string using `strings.Builder` and a `switch` statement to handle special characters. This reduces time complexity from O(M*N) to O(N) and significantly reduces allocations.
+## 2024-06-06 - Optimize String Normalization by Avoiding ReplaceAllString
+**Learning:** Using `regexp.ReplaceAllString` to remove punctuation in hot paths, combined with multiple strings passes (e.g., `strings.Fields` and `strings.Join` for whitespace), causes severe allocation overhead and slowness due to regex engine evaluation and intermediate string creation.
+**Action:** Replace `regexp.ReplaceAllString` for simple character filtering with a single-pass `strings.Builder` and the `unicode` package (e.g., checking `unicode.IsLetter`, `unicode.IsDigit`, `unicode.IsSpace`). This eliminates regex overhead and allocation churn, bringing O(N) execution and significant speedups.
