@@ -2,7 +2,6 @@ package translator
 
 import (
 	"fmt"
-	"html"
 	"io"
 	"log"
 	"net/http"
@@ -53,25 +52,65 @@ var markdownReplacements = []struct {
 }
 
 func markdownToTelegramHTML(text string) string {
-	escaped := html.EscapeString(strings.ReplaceAll(text, "\r\n", "\n"))
+	var sb strings.Builder
+	sb.Grow(len(text) + len(text)/4)
+
+	// Combine \r\n replacement and html.EscapeString
+	for i := 0; i < len(text); i++ {
+		if text[i] == '\r' && i+1 < len(text) && text[i+1] == '\n' {
+			continue // skip \r
+		}
+		switch text[i] {
+		case '&':
+			sb.WriteString("&amp;")
+		case '\'':
+			sb.WriteString("&#39;")
+		case '<':
+			sb.WriteString("&lt;")
+		case '>':
+			sb.WriteString("&gt;")
+		case '"':
+			sb.WriteString("&#34;")
+		default:
+			sb.WriteByte(text[i])
+		}
+	}
+
+	escaped := sb.String()
 
 	for _, replacement := range markdownReplacements {
 		escaped = replacement.re.ReplaceAllString(escaped, replacement.replace)
 	}
 
-	lines := strings.Split(escaped, "\n")
-	for i, line := range lines {
-		trimmed := strings.TrimSpace(line)
-		if strings.HasPrefix(trimmed, "### ") {
-			lines[i] = strings.Replace(line, "### "+strings.TrimPrefix(trimmed, "### "), "<b>"+strings.TrimPrefix(trimmed, "### ")+"</b>", 1)
-		} else if strings.HasPrefix(trimmed, "## ") {
-			lines[i] = strings.Replace(line, "## "+strings.TrimPrefix(trimmed, "## "), "<b>"+strings.TrimPrefix(trimmed, "## ")+"</b>", 1)
-		} else if strings.HasPrefix(trimmed, "# ") {
-			lines[i] = strings.Replace(line, "# "+strings.TrimPrefix(trimmed, "# "), "<b>"+strings.TrimPrefix(trimmed, "# ")+"</b>", 1)
+	sb.Reset()
+	sb.Grow(len(escaped) + len(escaped)/10)
+
+	start := 0
+	for i := 0; i <= len(escaped); i++ {
+		if i == len(escaped) || escaped[i] == '\n' {
+			line := escaped[start:i]
+			if start > 0 {
+				sb.WriteByte('\n')
+			}
+
+			trimmed := strings.TrimSpace(line)
+			if strings.HasPrefix(trimmed, "### ") {
+				content := strings.TrimPrefix(trimmed, "### ")
+				sb.WriteString(strings.Replace(line, "### "+content, "<b>"+content+"</b>", 1))
+			} else if strings.HasPrefix(trimmed, "## ") {
+				content := strings.TrimPrefix(trimmed, "## ")
+				sb.WriteString(strings.Replace(line, "## "+content, "<b>"+content+"</b>", 1))
+			} else if strings.HasPrefix(trimmed, "# ") {
+				content := strings.TrimPrefix(trimmed, "# ")
+				sb.WriteString(strings.Replace(line, "# "+content, "<b>"+content+"</b>", 1))
+			} else {
+				sb.WriteString(line)
+			}
+			start = i + 1
 		}
 	}
 
-	return strings.Join(lines, "\n")
+	return sb.String()
 }
 
 func textHandler(bot *tgbotapi.BotAPI, update tgbotapi.Update) {

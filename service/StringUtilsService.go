@@ -1,28 +1,35 @@
 package service
 
 import (
-	"regexp"
 	"strings"
+	"unicode"
 )
 
-var punctuationRe = regexp.MustCompile(`[^\w\s]`)
-
-// normalizeAndCompare normalizes both strings and compares them
+// NormalizeAndCompare normalizes both strings and compares them
 func NormalizeAndCompare(str1, str2 string) bool {
 	normalizeString := func(s string) string {
-		// Convert to lowercase
-		s = strings.ToLower(s)
-		// Remove punctuation using regex
-		s = punctuationRe.ReplaceAllString(s, "")
-		// Remove extra whitespace
-		s = strings.Join(strings.Fields(s), " ")
-		return s
+		var b strings.Builder
+		b.Grow(len(s))
+		lastSpace := true // Start as true to trim leading spaces
+		for _, r := range s {
+			r = unicode.ToLower(r)
+			if unicode.IsLetter(r) || unicode.IsDigit(r) {
+				b.WriteRune(r)
+				lastSpace = false
+			} else if unicode.IsSpace(r) {
+				if !lastSpace {
+					b.WriteByte(' ')
+					lastSpace = true
+				}
+			}
+		}
+		res := b.String()
+		if len(res) > 0 && res[len(res)-1] == ' ' {
+			res = res[:len(res)-1]
+		}
+		return res
 	}
 
-	// Normalize both strings
-	normalizedStr1 := normalizeString(str1)
-	normalizedStr2 := normalizeString(str2)
-
 	// Compare the normalized strings
-	return normalizedStr1 == normalizedStr2
+	return normalizeString(str1) == normalizeString(str2)
 }
