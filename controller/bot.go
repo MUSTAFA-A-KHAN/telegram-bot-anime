@@ -1059,7 +1059,10 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 				tgbotapi.NewInlineKeyboardButtonData("Normal abc", "set_scramy_normal"),
 			),
 		)
-		view.SendMessageWithButtons(bot, chatID, "⚙️ **Scramy Letters Setting**\nChoose the letter style for Scramy:", buttons)
+		editMsg := tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, "⚙️ **Scramy Letters Setting**\nChoose the letter style for Scramy:")
+		editMsg.ReplyMarkup = &buttons
+		editMsg.ParseMode = tgbotapi.ModeMarkdown
+		bot.Send(editMsg)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
 		return
 	case "set_scramy_squared":
@@ -1125,7 +1128,10 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 				tgbotapi.NewInlineKeyboardButtonData("Image View 🖼️", "set_wordle_view_image"),
 			),
 		)
-		view.SendMessageWithButtons(bot, chatID, "⚙️ **Wordle View Setting**\nChoose how you want Wordle results to be displayed:", buttons)
+		editMsg := tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, "⚙️ **Wordle View Setting**\nChoose how you want Wordle results to be displayed:")
+		editMsg.ReplyMarkup = &buttons
+		editMsg.ParseMode = tgbotapi.ModeMarkdown
+		bot.Send(editMsg)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
 		return
 	case "set_wordle_view_text":
