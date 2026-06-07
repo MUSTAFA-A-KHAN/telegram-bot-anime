@@ -1008,19 +1008,6 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		}
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
 		return
-	case "settings_main":
-		buttons := tgbotapi.NewInlineKeyboardMarkup(
-			tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonData("Wordle View 🖼️", "setting_wordle_view"),
-				tgbotapi.NewInlineKeyboardButtonData("Scramy Letters 🔠", "setting_scramy_letters"),
-			),
-		)
-		editMsg := tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, "⚙️ **Settings**\nChoose a setting to configure:")
-		editMsg.ReplyMarkup = &buttons
-		editMsg.ParseMode = tgbotapi.ModeMarkdown
-		bot.Send(editMsg)
-		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
-		return
 	case "mystats_main":
 		buttons := tgbotapi.NewInlineKeyboardMarkup(
 			tgbotapi.NewInlineKeyboardRow(
@@ -1055,13 +1042,11 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 	case "setting_scramy_letters_new":
 		buttons := tgbotapi.NewInlineKeyboardMarkup(
 			tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonData("Squared 🔠", "set_scramy_squared"),
-				tgbotapi.NewInlineKeyboardButtonData("Normal abc", "set_scramy_normal"),
+				tgbotapi.NewInlineKeyboardButtonData("Squared 🔠", "set_scramy_squared_new"),
+				tgbotapi.NewInlineKeyboardButtonData("Normal abc", "set_scramy_normal_new"),
 			),
 		)
-		editMsg := tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, "⚙️ **Scramy Letters Setting**\nChoose the letter style for Scramy:")
-		editMsg.ReplyMarkup = &buttons
-		editMsg.ParseMode = tgbotapi.ModeMarkdown
+		editMsg := tgbotapi.NewEditMessageReplyMarkup(chatID, callback.Message.MessageID, buttons)
 		bot.Send(editMsg)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
 		return
@@ -1124,13 +1109,11 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 	case "setting_wordle_view_new":
 		buttons := tgbotapi.NewInlineKeyboardMarkup(
 			tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonData("Text View 📝", "set_wordle_view_text"),
-				tgbotapi.NewInlineKeyboardButtonData("Image View 🖼️", "set_wordle_view_image"),
+				tgbotapi.NewInlineKeyboardButtonData("Text View 📝", "set_wordle_view_text_new"),
+				tgbotapi.NewInlineKeyboardButtonData("Image View 🖼️", "set_wordle_view_image_new"),
 			),
 		)
-		editMsg := tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, "⚙️ **Wordle View Setting**\nChoose how you want Wordle results to be displayed:")
-		editMsg.ReplyMarkup = &buttons
-		editMsg.ParseMode = tgbotapi.ModeMarkdown
+		editMsg := tgbotapi.NewEditMessageReplyMarkup(chatID, callback.Message.MessageID, buttons)
 		bot.Send(editMsg)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
 		return
@@ -1146,6 +1129,26 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		editMsg := tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, "✅ Wordle view updated to **Image**.")
 		editMsg.ParseMode = tgbotapi.ModeMarkdown
 		bot.Send(editMsg)
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "View set to Image"))
+		return
+	case "set_scramy_squared_new":
+		scramybot.UpdateScramyLetterView(chatID, "squared", client)
+		scramybot.RefreshActiveGameMessage(bot, chatID, callback.Message.MessageID, client)
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Scramy set to Squared"))
+		return
+	case "set_scramy_normal_new":
+		scramybot.UpdateScramyLetterView(chatID, "normal", client)
+		scramybot.RefreshActiveGameMessage(bot, chatID, callback.Message.MessageID, client)
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Scramy set to Normal"))
+		return
+	case "set_wordle_view_text_new":
+		wordlebot.UpdateWordleViewType(chatID, "text", client)
+		wordlebot.RefreshActiveGameMessage(bot, chatID, callback.Message.MessageID, client)
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "View set to Text"))
+		return
+	case "set_wordle_view_image_new":
+		wordlebot.UpdateWordleViewType(chatID, "image", client)
+		wordlebot.RefreshActiveGameMessage(bot, chatID, callback.Message.MessageID, client)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "View set to Image"))
 		return
 	case "wordle_start":
