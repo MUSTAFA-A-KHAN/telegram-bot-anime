@@ -1037,11 +1037,14 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Generating image..."))
 		imgBytes, err := service.GenerateLeaderboardImage(client, "CrocEn", 0, "Word Guess Global Leaderboard")
 		if err == nil {
-			photo := tgbotapi.NewPhotoUpload(chatID, tgbotapi.FileBytes{Name: "leaderboard.png", Bytes: imgBytes})
-			photo.ReplyMarkup = markup
-
-			bot.Send(photo)
-			bot.Send(tgbotapi.NewDeleteMessage(chatID, callback.Message.MessageID))
+			err = view.EditMessageMediaWithStyledButtons(bot.Token, chatID, callback.Message.MessageID, imgBytes, "leaderboard.png", &markup)
+			if err != nil {
+				// Fallback if message wasn't a photo previously
+				photo := tgbotapi.NewPhotoUpload(chatID, tgbotapi.FileBytes{Name: "leaderboard.png", Bytes: imgBytes})
+				photo.ReplyMarkup = markup
+				bot.Send(photo)
+				bot.Send(tgbotapi.NewDeleteMessage(chatID, callback.Message.MessageID))
+			}
 		} else {
 			view.SendMessage(bot, chatID, "Failed to generate image.")
 		}
@@ -1051,11 +1054,14 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Generating image..."))
 		imgBytes, err := service.GenerateLeaderboardImage(client, "WordleEn", 0, "Wordle Global Leaderboard")
 		if err == nil {
-			photo := tgbotapi.NewPhotoUpload(chatID, tgbotapi.FileBytes{Name: "leaderboard.png", Bytes: imgBytes})
-			photo.ReplyMarkup = markup
-
-			bot.Send(photo)
-			bot.Send(tgbotapi.NewDeleteMessage(chatID, callback.Message.MessageID))
+			err = view.EditMessageMediaWithStyledButtons(bot.Token, chatID, callback.Message.MessageID, imgBytes, "leaderboard.png", &markup)
+			if err != nil {
+				// Fallback if message wasn't a photo previously
+				photo := tgbotapi.NewPhotoUpload(chatID, tgbotapi.FileBytes{Name: "leaderboard.png", Bytes: imgBytes})
+				photo.ReplyMarkup = markup
+				bot.Send(photo)
+				bot.Send(tgbotapi.NewDeleteMessage(chatID, callback.Message.MessageID))
+			}
 		} else {
 			view.SendMessage(bot, chatID, "Failed to generate image.")
 		}
@@ -1065,11 +1071,14 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Generating image..."))
 		imgBytes, err := service.GenerateLeaderboardImage(client, "ScramyEn", 0, "Scramy Global Leaderboard")
 		if err == nil {
-			photo := tgbotapi.NewPhotoUpload(chatID, tgbotapi.FileBytes{Name: "leaderboard.png", Bytes: imgBytes})
-			photo.ReplyMarkup = markup
-
-			bot.Send(photo)
-			bot.Send(tgbotapi.NewDeleteMessage(chatID, callback.Message.MessageID))
+			err = view.EditMessageMediaWithStyledButtons(bot.Token, chatID, callback.Message.MessageID, imgBytes, "leaderboard.png", &markup)
+			if err != nil {
+				// Fallback if message wasn't a photo previously
+				photo := tgbotapi.NewPhotoUpload(chatID, tgbotapi.FileBytes{Name: "leaderboard.png", Bytes: imgBytes})
+				photo.ReplyMarkup = markup
+				bot.Send(photo)
+				bot.Send(tgbotapi.NewDeleteMessage(chatID, callback.Message.MessageID))
+			}
 		} else {
 			view.SendMessage(bot, chatID, "Failed to generate image.")
 		}
@@ -1079,11 +1088,14 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Generating image..."))
 		imgBytes, err := service.GenerateLeaderboardImage(client, "CrocEn", chatID, "Word Guess Group Leaderboard")
 		if err == nil {
-			photo := tgbotapi.NewPhotoUpload(chatID, tgbotapi.FileBytes{Name: "leaderboard.png", Bytes: imgBytes})
-			photo.ReplyMarkup = markup
-
-			bot.Send(photo)
-			bot.Send(tgbotapi.NewDeleteMessage(chatID, callback.Message.MessageID))
+			err = view.EditMessageMediaWithStyledButtons(bot.Token, chatID, callback.Message.MessageID, imgBytes, "leaderboard.png", &markup)
+			if err != nil {
+				// Fallback if message wasn't a photo previously
+				photo := tgbotapi.NewPhotoUpload(chatID, tgbotapi.FileBytes{Name: "leaderboard.png", Bytes: imgBytes})
+				photo.ReplyMarkup = markup
+				bot.Send(photo)
+				bot.Send(tgbotapi.NewDeleteMessage(chatID, callback.Message.MessageID))
+			}
 		} else {
 			view.SendMessage(bot, chatID, "Failed to generate image.")
 		}
@@ -1093,11 +1105,14 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Generating image..."))
 		imgBytes, err := service.GenerateLeaderboardImage(client, "WordleEn", chatID, "Wordle Group Leaderboard")
 		if err == nil {
-			photo := tgbotapi.NewPhotoUpload(chatID, tgbotapi.FileBytes{Name: "leaderboard.png", Bytes: imgBytes})
-			photo.ReplyMarkup = markup
-
-			bot.Send(photo)
-			bot.Send(tgbotapi.NewDeleteMessage(chatID, callback.Message.MessageID))
+			err = view.EditMessageMediaWithStyledButtons(bot.Token, chatID, callback.Message.MessageID, imgBytes, "leaderboard.png", &markup)
+			if err != nil {
+				// Fallback if message wasn't a photo previously
+				photo := tgbotapi.NewPhotoUpload(chatID, tgbotapi.FileBytes{Name: "leaderboard.png", Bytes: imgBytes})
+				photo.ReplyMarkup = markup
+				bot.Send(photo)
+				bot.Send(tgbotapi.NewDeleteMessage(chatID, callback.Message.MessageID))
+			}
 		} else {
 			view.SendMessage(bot, chatID, "Failed to generate image.")
 		}
@@ -1107,11 +1122,14 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Generating image..."))
 		imgBytes, err := service.GenerateLeaderboardImage(client, "ScramyEn", chatID, "Scramy Group Leaderboard")
 		if err == nil {
-			photo := tgbotapi.NewPhotoUpload(chatID, tgbotapi.FileBytes{Name: "leaderboard.png", Bytes: imgBytes})
-			photo.ReplyMarkup = markup
-
-			bot.Send(photo)
-			bot.Send(tgbotapi.NewDeleteMessage(chatID, callback.Message.MessageID))
+			err = view.EditMessageMediaWithStyledButtons(bot.Token, chatID, callback.Message.MessageID, imgBytes, "leaderboard.png", &markup)
+			if err != nil {
+				// Fallback if message wasn't a photo previously
+				photo := tgbotapi.NewPhotoUpload(chatID, tgbotapi.FileBytes{Name: "leaderboard.png", Bytes: imgBytes})
+				photo.ReplyMarkup = markup
+				bot.Send(photo)
+				bot.Send(tgbotapi.NewDeleteMessage(chatID, callback.Message.MessageID))
+			}
 		} else {
 			view.SendMessage(bot, chatID, "Failed to generate image.")
 		}
