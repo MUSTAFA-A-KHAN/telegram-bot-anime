@@ -364,7 +364,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		case "start":
 			args := message.CommandArguments()
 			if args == "shop" {
-				showShop(bot, message.Chat.ID)
+				showShop(bot, message.Chat.ID, message.From.ID, client)
 				return
 			} else if strings.HasPrefix(args, "custom_word_") {
 				parts := strings.Split(args, "_")
@@ -451,7 +451,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		case "shop":
 			if message.Chat.IsPrivate() {
 				// Handle shop in DM
-				showShop(bot, message.Chat.ID)
+				showShop(bot, message.Chat.ID, message.From.ID, client)
 			} else {
 				// Send a link to DM
 				botUsername := bot.Self.UserName
@@ -804,7 +804,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		return
 	case "start":
 		if message.CommandArguments() == "shop" {
-			showShop(bot, message.Chat.ID)
+			showShop(bot, message.Chat.ID, message.From.ID, client)
 		} else {
 			view.SendMessage(bot, message.Chat.ID, "Welcome! Type /word to start a new game.")
 		}
@@ -840,7 +840,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 	case "shop":
 		if message.Chat.IsPrivate() {
 			// Handle shop in DM
-			showShop(bot, message.Chat.ID)
+			showShop(bot, message.Chat.ID, message.From.ID, client)
 		} else {
 			// Send a link to DM
 			botUsername := bot.Self.UserName

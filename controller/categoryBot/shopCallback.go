@@ -17,7 +17,7 @@ func handleShopCallback(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery, 
 		showInventory(bot, callback, client)
 		return true
 	} else if data == "shop_main" {
-		editShopMain(bot, callback)
+		editShopMain(bot, callback, client)
 		return true
 	} else if strings.HasPrefix(data, "buy_emoji_") {
 		emoji := strings.TrimPrefix(data, "buy_emoji_")
@@ -32,7 +32,7 @@ func handleShopCallback(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery, 
 	return false
 }
 
-func editShopMain(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery) {
+func editShopMain(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery, client *mongo.Client) {
 	var rows [][]tgbotapi.InlineKeyboardButton
 
 	// Add inventory button
@@ -57,7 +57,10 @@ func editShopMain(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery) {
 
 	markup := tgbotapi.NewInlineKeyboardMarkup(rows...)
 
-	editMsg := tgbotapi.NewEditMessageText(callback.Message.Chat.ID, callback.Message.MessageID, "🛒 *Welcome to the Emoji Shop!*\n\nSpend your Wordle Points here to buy custom emojis that will appear next to your name on leaderboards.")
+	points := repository.GetCurrentPoints(client, int(callback.From.ID))
+	text := fmt.Sprintf("🛒 *Welcome to the Emoji Shop!*\n\nSpend your Wordle Points here to buy custom emojis that will appear next to your name on leaderboards.\n\n💰 *Your Balance:* %d 🪙", points)
+
+	editMsg := tgbotapi.NewEditMessageText(callback.Message.Chat.ID, callback.Message.MessageID, text)
 	editMsg.ReplyMarkup = &markup
 	editMsg.ParseMode = "Markdown"
 	bot.Send(editMsg)
