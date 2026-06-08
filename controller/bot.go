@@ -1024,7 +1024,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		imgBytes, err := service.GenerateLeaderboardImage(client, "CrocEn", 0, "Word Guess Global Leaderboard")
 		if err == nil {
 			photo := tgbotapi.NewPhotoUpload(chatID, tgbotapi.FileBytes{Name: "leaderboard.png", Bytes: imgBytes})
-			photo.ReplyMarkup = &markup
+			photo.ReplyMarkup = markup
 			bot.Send(photo)
 		} else {
 			view.SendMessage(bot, chatID, "Failed to generate image.")
@@ -1038,7 +1038,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		imgBytes, err := service.GenerateLeaderboardImage(client, "WordleEn", 0, "Wordle Global Leaderboard")
 		if err == nil {
 			photo := tgbotapi.NewPhotoUpload(chatID, tgbotapi.FileBytes{Name: "leaderboard.png", Bytes: imgBytes})
-			photo.ReplyMarkup = &markup
+			photo.ReplyMarkup = markup
 			bot.Send(photo)
 		} else {
 			view.SendMessage(bot, chatID, "Failed to generate image.")
@@ -1052,7 +1052,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		imgBytes, err := service.GenerateLeaderboardImage(client, "ScramyEn", 0, "Scramy Global Leaderboard")
 		if err == nil {
 			photo := tgbotapi.NewPhotoUpload(chatID, tgbotapi.FileBytes{Name: "leaderboard.png", Bytes: imgBytes})
-			photo.ReplyMarkup = &markup
+			photo.ReplyMarkup = markup
 			bot.Send(photo)
 		} else {
 			view.SendMessage(bot, chatID, "Failed to generate image.")
@@ -1066,7 +1066,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		imgBytes, err := service.GenerateLeaderboardImage(client, "CrocEn", chatID, "Word Guess Group Leaderboard")
 		if err == nil {
 			photo := tgbotapi.NewPhotoUpload(chatID, tgbotapi.FileBytes{Name: "leaderboard.png", Bytes: imgBytes})
-			photo.ReplyMarkup = &markup
+			photo.ReplyMarkup = markup
 			bot.Send(photo)
 		} else {
 			view.SendMessage(bot, chatID, "Failed to generate image.")
@@ -1080,7 +1080,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		imgBytes, err := service.GenerateLeaderboardImage(client, "WordleEn", chatID, "Wordle Group Leaderboard")
 		if err == nil {
 			photo := tgbotapi.NewPhotoUpload(chatID, tgbotapi.FileBytes{Name: "leaderboard.png", Bytes: imgBytes})
-			photo.ReplyMarkup = &markup
+			photo.ReplyMarkup = markup
 			bot.Send(photo)
 		} else {
 			view.SendMessage(bot, chatID, "Failed to generate image.")
@@ -1094,7 +1094,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		imgBytes, err := service.GenerateLeaderboardImage(client, "ScramyEn", chatID, "Scramy Group Leaderboard")
 		if err == nil {
 			photo := tgbotapi.NewPhotoUpload(chatID, tgbotapi.FileBytes{Name: "leaderboard.png", Bytes: imgBytes})
-			photo.ReplyMarkup = &markup
+			photo.ReplyMarkup = markup
 			bot.Send(photo)
 		} else {
 			view.SendMessage(bot, chatID, "Failed to generate image.")
