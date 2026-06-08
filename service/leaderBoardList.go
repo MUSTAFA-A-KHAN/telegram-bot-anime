@@ -3,7 +3,6 @@ package service
 import (
 	"fmt"
 	"log"
-	"strconv"
 	"strings"
 
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/repository"
@@ -85,18 +84,18 @@ func GetUserStatsByID(client *mongo.Client, userID int) string {
 
 		count, _ := result["count"].(int32)
 
-		stats = fmt.Sprintf("You %s have successfully guessed for:\n%d Times", name, count)
+		stats = fmt.Sprintf("📊 <b>Word Guess Stats</b>\n\n👤 <b>Player:</b> %s\n🎯 <b>Correct Guesses:</b> %d", name, count)
 	}
 
 	result, err = repository.GetUserStatsByID(client, "CrocEnLeader", userID)
 	if err != nil {
-		return stats + "\n:)"
+		return stats
 	}
 
 	// name, _ = result["Name"].(string)
 	count, _ := result["count"].(int32)
 
-	stats += fmt.Sprintf("\nAnd have leaded for:\n%d Times", count)
+	stats += fmt.Sprintf("\n👑 <b>Times Leaded:</b> %d", count)
 	return stats
 
 }
@@ -126,7 +125,7 @@ func GetWordleUserStatsByID(client *mongo.Client, userID int) string {
 			}
 		}
 
-		stats = "```text\nName: " + name + "\nPoints: " + strconv.Itoa(count) + " 🪙\n```"
+		stats = fmt.Sprintf("📊 <b>Wordle Stats</b>\n\n👤 <b>Player:</b> %s\n🪙 <b>Points:</b> %d", name, count)
 	}
 
 	return stats
@@ -151,7 +150,7 @@ func GetScramyUserStatsByID(client *mongo.Client, userID int) string {
 			}
 		}
 
-		stats = "```text\nName: " + name + "\nPoints: " + strconv.Itoa(count) + " 💎\n```"
+		stats = fmt.Sprintf("📊 <b>Scramy Stats</b>\n\n👤 <b>Player:</b> %s\n💎 <b>Points:</b> %d", name, count)
 	}
 	return stats
 }

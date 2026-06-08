@@ -1370,6 +1370,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		buttons := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("🔙 Back", "mystats_main")))
 		editMsg := tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, result)
 		editMsg.ReplyMarkup = &buttons
+		editMsg.ParseMode = tgbotapi.ModeHTML
 		bot.Send(editMsg)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
 		return
@@ -1378,7 +1379,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		buttons := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("🔙 Back", "mystats_main")))
 		editMsg := tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, result)
 		editMsg.ReplyMarkup = &buttons
-		editMsg.ParseMode = tgbotapi.ModeMarkdown
+		editMsg.ParseMode = tgbotapi.ModeHTML
 		bot.Send(editMsg)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
 		return
@@ -1387,7 +1388,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		buttons := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("🔙 Back", "mystats_main")))
 		editMsg := tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, result)
 		editMsg.ReplyMarkup = &buttons
-		editMsg.ParseMode = tgbotapi.ModeMarkdown
+		editMsg.ParseMode = tgbotapi.ModeHTML
 		bot.Send(editMsg)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
 		return
