@@ -5,6 +5,7 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/wordlebot/image_generator"
 	"go.mongodb.org/mongo-driver/mongo"
+	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/view"
 )
 
 // RefreshActiveGameMessage updates the active wordle game message
@@ -26,20 +27,27 @@ func RefreshActiveGameMessage(bot *tgbotapi.BotAPI, chatID int64, messageID int,
 		),
 	)
 
-	// Since we can't reliably edit text into photo, we will delete and resend.
-	deleteMsg := tgbotapi.NewDeleteMessage(chatID, messageID)
-	bot.Send(deleteMsg)
-
 	if isImage {
 		imageData, err := image_generator.GenerateWordleImage(ws.Guesses, ws.Word)
 		if err == nil {
-			photo := tgbotapi.NewPhotoUpload(chatID, tgbotapi.FileBytes{Name: "wordle.png", Bytes: imageData})
-			photo.ReplyMarkup = buttons
-			bot.Send(photo)
+			err = view.EditMessageMediaWithStyledButtons(bot.Token, chatID, messageID, imageData, "wordle.png", &buttons)
+			if err != nil {
+				// Fallback if message wasn't a photo previously
+				deleteMsg := tgbotapi.NewDeleteMessage(chatID, messageID)
+				bot.Send(deleteMsg)
+
+				photo := tgbotapi.NewPhotoUpload(chatID, tgbotapi.FileBytes{Name: "wordle.png", Bytes: imageData})
+				photo.ReplyMarkup = buttons
+				bot.Send(photo)
+			}
 			return
 		}
 		// fallback to text
 	}
+
+	// If not image, delete and resend text
+	deleteMsg := tgbotapi.NewDeleteMessage(chatID, messageID)
+	bot.Send(deleteMsg)
 
 	boardStr := buildWordleBoard(ws)
 	msgText := fmt.Sprintf("📝 *WORDLE*\n\n%s\n\nTotal: %d/6", boardStr, len(ws.Guesses))
