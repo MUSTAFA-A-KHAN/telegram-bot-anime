@@ -19,3 +19,7 @@
 ## 2024-06-06 - Optimize String Normalization by Avoiding ReplaceAllString
 **Learning:** Using `regexp.ReplaceAllString` to remove punctuation in hot paths, combined with multiple strings passes (e.g., `strings.Fields` and `strings.Join` for whitespace), causes severe allocation overhead and slowness due to regex engine evaluation and intermediate string creation.
 **Action:** Replace `regexp.ReplaceAllString` for simple character filtering with a single-pass `strings.Builder` and the `unicode` package (e.g., checking `unicode.IsLetter`, `unicode.IsDigit`, `unicode.IsSpace`). This eliminates regex overhead and allocation churn, bringing O(N) execution and significant speedups.
+
+## 2025-02-23 - Avoid Maps for ASCII Lookups
+**Learning:** Using `map[rune]bool` to check if a character exists in a small, ASCII-only character set (e.g., english letters) introduces significant overhead compared to simple array lookups, especially inside hot loops evaluating thousands of words. Furthermore, using `strings.ReplaceAll` and `strings.ToLower` for basic string normalization before validation causes unnecessary allocations.
+**Action:** Replace `map[rune]bool` with a fixed-size `[128]bool` or `[256]bool` array for O(1) ascii character existence checks. Iterate over strings using byte-indices (`for i := 0; i < len(s); i++`) instead of `range` to avoid implicit rune decoding overhead.

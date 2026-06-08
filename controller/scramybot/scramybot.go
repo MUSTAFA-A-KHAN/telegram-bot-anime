@@ -258,16 +258,20 @@ func generateScramyLetters() string {
 			letters[i], letters[j] = letters[j], letters[i]
 		})
 
-		letterSet := make(map[rune]bool)
+		// Bolt Optimization: Replace map[rune]bool with a boolean array for faster O(1) lookups
+		// and use a byte-indexed loop to avoid rune decoding overhead since all words are ASCII.
+		var letterSet [256]bool
 		for _, l := range letters {
-			letterSet[l] = true
+			if l < 256 {
+				letterSet[l] = true
+			}
 		}
 
 		count := 0
 		for _, w := range validWordsList {
 			valid := true
-			for _, ch := range w {
-				if !letterSet[ch] {
+			for i := 0; i < len(w); i++ {
+				if !letterSet[w[i]] {
 					valid = false
 					break
 				}
@@ -501,17 +505,20 @@ func CancelPendingGame(bot *tgbotapi.BotAPI, chatID int64, username string) bool
 }
 
 func isValidWordFromLetters(word string, letters string) bool {
-	letterSet := make(map[rune]bool)
-	letters = strings.ReplaceAll(letters, ",", "")
-	letters = strings.ReplaceAll(letters, " ", "")
-	letters = strings.ToLower(letters)
-
-	for _, l := range letters {
-		letterSet[l] = true
+	// Bolt Optimization: Use a 256 boolean array instead of map for O(1) ASCII lookup,
+	// and single loop mapping over raw characters avoiding string allocation overheads.
+	var letterSet [256]bool
+	for i := 0; i < len(letters); i++ {
+		c := letters[i]
+		if c >= 'A' && c <= 'Z' {
+			letterSet[c+32] = true
+		} else if c >= 'a' && c <= 'z' {
+			letterSet[c] = true
+		}
 	}
 
-	for _, ch := range word {
-		if !letterSet[ch] {
+	for i := 0; i < len(word); i++ {
+		if !letterSet[word[i]] {
 			return false
 		}
 	}
