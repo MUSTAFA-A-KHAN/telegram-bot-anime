@@ -2,12 +2,14 @@ package categorybot
 
 import (
 	"fmt"
+	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/repository"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/service"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/view"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func showShop(bot *tgbotapi.BotAPI, chatID int64) {
+func showShop(bot *tgbotapi.BotAPI, chatID int64, userID int, client *mongo.Client) {
 	var rows [][]tgbotapi.InlineKeyboardButton
 
 	// Add inventory button
@@ -31,5 +33,9 @@ func showShop(bot *tgbotapi.BotAPI, chatID int64) {
 	}
 
 	markup := tgbotapi.NewInlineKeyboardMarkup(rows...)
-	view.SendMessageWithButtons(bot, chatID, "🛒 *Welcome to the Emoji Shop!*\n\nSpend your Wordle Points here to buy custom emojis that will appear next to your name on leaderboards.", markup)
+
+	points := repository.GetCurrentPoints(client, userID)
+	text := fmt.Sprintf("🛒 *Welcome to the Emoji Shop!*\n\nSpend your Wordle Points here to buy custom emojis that will appear next to your name on leaderboards.\n\n💰 *Your Balance:* %d 🪙", points)
+
+	view.SendMessageWithButtons(bot, chatID, text, markup)
 }

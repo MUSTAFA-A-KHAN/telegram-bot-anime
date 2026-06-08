@@ -12,3 +12,8 @@ Action: Always look for opportunities to replace 'showShop' or similar new-messa
 
 **Learning:** When navigating between different views with inline keyboards, make sure all "Back" button callbacks (like `settings_main`) are actually handled in the main `switch callback.Data` block. It can easily be missed when refactoring or adding new settings menus.
 **Action:** Always check the full lifecycle of navigation flows and ensure all button paths have defined handlers.
+
+2024-10-18 - Display User Balance in Shop Interfaces
+
+Learning: When building an economy feature like an in-game shop, users must be able to view their available currency balance within the shop interface itself to prevent failed purchases and friction.
+Action: Updated the `showShop` and `editShopMain` functions to fetch and present the user's `Wordle Points` balance prominently when the shop menu is rendered.
