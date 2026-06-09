@@ -23,3 +23,7 @@
 ## 2025-02-23 - Avoid Maps for ASCII Lookups
 **Learning:** Using `map[rune]bool` to check if a character exists in a small, ASCII-only character set (e.g., english letters) introduces significant overhead compared to simple array lookups, especially inside hot loops evaluating thousands of words. Furthermore, using `strings.ReplaceAll` and `strings.ToLower` for basic string normalization before validation causes unnecessary allocations.
 **Action:** Replace `map[rune]bool` with a fixed-size `[128]bool` or `[256]bool` array for O(1) ascii character existence checks. Iterate over strings using byte-indices (`for i := 0; i < len(s); i++`) instead of `range` to avoid implicit rune decoding overhead.
+
+## 2024-06-08 - Use Fixed Arrays for Small ASCII Lookup Hot Paths
+**Learning:** Using `make(map[rune]bool)` or `make(map[rune]int)` inside tight loops evaluating many words creates significant memory allocation overhead. Since the application mostly handles fixed 5-letter uppercase ASCII words, map lookups are unnecessarily heavy.
+**Action:** Replace `map[rune]bool` and `map[rune]int` with fixed-size arrays (`[256]bool` and `[256]int`) for counting and tracking seen characters. Iterate over the strings using byte indices (`w[i]`) instead of `range` to eliminate implicit rune decoding overhead and drastically speed up execution.
