@@ -151,14 +151,14 @@ func parseConstraints(puzzle string) (string, []rune, []rune, []map[rune]bool) {
 		}
 		var emojis []rune
 		for _, r := range line {
-			if r == '🟩' || r == '🟨' || r == '🟥' {
+			if r == '🟩' || r == '🟨' || r == '🟥' || r == '⬛' || r == '⬜' {
 				emojis = append(emojis, r)
 			}
 		}
 		if len(emojis) < 5 {
 			for _, tok := range strings.Fields(line) {
 				for _, r := range tok {
-					if r == '🟩' || r == '🟨' || r == '🟥' {
+					if r == '🟩' || r == '🟨' || r == '🟥' || r == '⬛' || r == '⬜' {
 						emojis = append(emojis, r)
 					}
 				}
@@ -187,7 +187,7 @@ func parseConstraints(puzzle string) (string, []rune, []rune, []map[rune]bool) {
 				if excludedMap[ch] {
 					delete(excludedMap, ch)
 				}
-			case '🟥':
+			case '🟥', '⬛', '⬜':
 				if !presentMap[ch] {
 					excludedMap[ch] = true
 				}
@@ -422,7 +422,7 @@ func (t *TextTranslator) AnalyzeEordle(puzzle string) string {
 		// collect emoji feedback runes in order
 		var emojis []rune
 		for _, r := range line {
-			if r == '🟩' || r == '🟨' || r == '🟥' {
+			if r == '🟩' || r == '🟨' || r == '🟥' || r == '⬛' || r == '⬜' {
 				emojis = append(emojis, r)
 			}
 		}
@@ -431,7 +431,7 @@ func (t *TextTranslator) AnalyzeEordle(puzzle string) string {
 		if len(emojis) < 5 {
 			for _, tok := range strings.Fields(line) {
 				for _, r := range tok {
-					if r == '🟩' || r == '🟨' || r == '🟥' {
+					if r == '🟩' || r == '🟨' || r == '🟥' || r == '⬛' || r == '⬜' {
 						emojis = append(emojis, r)
 					}
 				}
@@ -456,7 +456,7 @@ func (t *TextTranslator) AnalyzeEordle(puzzle string) string {
 			case '🟨':
 				present[ch] = true
 				delete(excluded, ch)
-			case '🟥':
+			case '🟥', '⬛', '⬜':
 				// tentatively excluded; we'll remove if seen as present/green later
 				if !present[ch] {
 					excluded[ch] = true
