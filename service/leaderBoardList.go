@@ -23,9 +23,6 @@ func LeaderBoardList(client *mongo.Client, collection string, chatID int64) stri
 	rankEmojis := []string{"🥇", "🥈", "🥉"}
 
 	leaderboard := "🏆 <b>Top 10 Players Leaderboard</b> 🏆\n\n"
-	leaderboard += "<pre>"
-	leaderboard += fmt.Sprintf("%-6s | %-20s | %s\n", "Rank", "Player", "Score")
-	leaderboard += strings.Repeat("─", 38) + "\n"
 
 	for i := 0; i < limit; i++ {
 		count := idCounts[i]
@@ -59,10 +56,9 @@ func LeaderBoardList(client *mongo.Client, collection string, chatID int64) stri
 		} else {
 			rankDisplay = "⭐ " + rankDisplay
 		}
-		leaderboard += fmt.Sprintf("%-6s | %-20s | %s\n", rankDisplay, name, score)
+		leaderboard += fmt.Sprintf("<b>%s</b> %s — %s\n", rankDisplay, name, score)
 	}
 
-	leaderboard += "</pre>"
 	leaderboard += "\n✨ <b>Keep it up and aim for the top!</b> ✨\n"
 
 	return leaderboard
