@@ -688,6 +688,9 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		buttons := tgbotapi.NewInlineKeyboardMarkup(
 			tgbotapi.NewInlineKeyboardRow(
 				tgbotapi.NewInlineKeyboardButtonData("Wordle View 🖼️", "setting_wordle_view"),
+				tgbotapi.NewInlineKeyboardButtonData("Wordle Color 🎨", "setting_wordle_color"),
+			),
+			tgbotapi.NewInlineKeyboardRow(
 				tgbotapi.NewInlineKeyboardButtonData("Scramy Letters 🔠", "setting_scramy_letters"),
 			),
 		)
@@ -806,7 +809,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		// 	view.SendMessage(bot, chatID, "Please provide a message with your report. Usage: /report [your message]")
 		// }
 	case "wordle":
-		wordlebot.HandleWordleCommand(bot, chatID, message.From.FirstName)
+		wordlebot.HandleWordleCommand(bot, chatID, message.From.FirstName, client)
 		return
 	case "scramy":
 		scramybot.HandleScramyCommand(bot, chatID, message.From.FirstName)
@@ -1221,12 +1224,48 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		buttons := tgbotapi.NewInlineKeyboardMarkup(
 			tgbotapi.NewInlineKeyboardRow(
 				tgbotapi.NewInlineKeyboardButtonData("Wordle View 🖼️", "setting_wordle_view"),
+				tgbotapi.NewInlineKeyboardButtonData("Wordle Color 🎨", "setting_wordle_color"),
+			),
+			tgbotapi.NewInlineKeyboardRow(
 				tgbotapi.NewInlineKeyboardButtonData("Scramy Letters 🔠", "setting_scramy_letters"),
 			),
 		)
 		editMsg := tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, "⚙️ *Settings*\nChoose a setting to configure:")
 		editMsg.ReplyMarkup = &buttons
 		editMsg.ParseMode = tgbotapi.ModeMarkdown
+		bot.Send(editMsg)
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
+		return
+	case "setting_wordle_color":
+		buttons := tgbotapi.NewInlineKeyboardMarkup(
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("Classic (🟥)", "set_wordle_color_classic"),
+			),
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("Dark Mode (⬛)", "set_wordle_color_dark"),
+				tgbotapi.NewInlineKeyboardButtonData("Light Mode (⬜)", "set_wordle_color_light"),
+			),
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("🔙 Back", "settings_main"),
+			),
+		)
+		editMsg := tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, "⚙️ **Wordle Color Setting**\nChoose the color used for missing letters:")
+		editMsg.ReplyMarkup = &buttons
+		editMsg.ParseMode = tgbotapi.ModeMarkdown
+		bot.Send(editMsg)
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
+		return
+	case "setting_wordle_color_new":
+		buttons := tgbotapi.NewInlineKeyboardMarkup(
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("Classic (🟥)", "set_wordle_color_classic_new"),
+			),
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("Dark Mode (⬛)", "set_wordle_color_dark_new"),
+				tgbotapi.NewInlineKeyboardButtonData("Light Mode (⬜)", "set_wordle_color_light_new"),
+			),
+		)
+		editMsg := tgbotapi.NewEditMessageReplyMarkup(chatID, callback.Message.MessageID, buttons)
 		bot.Send(editMsg)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
 		return
@@ -1271,6 +1310,27 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		bot.Send(editMsg)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "View set to Image"))
 		return
+	case "set_wordle_color_classic":
+		wordlebot.UpdateWordleColor(chatID, "classic", client)
+		editMsg := tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, "✅ Wordle color updated to **Classic** (🟥).")
+		editMsg.ParseMode = tgbotapi.ModeMarkdown
+		bot.Send(editMsg)
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Color set to Classic"))
+		return
+	case "set_wordle_color_dark":
+		wordlebot.UpdateWordleColor(chatID, "dark", client)
+		editMsg := tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, "✅ Wordle color updated to **Dark** (⬛).")
+		editMsg.ParseMode = tgbotapi.ModeMarkdown
+		bot.Send(editMsg)
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Color set to Dark"))
+		return
+	case "set_wordle_color_light":
+		wordlebot.UpdateWordleColor(chatID, "light", client)
+		editMsg := tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, "✅ Wordle color updated to **Light** (⬜).")
+		editMsg.ParseMode = tgbotapi.ModeMarkdown
+		bot.Send(editMsg)
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Color set to Light"))
+		return
 	case "set_scramy_squared_new":
 		scramybot.UpdateScramyLetterView(chatID, "squared", client)
 		scramybot.RefreshActiveGameMessage(bot, chatID, callback.Message.MessageID, client)
@@ -1291,8 +1351,23 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		wordlebot.RefreshActiveGameMessage(bot, chatID, callback.Message.MessageID, client)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "View set to Image"))
 		return
+	case "set_wordle_color_classic_new":
+		wordlebot.UpdateWordleColor(chatID, "classic", client)
+		wordlebot.RefreshActiveGameMessage(bot, chatID, callback.Message.MessageID, client)
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Color set to Classic"))
+		return
+	case "set_wordle_color_dark_new":
+		wordlebot.UpdateWordleColor(chatID, "dark", client)
+		wordlebot.RefreshActiveGameMessage(bot, chatID, callback.Message.MessageID, client)
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Color set to Dark"))
+		return
+	case "set_wordle_color_light_new":
+		wordlebot.UpdateWordleColor(chatID, "light", client)
+		wordlebot.RefreshActiveGameMessage(bot, chatID, callback.Message.MessageID, client)
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Color set to Light"))
+		return
 	case "wordle_start":
-		wordlebot.HandleWordleCommand(bot, chatID, callback.From.FirstName)
+		wordlebot.HandleWordleCommand(bot, chatID, callback.From.FirstName, client)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Wordle Started!"))
 		return
 	case "cancel_new_wordle":

@@ -13,6 +13,7 @@ import (
 type ChatSettings struct {
 	ChatID         int64  `bson:"_id"`
 	WordleViewType string `bson:"wordle_view_type"` // "text" or "image"
+	WordleColor    string `bson:"wordle_color"`     // "classic", "dark", or "light"
 }
 
 var (
@@ -32,7 +33,8 @@ func GetChatSettings(chatID int64, client *mongo.Client) *ChatSettings {
 	// Default settings
 	settings = &ChatSettings{
 		ChatID:         chatID,
-		WordleViewType: "text", // Default to text
+		WordleViewType: "text",    // Default to text
+		WordleColor:    "classic", // Default to classic
 	}
 
 	if client != nil {
@@ -68,6 +70,27 @@ func UpdateWordleViewType(chatID int64, viewType string, client *mongo.Client) e
 
 		opts := options.Update().SetUpsert(true)
 		update := bson.M{"$set": bson.M{"wordle_view_type": viewType}}
+		_, err := collection.UpdateOne(ctx, bson.M{"_id": chatID}, update, opts)
+		return err
+	}
+	return nil
+}
+
+func UpdateWordleColor(chatID int64, color string, client *mongo.Client) error {
+	settings := GetChatSettings(chatID, client)
+
+	settingsMutex.Lock()
+	settings.WordleColor = color
+	settingsCache[chatID] = settings
+	settingsMutex.Unlock()
+
+	if client != nil {
+		collection := client.Database("TelegramBot").Collection("ChatSettings")
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		opts := options.Update().SetUpsert(true)
+		update := bson.M{"$set": bson.M{"wordle_color": color}}
 		_, err := collection.UpdateOne(ctx, bson.M{"_id": chatID}, update, opts)
 		return err
 	}
