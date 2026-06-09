@@ -15,7 +15,7 @@ import (
 )
 
 // GenerateWordleImage creates an image from Wordle guesses and their feedback
-func GenerateWordleImage(guesses []string, targetWord string) ([]byte, error) {
+func GenerateWordleImage(guesses []string, targetWord string, colorConfig string) ([]byte, error) {
 	// Constants
 	cellSize := 60
 	margin := 10
@@ -42,6 +42,14 @@ func GenerateWordleImage(guesses []string, targetWord string) ([]byte, error) {
 	greenColor := color.RGBA{83, 141, 78, 255}
 	yellowColor := color.RGBA{181, 159, 59, 255}
 	redColor := color.RGBA{220, 53, 69, 255}
+
+	missColor := redColor
+	if colorConfig == "dark" {
+		missColor = color.RGBA{58, 58, 60, 255} // Dark gray (same as empty cell in classic)
+	} else if colorConfig == "light" {
+		missColor = color.RGBA{240, 240, 240, 255} // Light gray/white
+	}
+
 	textColor := color.RGBA{255, 255, 255, 255}
 
 	// Fill background
@@ -105,7 +113,7 @@ func GenerateWordleImage(guesses []string, targetWord string) ([]byte, error) {
 				}
 
 				if !foundYellow {
-					colors[c] = redColor
+					colors[c] = missColor
 				}
 			}
 		}
@@ -134,9 +142,14 @@ func GenerateWordleImage(guesses []string, targetWord string) ([]byte, error) {
 
 			// Draw text
 			if char != 0 {
+				cellTextColor := textColor
+				if colors[c] == missColor && colorConfig == "light" {
+					cellTextColor = color.RGBA{0, 0, 0, 255} // Black text for light mode miss cells
+				}
+
 				d := &font.Drawer{
 					Dst:  img,
-					Src:  image.NewUniform(textColor),
+					Src:  image.NewUniform(cellTextColor),
 					Face: face,
 				}
 

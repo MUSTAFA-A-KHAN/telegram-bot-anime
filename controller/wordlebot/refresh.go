@@ -28,7 +28,7 @@ func RefreshActiveGameMessage(bot *tgbotapi.BotAPI, chatID int64, messageID int,
 	)
 
 	if isImage {
-		imageData, err := image_generator.GenerateWordleImage(ws.Guesses, ws.Word)
+		imageData, err := image_generator.GenerateWordleImage(ws.Guesses, ws.Word, settings.WordleColor)
 		if err == nil {
 			err = view.EditMessageMediaWithStyledButtons(bot.Token, chatID, messageID, imageData, "wordle.png", &buttons)
 			if err != nil {
@@ -49,7 +49,7 @@ func RefreshActiveGameMessage(bot *tgbotapi.BotAPI, chatID int64, messageID int,
 	deleteMsg := tgbotapi.NewDeleteMessage(chatID, messageID)
 	bot.Send(deleteMsg)
 
-	boardStr := buildWordleBoard(ws)
+	boardStr := buildWordleBoard(ws, settings.WordleColor)
 	msgText := fmt.Sprintf("📝 *WORDLE*\n\n%s\n\nTotal: %d/6", boardStr, len(ws.Guesses))
 	msg := tgbotapi.NewMessage(chatID, msgText)
 	msg.ReplyMarkup = buttons

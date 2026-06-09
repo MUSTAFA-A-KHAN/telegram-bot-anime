@@ -205,17 +205,24 @@ func getRandomWordleWord() string {
 }
 
 // validateWordleGuess compares a guess against the target word and returns colored emojis
-func validateWordleGuess(guess, target string) string {
+func validateWordleGuess(guess, target string, colorConfig string) string {
 	guess = strings.ToLower(guess)
 	target = strings.ToLower(target)
 
 	result := make([]string, 5)
 	targetCounts := make(map[rune]int)
 
+	missColor := "🟥"
+	if colorConfig == "dark" {
+		missColor = "⬛"
+	} else if colorConfig == "light" {
+		missColor = "⬜"
+	}
+
 	// First pass: count characters in target and check for exact matches (Green)
 	for i, ch := range target {
 		targetCounts[ch]++
-		result[i] = "🟥" // Default to Red
+		result[i] = missColor // Default to selected miss color
 	}
 
 	// Mark Green
@@ -256,10 +263,10 @@ func getSuperscript(num int) string {
 }
 
 // buildWordleBoard generates the string representation of the current Wordle board
-func buildWordleBoard(ws *WordleState) string {
+func buildWordleBoard(ws *WordleState, colorConfig string) string {
 	var sb strings.Builder
 	for i, guess := range ws.Guesses {
-		feedback := validateWordleGuess(guess, ws.Word)
+		feedback := validateWordleGuess(guess, ws.Word, colorConfig)
 		if i > 10 {
 			attemptNum := getSuperscript(i + 1)
 			sb.WriteString(fmt.Sprintf("%s  %s %s\n", feedback, strings.ToUpper(guess), attemptNum))
@@ -279,7 +286,7 @@ func IsWordleActive(chatID int64) bool {
 }
 
 // HandleWordleCommand starts a new Wordle game
-func HandleWordleCommand(bot *tgbotapi.BotAPI, chatID int64, username string) {
+func HandleWordleCommand(bot *tgbotapi.BotAPI, chatID int64, username string, client *mongo.Client) {
 	ws := GetOrCreateWordleState(chatID)
 
 	ws.Lock()
@@ -332,10 +339,19 @@ func HandleWordleCommand(bot *tgbotapi.BotAPI, chatID int64, username string) {
 				buttons := tgbotapi.NewInlineKeyboardMarkup(
 					tgbotapi.NewInlineKeyboardRow(
 						tgbotapi.NewInlineKeyboardButtonData("Change Layout ⚙️", "setting_wordle_view_new"),
+						tgbotapi.NewInlineKeyboardButtonData("Wordle Color 🎨", "setting_wordle_color_new"),
 					),
 				)
 
-				msg := fmt.Sprintf("🐊 🖼 *Wordle started!* ✨\n\n• The word consists of 5 letters.\n• You have %d attempts.\n\n💡 Hints:\n🟩 Correct letter in the right spot\n🟨 Correct letter but in the wrong spot\n🟥 Letter is not in the word\n\nSend a 5-letter word to guess.", ws.MaxAttempts)
+				settings := GetChatSettings(chatID, client)
+				missEmoji := "🟥"
+				if settings.WordleColor == "dark" {
+					missEmoji = "⬛"
+				} else if settings.WordleColor == "light" {
+					missEmoji = "⬜"
+				}
+
+				msg := fmt.Sprintf("🐊 🖼 *Wordle started!* ✨\n\n• The word consists of 5 letters.\n• You have %d attempts.\n\n💡 Hints:\n🟩 Correct letter in the right spot\n🟨 Correct letter but in the wrong spot\n%s Letter is not in the word\n\nSend a 5-letter word to guess.", ws.MaxAttempts, missEmoji)
 				view.SendMessageWithButtons(bot, chatID, msg, buttons)
 			case <-ws.CancelChan:
 				// Cancelled by a user
@@ -358,10 +374,19 @@ func HandleWordleCommand(bot *tgbotapi.BotAPI, chatID int64, username string) {
 	buttons := tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("Change Layout ⚙️", "setting_wordle_view_new"),
+			tgbotapi.NewInlineKeyboardButtonData("Wordle Color 🎨", "setting_wordle_color_new"),
 		),
 	)
 
-	msg := fmt.Sprintf("🐊 🖼 *Wordle started!* ✨\n\n• The word consists of 5 letters.\n• You have %d attempts.\n\n💡 Hints:\n🟩 Correct letter in the right spot\n🟨 Correct letter but in the wrong spot\n🟥 Letter is not in the word\n\nSend a 5-letter word to guess.", ws.MaxAttempts)
+	settings := GetChatSettings(chatID, client)
+	missEmoji := "🟥"
+	if settings.WordleColor == "dark" {
+		missEmoji = "⬛"
+	} else if settings.WordleColor == "light" {
+		missEmoji = "⬜"
+	}
+
+	msg := fmt.Sprintf("🐊 🖼 *Wordle started!* ✨\n\n• The word consists of 5 letters.\n• You have %d attempts.\n\n💡 Hints:\n🟩 Correct letter in the right spot\n🟨 Correct letter but in the wrong spot\n%s Letter is not in the word\n\nSend a 5-letter word to guess.", ws.MaxAttempts, missEmoji)
 	view.SendMessageWithButtons(bot, chatID, msg, buttons)
 }
 
@@ -445,14 +470,14 @@ func HandleGuess(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.
 
 	if isImage {
 		var err error
-		imgData, err = image_generator.GenerateWordleImage(ws.Guesses, ws.Word)
+		imgData, err = image_generator.GenerateWordleImage(ws.Guesses, ws.Word, settings.WordleColor)
 		if err != nil {
 			log.Printf("Failed to generate wordle image: %v", err)
 			isImage = false
-			board = buildWordleBoard(ws)
+			board = buildWordleBoard(ws, settings.WordleColor)
 		}
 	} else {
-		board = buildWordleBoard(ws)
+		board = buildWordleBoard(ws, settings.WordleColor)
 	}
 
 	if guess == ws.Word {
