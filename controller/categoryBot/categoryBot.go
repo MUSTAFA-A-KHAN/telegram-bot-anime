@@ -1349,6 +1349,9 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 				tgbotapi.NewInlineKeyboardButtonData("Squared 🔠", "set_scramy_squared_new"),
 				tgbotapi.NewInlineKeyboardButtonData("Normal abc", "set_scramy_normal_new"),
 			),
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("🔙 Back", "refresh_scramy_game"),
+			),
 		)
 		editMsg := tgbotapi.NewEditMessageReplyMarkup(chatID, callback.Message.MessageID, buttons)
 		bot.Send(editMsg)
@@ -1477,6 +1480,9 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 				tgbotapi.NewInlineKeyboardButtonData("Dark Mode (⬛)", "set_wordle_color_dark_new"),
 				tgbotapi.NewInlineKeyboardButtonData("Light Mode (⬜)", "set_wordle_color_light_new"),
 			),
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("🔙 Back", "refresh_wordle_game"),
+			),
 		)
 		editMsg := tgbotapi.NewEditMessageReplyMarkup(chatID, callback.Message.MessageID, buttons)
 		bot.Send(editMsg)
@@ -1498,11 +1504,22 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		bot.Send(editMsg)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
 		return
+	case "refresh_wordle_game":
+		wordlebot.RefreshActiveGameMessage(bot, chatID, callback.Message.MessageID, client)
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
+		return
+	case "refresh_scramy_game":
+		scramybot.RefreshActiveGameMessage(bot, chatID, callback.Message.MessageID, client)
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
+		return
 	case "setting_wordle_view_new":
 		buttons := tgbotapi.NewInlineKeyboardMarkup(
 			tgbotapi.NewInlineKeyboardRow(
 				tgbotapi.NewInlineKeyboardButtonData("Text View 📝", "set_wordle_view_text_new"),
 				tgbotapi.NewInlineKeyboardButtonData("Image View 🖼️", "set_wordle_view_image_new"),
+			),
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("🔙 Back", "refresh_wordle_game"),
 			),
 		)
 		editMsg := tgbotapi.NewEditMessageReplyMarkup(chatID, callback.Message.MessageID, buttons)
