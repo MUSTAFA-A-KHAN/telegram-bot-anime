@@ -84,6 +84,9 @@ func handleBuyPack(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery, clien
 			tgbotapi.NewInlineKeyboardButtonData("🎁 Buy Another", "collectible_buy_pack"),
 			tgbotapi.NewInlineKeyboardButtonData("🎒 View Collection", "collectible_inventory"),
 		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("🔙 Back to Hub", "collectible_hub"),
+		),
 	)
 
 	if template.ImageURL != "" {
@@ -145,7 +148,7 @@ func showInventory(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery, clien
 		text += fmt.Sprintf("%s *%s #%d* (%s)%s\n", tmpl.Emoji, tmpl.Name, item.SerialNumber, string(tmpl.Rarity), status)
 
 		if !listedItemsMap[item.ID] {
-			btnText := fmt.Sprintf("Sell: %s #%d", tmpl.Name, item.SerialNumber)
+			btnText := fmt.Sprintf("🏷️ Sell: %s #%d", tmpl.Name, item.SerialNumber)
 			rows = append(rows, tgbotapi.NewInlineKeyboardRow(
 				tgbotapi.NewInlineKeyboardButtonData(btnText, "collectible_sell_"+item.ID),
 			))
@@ -193,7 +196,7 @@ func showMarketplace(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery, cli
 
 		text += fmt.Sprintf("%s *%s #%d* - %d 🪙\n", tmpl.Emoji, tmpl.Name, item.SerialNumber, listing.Price)
 
-		btnText := fmt.Sprintf("Buy: %s #%d (%d 🪙)", tmpl.Name, item.SerialNumber, listing.Price)
+		btnText := fmt.Sprintf("🛒 Buy: %s #%d — %d 🪙", tmpl.Name, item.SerialNumber, listing.Price)
 		rows = append(rows, tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData(btnText, "collectible_buy_listing_"+listing.ID),
 		))
@@ -217,7 +220,10 @@ func promptSellPrice(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery, ite
 	pendingMarketplaceMutex.Unlock()
 
 	text := "💰 Please reply with the price in Coins (numbers only) to list this item on the marketplace. Or type /cancel to abort."
-	view.SendMessage(bot, callback.Message.Chat.ID, text)
+	msg := tgbotapi.NewMessage(callback.Message.Chat.ID, text)
+	msg.ReplyMarkup = tgbotapi.ForceReply{ForceReply: true}
+	bot.Send(msg)
+
 	bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
 }
 
