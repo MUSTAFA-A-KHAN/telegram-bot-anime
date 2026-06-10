@@ -86,7 +86,15 @@ func handleBuyPack(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery, clien
 		),
 	)
 
-	view.SendMessageWithButtons(bot, callback.Message.Chat.ID, text, markup)
+	if template.ImageURL != "" {
+		photo := tgbotapi.NewPhotoUpload(callback.Message.Chat.ID, template.ImageURL)
+		photo.Caption = text
+		photo.ParseMode = "Markdown"
+		photo.ReplyMarkup = markup
+		bot.Send(photo)
+	} else {
+		view.SendMessageWithButtons(bot, callback.Message.Chat.ID, text, markup)
+	}
 	bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Pack opened!"))
 }
 

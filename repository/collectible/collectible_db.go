@@ -47,7 +47,7 @@ func BootstrapTemplates(client *mongo.Client) error {
 
 	collection := client.Database(dbName).Collection(templatesCollection)
 	initialTemplates := []interface{}{
-		collectible.Template{ID: primitive.NewObjectID().Hex(), Name: "Naruto Run", Rarity: collectible.RarityCommon, Emoji: "🏃"},
+		collectible.Template{ID: primitive.NewObjectID().Hex(), Name: "Naruto Run", Rarity: collectible.RarityCommon, Emoji: "🏃", ImageURL: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTBq1hBIt2Ve2P6TfmCehLeuNvVEubCxTRphQ&s"},
 		collectible.Template{ID: primitive.NewObjectID().Hex(), Name: "Goku Hair", Rarity: collectible.RarityUncommon, Emoji: "🔥"},
 		collectible.Template{ID: primitive.NewObjectID().Hex(), Name: "Sakura Shrine", Rarity: collectible.RarityRare, Emoji: "🌸"},
 		collectible.Template{ID: primitive.NewObjectID().Hex(), Name: "Gojo Eyes", Rarity: collectible.RarityEpic, Emoji: "🌌"},
