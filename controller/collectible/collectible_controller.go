@@ -7,10 +7,10 @@ import (
 	"strings"
 	"sync"
 
+	model "github.com/MUSTAFA-A-KHAN/telegram-bot-anime/model/collectible"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/repository"
 	collectibleRepo "github.com/MUSTAFA-A-KHAN/telegram-bot-anime/repository/collectible"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/service/collectible"
-	model "github.com/MUSTAFA-A-KHAN/telegram-bot-anime/model/collectible"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/view"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -87,11 +87,14 @@ func handleBuyPack(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery, clien
 	)
 
 	if template.ImageURL != "" {
-		photo := tgbotapi.NewPhotoUpload(callback.Message.Chat.ID, template.ImageURL)
+		photo := tgbotapi.NewPhotoShare(callback.Message.Chat.ID, template.ImageURL)
 		photo.Caption = text
 		photo.ParseMode = "Markdown"
 		photo.ReplyMarkup = markup
-		bot.Send(photo)
+		_, err := bot.Send(photo)
+		if err != nil {
+			log.Printf("send error: %v", err)
+		}
 	} else {
 		view.SendMessageWithButtons(bot, callback.Message.Chat.ID, text, markup)
 	}
@@ -154,10 +157,11 @@ func showInventory(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery, clien
 	))
 
 	markup := tgbotapi.NewInlineKeyboardMarkup(rows...)
-	editMsg := tgbotapi.NewEditMessageText(callback.Message.Chat.ID, callback.Message.MessageID, text)
-	editMsg.ReplyMarkup = &markup
-	editMsg.ParseMode = "Markdown"
-	bot.Send(editMsg)
+	// editMsg := tgbotapi.NewEditMessageText(callback.Message.Chat.ID, callback.Message.MessageID, text)
+	// editMsg.ReplyMarkup = &markup
+	// editMsg.ParseMode = "Markdown"
+	bot.Send(tgbotapi.NewDeleteMessage(callback.Message.Chat.ID, callback.Message.MessageID))
+	view.SendMessageWithButtons(bot, callback.Message.Chat.ID, text, markup)
 	bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
 }
 
