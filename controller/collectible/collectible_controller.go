@@ -47,7 +47,12 @@ func HandleCallback(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery, clie
 		handleBuyPack(bot, callback, client)
 		return true
 	} else if data == "collectible_inventory" {
-		showInventory(bot, callback, client)
+		showInventory(bot, callback, client, 0)
+		return true
+	} else if strings.HasPrefix(data, "collectible_inventory_page_") {
+		pageStr := strings.TrimPrefix(data, "collectible_inventory_page_")
+		page, _ := strconv.Atoi(pageStr)
+		showInventory(bot, callback, client, page)
 		return true
 	} else if data == "collectible_market" {
 		showMarketplace(bot, callback, client)
@@ -104,7 +109,7 @@ func handleBuyPack(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery, clien
 	bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Pack opened!"))
 }
 
-func showInventory(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery, client *mongo.Client) {
+func showInventory(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery, client *mongo.Client, page int) {
 	items, templates, err := collectible.GetUserInventoryWithTemplates(client, int(callback.From.ID))
 	if err != nil {
 		bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, "Error loading inventory!"))
@@ -134,25 +139,38 @@ func showInventory(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery, clien
 		return
 	}
 
-	text := "🎒 *Your Collection*\n\n"
+	if page < 0 || page >= len(items) {
+		page = 0
+	}
+
+	item := items[page]
+	tmpl := templates[item.TemplateID]
+
+	status := ""
+	if !listingsErr && listedItemsMap[item.ID] {
+		status = " [Listed on Market 🏪]"
+	}
+
+	text := fmt.Sprintf("🎒 *Your Collection (%d/%d)*\n\n%s *%s #%d*\n⭐ Rarity: %s%s", page+1, len(items), tmpl.Emoji, tmpl.Name, item.SerialNumber, string(tmpl.Rarity), status)
+
 	var rows [][]tgbotapi.InlineKeyboardButton
 
-	for _, item := range items {
-		tmpl := templates[item.TemplateID]
+	navRow := []tgbotapi.InlineKeyboardButton{}
+	if page > 0 {
+		navRow = append(navRow, tgbotapi.NewInlineKeyboardButtonData("⬅️ Prev", fmt.Sprintf("collectible_inventory_page_%d", page-1)))
+	}
+	if page < len(items)-1 {
+		navRow = append(navRow, tgbotapi.NewInlineKeyboardButtonData("Next ➡️", fmt.Sprintf("collectible_inventory_page_%d", page+1)))
+	}
+	if len(navRow) > 0 {
+		rows = append(rows, navRow)
+	}
 
-		status := ""
-		if !listingsErr && listedItemsMap[item.ID] {
-			status = " [Listed on Market 🏪]"
-		}
-
-		text += fmt.Sprintf("%s *%s #%d* (%s)%s\n", tmpl.Emoji, tmpl.Name, item.SerialNumber, string(tmpl.Rarity), status)
-
-		if !listedItemsMap[item.ID] {
-			btnText := fmt.Sprintf("🏷️ Sell: %s #%d", tmpl.Name, item.SerialNumber)
-			rows = append(rows, tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonData(btnText, "collectible_sell_"+item.ID),
-			))
-		}
+	if !listedItemsMap[item.ID] {
+		btnText := fmt.Sprintf("🏷️ Sell: %s #%d", tmpl.Name, item.SerialNumber)
+		rows = append(rows, tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData(btnText, "collectible_sell_"+item.ID),
+		))
 	}
 
 	rows = append(rows, tgbotapi.NewInlineKeyboardRow(
@@ -160,11 +178,16 @@ func showInventory(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery, clien
 	))
 
 	markup := tgbotapi.NewInlineKeyboardMarkup(rows...)
-	// editMsg := tgbotapi.NewEditMessageText(callback.Message.Chat.ID, callback.Message.MessageID, text)
-	// editMsg.ReplyMarkup = &markup
-	// editMsg.ParseMode = "Markdown"
 	bot.Send(tgbotapi.NewDeleteMessage(callback.Message.Chat.ID, callback.Message.MessageID))
-	view.SendMessageWithButtons(bot, callback.Message.Chat.ID, text, markup)
+	if tmpl.ImageURL != "" {
+		photo := tgbotapi.NewPhotoShare(callback.Message.Chat.ID, tmpl.ImageURL)
+		photo.Caption = text
+		photo.ParseMode = "Markdown"
+		photo.ReplyMarkup = markup
+		bot.Send(photo)
+	} else {
+		view.SendMessageWithButtons(bot, callback.Message.Chat.ID, text, markup)
+	}
 	bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
 }
 
