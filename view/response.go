@@ -177,3 +177,31 @@ func ReplyToMessageWithPhotoAndButtons(bot *tgbotapi.BotAPI, mesgID int, chatID 
 	res, err := bot.Send(msg)
 	return res, err
 }
+
+func EditMessageMediaWithButtons(bot *tgbotapi.BotAPI, chatID int64, messageID int, mediaURL string, caption string, buttons tgbotapi.InlineKeyboardMarkup) error {
+	params := url.Values{}
+	params.Add("chat_id", strconv.FormatInt(chatID, 10))
+	params.Add("message_id", strconv.Itoa(messageID))
+
+	mediaObj := map[string]string{
+		"type":       "photo",
+		"media":      mediaURL,
+		"caption":    caption,
+		"parse_mode": "Markdown",
+	}
+
+	mediaBytes, err := json.Marshal(mediaObj)
+	if err != nil {
+		return err
+	}
+	params.Add("media", string(mediaBytes))
+
+	replyMarkupBytes, err := json.Marshal(buttons)
+	if err != nil {
+		return err
+	}
+	params.Add("reply_markup", string(replyMarkupBytes))
+
+	_, err = bot.MakeRequest("editMessageMedia", params)
+	return err
+}
