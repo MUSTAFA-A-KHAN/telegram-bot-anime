@@ -55,7 +55,12 @@ func HandleCallback(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery, clie
 		showInventory(bot, callback, client, page)
 		return true
 	} else if data == "collectible_market" {
-		showMarketplace(bot, callback, client)
+		showMarketplace(bot, callback, client, 0)
+		return true
+	} else if strings.HasPrefix(data, "collectible_market_page_") {
+		pageStr := strings.TrimPrefix(data, "collectible_market_page_")
+		page, _ := strconv.Atoi(pageStr)
+		showMarketplace(bot, callback, client, page)
 		return true
 	} else if strings.HasPrefix(data, "collectible_sell_") {
 		itemID := strings.TrimPrefix(data, "collectible_sell_")
@@ -200,7 +205,7 @@ func showInventory(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery, clien
 	bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
 }
 
-func showMarketplace(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery, client *mongo.Client) {
+func showMarketplace(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery, client *mongo.Client, page int) {
 	listings, items, templates, err := collectible.GetMarketplaceListingsWithDetails(client)
 	if err != nil {
 		bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, "Error loading marketplace!"))
@@ -219,30 +224,55 @@ func showMarketplace(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery, cli
 		return
 	}
 
-	text := "🏪 *Marketplace*\n\n"
+	if page < 0 || page >= len(listings) {
+		page = 0
+	}
+
+	listing := listings[page]
+	item := items[listing.ItemID]
+	tmpl := templates[item.TemplateID]
+
+	text := fmt.Sprintf("🏪 *Marketplace (%d/%d)*\n\n%s *%s #%d*\n⭐ Rarity: %s\n💰 Price: %d 🪙", page+1, len(listings), tmpl.Emoji, tmpl.Name, item.SerialNumber, string(tmpl.Rarity), listing.Price)
+
 	var rows [][]tgbotapi.InlineKeyboardButton
 
-	for _, listing := range listings {
-		item := items[listing.ItemID]
-		tmpl := templates[item.TemplateID]
-
-		text += fmt.Sprintf("%s *%s #%d* - %d 🪙\n", tmpl.Emoji, tmpl.Name, item.SerialNumber, listing.Price)
-
-		btnText := fmt.Sprintf("🛒 Buy: %s #%d — %d 🪙", tmpl.Name, item.SerialNumber, listing.Price)
-		rows = append(rows, tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData(btnText, "collectible_buy_listing_"+listing.ID),
-		))
+	navRow := []tgbotapi.InlineKeyboardButton{}
+	if page > 0 {
+		navRow = append(navRow, tgbotapi.NewInlineKeyboardButtonData("⬅️ Prev", fmt.Sprintf("collectible_market_page_%d", page-1)))
 	}
+	if page < len(listings)-1 {
+		navRow = append(navRow, tgbotapi.NewInlineKeyboardButtonData("Next ➡️", fmt.Sprintf("collectible_market_page_%d", page+1)))
+	}
+	if len(navRow) > 0 {
+		rows = append(rows, navRow)
+	}
+
+	btnText := fmt.Sprintf("🛒 Buy (%d 🪙)", listing.Price)
+	rows = append(rows, tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData(btnText, "collectible_buy_listing_"+listing.ID),
+	))
 
 	rows = append(rows, tgbotapi.NewInlineKeyboardRow(
 		tgbotapi.NewInlineKeyboardButtonData("🔙 Back to Hub", "collectible_hub"),
 	))
 
 	markup := tgbotapi.NewInlineKeyboardMarkup(rows...)
-	editMsg := tgbotapi.NewEditMessageText(callback.Message.Chat.ID, callback.Message.MessageID, text)
-	editMsg.ReplyMarkup = &markup
-	editMsg.ParseMode = "Markdown"
-	bot.Send(editMsg)
+
+	if tmpl.ImageURL != "" {
+		if strings.HasPrefix(callback.Data, "collectible_market_page_") {
+			view.EditMessageMediaWithButtons(bot, callback.Message.Chat.ID, callback.Message.MessageID, tmpl.ImageURL, text, markup)
+		} else {
+			bot.Send(tgbotapi.NewDeleteMessage(callback.Message.Chat.ID, callback.Message.MessageID))
+			photo := tgbotapi.NewPhotoShare(callback.Message.Chat.ID, tmpl.ImageURL)
+			photo.Caption = text
+			photo.ParseMode = "Markdown"
+			photo.ReplyMarkup = markup
+			bot.Send(photo)
+		}
+	} else {
+		bot.Send(tgbotapi.NewDeleteMessage(callback.Message.Chat.ID, callback.Message.MessageID))
+		view.SendMessageWithButtons(bot, callback.Message.Chat.ID, text, markup)
+	}
 	bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
 }
 
@@ -268,7 +298,7 @@ func handleBuyListing(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery, cl
 	}
 
 	bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, "Successfully purchased item!"))
-	showMarketplace(bot, callback, client)
+	showMarketplace(bot, callback, client, 0)
 }
 
 // CheckAndHandlePendingMarketplaceListing checks if a user is trying to list an item and processes the text as a price
