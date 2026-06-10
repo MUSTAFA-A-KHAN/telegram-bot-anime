@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	collectibleController "github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/collectible"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/scramybot"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/wordlebot"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/model"
@@ -300,7 +301,10 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			view.SendMessageWithKeyboardButton(bot, chatID, "Unlock my full potential by adding me to a group chat!", button)
 		case "start":
 			args := message.CommandArguments()
-			if args == "shop" {
+			if args == "collectibles" {
+				collectibleController.ShowHub(bot, message.Chat.ID, message.From.ID, client)
+				return
+			} else if args == "shop" {
 				showShop(bot, message.Chat.ID, message.From.ID, client)
 				return
 			} else if strings.HasPrefix(args, "custom_word_") {
@@ -613,6 +617,10 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			}
 		}
 
+		if collectibleController.CheckAndHandlePendingMarketplaceListing(bot, message, client) {
+			return
+		}
+
 		// Check if Wordle is active for DM
 		if wordlebot.IsWordleActive(chatID) {
 			wordlebot.HandleGuess(bot, message, client, chatID, message.Text)
@@ -679,7 +687,9 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			}
 		}
 	case "start":
-		if message.CommandArguments() == "shop" {
+		if message.CommandArguments() == "collectibles" {
+			collectibleController.ShowHub(bot, message.Chat.ID, message.From.ID, client)
+		} else if message.CommandArguments() == "shop" {
 			showShop(bot, message.Chat.ID, message.From.ID, client)
 		} else {
 			view.SendMessage(bot, message.Chat.ID, "Welcome! Type /word to start a new game.")
@@ -974,6 +984,9 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 // handleCallbackQuery processes incoming callback queries and handles the "explain" action.
 func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery, client *mongo.Client) {
 	if handleShopCallback(bot, callback, client) {
+		return
+	}
+	if collectibleController.HandleCallback(bot, callback, client) {
 		return
 	}
 
