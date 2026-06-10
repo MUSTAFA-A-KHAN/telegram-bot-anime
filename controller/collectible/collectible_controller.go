@@ -178,14 +178,23 @@ func showInventory(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery, clien
 	))
 
 	markup := tgbotapi.NewInlineKeyboardMarkup(rows...)
-	bot.Send(tgbotapi.NewDeleteMessage(callback.Message.Chat.ID, callback.Message.MessageID))
+
 	if tmpl.ImageURL != "" {
-		photo := tgbotapi.NewPhotoShare(callback.Message.Chat.ID, tmpl.ImageURL)
-		photo.Caption = text
-		photo.ParseMode = "Markdown"
-		photo.ReplyMarkup = markup
-		bot.Send(photo)
+		// if callback is a pagination edit
+		if strings.HasPrefix(callback.Data, "collectible_inventory_page_") {
+			// We're already viewing an image, use custom API call to edit it
+			view.EditMessageMediaWithButtons(bot, callback.Message.Chat.ID, callback.Message.MessageID, tmpl.ImageURL, text, markup)
+		} else {
+			// From hub -> inventory, so we transition text to image.
+			bot.Send(tgbotapi.NewDeleteMessage(callback.Message.Chat.ID, callback.Message.MessageID))
+			photo := tgbotapi.NewPhotoShare(callback.Message.Chat.ID, tmpl.ImageURL)
+			photo.Caption = text
+			photo.ParseMode = "Markdown"
+			photo.ReplyMarkup = markup
+			bot.Send(photo)
+		}
 	} else {
+		bot.Send(tgbotapi.NewDeleteMessage(callback.Message.Chat.ID, callback.Message.MessageID))
 		view.SendMessageWithButtons(bot, callback.Message.Chat.ID, text, markup)
 	}
 	bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
