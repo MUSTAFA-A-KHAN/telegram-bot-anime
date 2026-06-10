@@ -83,14 +83,12 @@ func (t *TextTranslator) SolveWordle(puzzle string) string {
 	// include per-position not-in info if any
 	var notInParts []string
 	for i := 0; i < 5; i++ {
-		var chars []string
-		for ch := 0; ch < 256; ch++ {
-			if notIn[i][ch] {
-				chars = append(chars, strings.ToUpper(string(rune(ch))))
-			}
-		}
-		if len(chars) == 0 {
+		if len(notIn[i]) == 0 {
 			continue
+		}
+		chars := make([]string, 0, len(notIn[i]))
+		for ch := range notIn[i] {
+			chars = append(chars, strings.ToUpper(string(ch)))
 		}
 		sort.Strings(chars)
 		notInParts = append(notInParts, fmt.Sprintf("pos%d: %s", i+1, strings.Join(chars, ",")))
@@ -135,13 +133,16 @@ func (t *TextTranslator) SolveWordle(puzzle string) string {
 }
 
 // parseConstraints returns pattern (e.g. FLU__), present letters, excluded letters and per-position not-in maps
-func parseConstraints(puzzle string) (string, []rune, []rune, [5][256]bool) {
+func parseConstraints(puzzle string) (string, []rune, []rune, []map[rune]bool) {
 	lines := strings.Split(strings.TrimSpace(puzzle), "\n")
 	pattern := []rune{'_', '_', '_', '_', '_'}
 	presentMap := make(map[rune]bool)
 	excludedMap := make(map[rune]bool)
 	// per-position not-in constraints from 🟨 feedback
-	var notIn [5][256]bool
+	notIn := make([]map[rune]bool, 5)
+	for i := 0; i < 5; i++ {
+		notIn[i] = make(map[rune]bool)
+	}
 
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
@@ -182,9 +183,7 @@ func parseConstraints(puzzle string) (string, []rune, []rune, [5][256]bool) {
 				}
 			case '🟨':
 				presentMap[ch] = true
-				if ch < 256 {
-					notIn[i][ch] = true
-				}
+				notIn[i][ch] = true
 				if excludedMap[ch] {
 					delete(excludedMap, ch)
 				}
@@ -223,38 +222,34 @@ func parseConstraints(puzzle string) (string, []rune, []rune, [5][256]bool) {
 }
 
 // validateCandidate ensures the suggested word fits pattern, contains all present letters and excludes excluded letters
-// ⚡ Bolt Optimization: Replace `strings.ToUpper` and `strings.ContainsRune` with allocation-free ASCII uppercase conversion and boolean array lookups
-func validateCandidate(word, pattern string, present, excluded []rune, notIn [5][256]bool) bool {
+func validateCandidate(word, pattern string, present, excluded []rune, notIn []map[rune]bool) bool {
 	if len(word) != 5 {
 		return false
 	}
-	var seen [256]bool
-
-	// Check pattern and notIn constraints without allocations
+	w := strings.ToUpper(word)
+	// pattern
 	for i := 0; i < 5; i++ {
-		ch := word[i]
-		if ch >= 'a' && ch <= 'z' {
-			ch -= 32
-		}
-
-		if pattern[i] != '_' && rune(pattern[i]) != rune(ch) {
+		if pattern[i] != '_' && pattern[i] != w[i] {
 			return false
 		}
-		if notIn[i][ch] {
-			return false
-		}
-		seen[ch] = true
 	}
-
+	// per-position not-in checks (yellow constraints)
+	if len(notIn) == 5 {
+		for i := 0; i < 5; i++ {
+			if notIn[i][rune(w[i])] {
+				return false
+			}
+		}
+	}
 	// present letters
 	for _, ch := range present {
-		if ch < 256 && !seen[ch] {
+		if !strings.ContainsRune(w, ch) {
 			return false
 		}
 	}
 	// excluded letters
 	for _, ch := range excluded {
-		if ch < 256 && seen[ch] {
+		if strings.ContainsRune(w, ch) {
 			return false
 		}
 	}
@@ -285,7 +280,7 @@ func loadWordList() ([]string, error) {
 }
 
 // generateCandidates returns up to limit words from the wordlist that satisfy constraints
-func findCandidates(pattern string, present, excluded []rune, notIn [5][256]bool) ([]string, error) {
+func findCandidates(pattern string, present, excluded []rune, notIn []map[rune]bool) ([]string, error) {
 	words, err := loadWordList()
 	if err != nil {
 		return nil, err
@@ -336,7 +331,7 @@ func chooseBestCandidate(candidates []string) string {
 	return best
 }
 
-func generateCandidates(pattern string, present, excluded []rune, notIn [5][256]bool, limit int) ([]string, error) {
+func generateCandidates(pattern string, present, excluded []rune, notIn []map[rune]bool, limit int) ([]string, error) {
 	out, err := findCandidates(pattern, present, excluded, notIn)
 	if err != nil {
 		return nil, err

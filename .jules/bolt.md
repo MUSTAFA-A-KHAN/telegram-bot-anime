@@ -27,3 +27,6 @@
 ## 2024-06-08 - Use Fixed Arrays for Small ASCII Lookup Hot Paths
 **Learning:** Using `make(map[rune]bool)` or `make(map[rune]int)` inside tight loops evaluating many words creates significant memory allocation overhead. Since the application mostly handles fixed 5-letter uppercase ASCII words, map lookups are unnecessarily heavy.
 **Action:** Replace `map[rune]bool` and `map[rune]int` with fixed-size arrays (`[256]bool` and `[256]int`) for counting and tracking seen characters. Iterate over the strings using byte indices (`w[i]`) instead of `range` to eliminate implicit rune decoding overhead and drastically speed up execution.
+## 2025-02-23 - Eordle Candidate Validation Optimization
+**Learning:** Checking string characters with `strings.ToUpper` and checking constraints with `[]map[rune]bool` and `strings.ContainsRune` within hot loops when searching for valid Eordle words creates major garbage collection and string allocation overhead.
+**Action:** Replace `strings.ToUpper` inside loops with inline bitwise ASCII conversions. Replace the slice of rune maps with a fixed `[5][256]bool` array. Eliminate all internal allocations in `validateCandidate` by utilizing byte indices and a `seen` fixed array for tracking characters.
