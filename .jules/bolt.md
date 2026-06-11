@@ -30,3 +30,6 @@
 ## 2025-02-23 - Eordle Candidate Validation Optimization
 **Learning:** Checking string characters with `strings.ToUpper` and checking constraints with `[]map[rune]bool` and `strings.ContainsRune` within hot loops when searching for valid Eordle words creates major garbage collection and string allocation overhead.
 **Action:** Replace `strings.ToUpper` inside loops with inline bitwise ASCII conversions. Replace the slice of rune maps with a fixed `[5][256]bool` array. Eliminate all internal allocations in `validateCandidate` by utilizing byte indices and a `seen` fixed array for tracking characters.
+## 2025-02-23 - Optimize String Iteration in Normalization Loops
+**Learning:** Iterating over strings using `range s` implicitly decodes each character as a rune. Furthermore, utilizing functions like `unicode.IsLetter` and `unicode.ToLower` on standard ASCII text imposes heavy function call overheads compared to simple byte comparison and bitwise operations.
+**Action:** Replace `range` string iterations with a byte index loop (`for i := 0; i < len(s);`) in hot path normalizations (like `NormalizeAndCompare`). Include an ASCII fast path (`c < utf8.RuneSelf`) and rely on inline bitwise lowercase conversion (`c += 32`) and boolean evaluations. Keep the rune-decoding path only as a fallback for non-ASCII characters (`utf8.DecodeRuneInString`).
