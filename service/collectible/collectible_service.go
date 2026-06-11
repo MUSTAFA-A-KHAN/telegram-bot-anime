@@ -11,7 +11,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-const PackPrice = 1000
+const PackPrice = 201
 
 // OpenPack handles the logic for a user buying and opening a collectible pack
 func OpenPack(client *mongo.Client, userID int, name string, chatID int64) (model.Item, model.Template, error) {

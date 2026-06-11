@@ -23,7 +23,7 @@ var pendingMarketplaceMutex sync.Mutex
 func ShowHub(bot *tgbotapi.BotAPI, chatID int64, userID int, client *mongo.Client) {
 	markup := tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("🎁 Buy Pack (1000 🪙)", "collectible_buy_pack"),
+			tgbotapi.NewInlineKeyboardButtonData("🎁 Buy Pack (201 🪙)", "collectible_buy_pack"),
 		),
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("🎒 My Collection", "collectible_inventory"),
@@ -81,7 +81,7 @@ func handleBuyPack(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery, clien
 
 	if err != nil {
 		if err.Error() == "not enough points" {
-			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, "Not enough points! Packs cost 1000 🪙."))
+			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, "Not enough points! Packs cost 201 🪙."))
 		} else {
 			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, "Error opening pack: "+err.Error()))
 		}
