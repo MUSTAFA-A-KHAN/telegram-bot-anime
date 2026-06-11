@@ -321,33 +321,20 @@ func HandleGeographyCallback(bot *tgbotapi.BotAPI, chatID int64, userID int, use
 			repository.InsertWordleBonusDoc(userID, userName, chatID, client, "GeographyPoints", points)
 		}
 
-		successMsg := fmt.Sprintf("✅ *Correct, %s!*\n\nThe answer was *%s*.\nYou earned %d Geography points! 🌍\n\n_Next question in 3 seconds..._", userName, correctAnswer, points)
+		successMsg := fmt.Sprintf("✅ *Correct, %s!*\n\nThe answer was *%s*.\nYou earned %d Geography points! 🌍\n\n_Use /geography to play again._", userName, correctAnswer, points)
 		view.SendMessage(bot, chatID, successMsg)
 
 	} else {
 		// Wrong
 		state.Active = false
-		state.PendingNewGame = true
+		state.PendingNewGame = false
 		state.Unlock()
 
-		failMsg := fmt.Sprintf("❌ *Incorrect, %s!*\n\nThe correct answer was *%s*.\n\n_Next question in 3 seconds..._", userName, correctAnswer)
+		failMsg := fmt.Sprintf("❌ *Incorrect, %s!*\n\nThe correct answer was *%s*.\n\n_Use /geography to play again._", userName, correctAnswer)
 		view.SendMessage(bot, chatID, failMsg)
 	}
 
 	saveGeographyStateAsync(chatID, state)
-
-	// Automatically start new round after delay
-	go func() {
-		time.Sleep(3 * time.Second)
-		state.Lock()
-		if state.PendingNewGame {
-			state.PendingNewGame = false
-			state.Unlock()
-			startNewRound(bot, chatID, client)
-		} else {
-			state.Unlock()
-		}
-	}()
 }
 
 // HandleGuess handles exact text match guesses
@@ -377,51 +364,11 @@ func HandleGuess(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.
 			repository.InsertWordleBonusDoc(message.From.ID, message.From.FirstName, chatID, client, "GeographyPoints", points)
 		}
 
-		successMsg := fmt.Sprintf("✅ *Correct, %s!*\n\nThe answer was *%s*.\nYou earned %d Geography points! 🌍\n\n_Next question in 3 seconds..._", message.From.FirstName, correctAnswer, points)
+		successMsg := fmt.Sprintf("✅ *Correct, %s!*\n\nThe answer was *%s*.\nYou earned %d Geography points! 🌍\n\n_Use /geography to play again._", message.From.FirstName, correctAnswer, points)
 		view.SendMessage(bot, chatID, successMsg)
 
 		saveGeographyStateAsync(chatID, state)
-
-		go func() {
-			time.Sleep(3 * time.Second)
-			state.Lock()
-			if state.PendingNewGame {
-				state.PendingNewGame = false
-				state.Unlock()
-				startNewRound(bot, chatID, client)
-			} else {
-				state.Unlock()
-			}
-		}()
 	} else {
 		state.Unlock()
 	}
-}
-
-// CancelPendingGame stops the auto-next question loop
-func CancelPendingGame(bot *tgbotapi.BotAPI, chatID int64, userName string) bool {
-	geographyMutex.RLock()
-	state, exists := geographyStates[chatID]
-	geographyMutex.RUnlock()
-
-	if !exists {
-		return false
-	}
-
-	state.Lock()
-	defer state.Unlock()
-
-	if state.Active {
-		state.Active = false
-		state.PendingNewGame = false
-		saveGeographyStateAsync(chatID, state)
-		view.SendMessage(bot, chatID, fmt.Sprintf("🛑 Geography game cancelled by %s.", userName))
-		return true
-	} else if state.PendingNewGame {
-		state.PendingNewGame = false
-		saveGeographyStateAsync(chatID, state)
-		view.SendMessage(bot, chatID, fmt.Sprintf("🛑 Geography auto-next cancelled by %s.", userName))
-		return true
-	}
-	return false
 }
