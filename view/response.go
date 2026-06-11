@@ -178,18 +178,30 @@ func ReplyToMessageWithPhotoAndButtons(bot *tgbotapi.BotAPI, mesgID int, chatID 
 	return res, err
 }
 
-func EditMessageMediaFileBytesWithButtons(bot *tgbotapi.BotAPI, chatID int64, messageID int, file tgbotapi.FileBytes, caption string, buttons tgbotapi.InlineKeyboardMarkup) error {
-	// The standard go-telegram-bot-api wrapper does not easily support multipart
-	// EditMessageMedia with local bytes without using direct REST calls or its unexported internals.
-	// As a fallback for local byte slices that need to be edited to avoid flashing, we can simulate an edit
-	// by deleting the old message and immediately sending the new one.
-	// Note: True native EditMessageMedia with bytes requires manually constructing a multipart/form-data HTTP request.
-	bot.Send(tgbotapi.NewDeleteMessage(chatID, messageID))
+func EditMessageMediaWithButtons(bot *tgbotapi.BotAPI, chatID int64, messageID int, mediaURL string, caption string, buttons tgbotapi.InlineKeyboardMarkup) error {
+	params := url.Values{}
+	params.Add("chat_id", strconv.FormatInt(chatID, 10))
+	params.Add("message_id", strconv.Itoa(messageID))
 
-	photo := tgbotapi.NewPhotoUpload(chatID, file)
-	photo.Caption = caption
-	photo.ParseMode = "Markdown"
-	photo.ReplyMarkup = buttons
-	_, err := bot.Send(photo)
+	mediaObj := map[string]string{
+		"type":       "photo",
+		"media":      mediaURL,
+		"caption":    caption,
+		"parse_mode": "Markdown",
+	}
+
+	mediaBytes, err := json.Marshal(mediaObj)
+	if err != nil {
+		return err
+	}
+	params.Add("media", string(mediaBytes))
+
+	replyMarkupBytes, err := json.Marshal(buttons)
+	if err != nil {
+		return err
+	}
+	params.Add("reply_markup", string(replyMarkupBytes))
+
+	_, err = bot.MakeRequest("editMessageMedia", params)
 	return err
 }
