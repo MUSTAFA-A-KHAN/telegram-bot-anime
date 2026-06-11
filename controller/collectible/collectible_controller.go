@@ -99,18 +99,14 @@ func handleBuyPack(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery, clien
 		),
 	)
 
-	imgBytes, _ := GenerateCollectibleCard(template, item.SerialNumber, false, 0)
-	if len(imgBytes) > 0 {
-		file := tgbotapi.FileBytes{
-			Name:  "card.png",
-			Bytes: imgBytes,
-		}
-		msg := tgbotapi.NewPhotoUpload(callback.Message.Chat.ID, file)
-		msg.Caption = text
-		msg.ParseMode = "Markdown"
-		msg.ReplyMarkup = markup
-		if _, err := bot.Send(msg); err != nil {
-			log.Printf("send photo error: %v", err)
+	if template.ImageURL != "" {
+		photo := tgbotapi.NewPhotoShare(callback.Message.Chat.ID, template.ImageURL)
+		photo.Caption = text
+		photo.ParseMode = "Markdown"
+		photo.ReplyMarkup = markup
+		_, err := bot.Send(photo)
+		if err != nil {
+			log.Printf("send error: %v", err)
 		}
 	} else {
 		view.SendMessageWithButtons(bot, callback.Message.Chat.ID, text, markup)
@@ -188,17 +184,15 @@ func showInventory(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery, clien
 
 	markup := tgbotapi.NewInlineKeyboardMarkup(rows...)
 
-	imgBytes, _ := GenerateCollectibleCard(tmpl, item.SerialNumber, false, 0)
-	if len(imgBytes) > 0 {
-		file := tgbotapi.FileBytes{
-			Name:  "card.png",
-			Bytes: imgBytes,
-		}
+	if tmpl.ImageURL != "" {
+		// if callback is a pagination edit
 		if strings.HasPrefix(callback.Data, "collectible_inventory_page_") {
-			view.EditMessageMediaFileBytesWithButtons(bot, callback.Message.Chat.ID, callback.Message.MessageID, file, text, markup)
+			// We're already viewing an image, use custom API call to edit it
+			view.EditMessageMediaWithButtons(bot, callback.Message.Chat.ID, callback.Message.MessageID, tmpl.ImageURL, text, markup)
 		} else {
+			// From hub -> inventory, so we transition text to image.
 			bot.Send(tgbotapi.NewDeleteMessage(callback.Message.Chat.ID, callback.Message.MessageID))
-			photo := tgbotapi.NewPhotoUpload(callback.Message.Chat.ID, file)
+			photo := tgbotapi.NewPhotoShare(callback.Message.Chat.ID, tmpl.ImageURL)
 			photo.Caption = text
 			photo.ParseMode = "Markdown"
 			photo.ReplyMarkup = markup
@@ -264,17 +258,12 @@ func showMarketplace(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery, cli
 
 	markup := tgbotapi.NewInlineKeyboardMarkup(rows...)
 
-	imgBytes, _ := GenerateCollectibleCard(tmpl, item.SerialNumber, true, listing.Price)
-	if len(imgBytes) > 0 {
-		file := tgbotapi.FileBytes{
-			Name:  "card.png",
-			Bytes: imgBytes,
-		}
+	if tmpl.ImageURL != "" {
 		if strings.HasPrefix(callback.Data, "collectible_market_page_") {
-			view.EditMessageMediaFileBytesWithButtons(bot, callback.Message.Chat.ID, callback.Message.MessageID, file, text, markup)
+			view.EditMessageMediaWithButtons(bot, callback.Message.Chat.ID, callback.Message.MessageID, tmpl.ImageURL, text, markup)
 		} else {
 			bot.Send(tgbotapi.NewDeleteMessage(callback.Message.Chat.ID, callback.Message.MessageID))
-			photo := tgbotapi.NewPhotoUpload(callback.Message.Chat.ID, file)
+			photo := tgbotapi.NewPhotoShare(callback.Message.Chat.ID, tmpl.ImageURL)
 			photo.Caption = text
 			photo.ParseMode = "Markdown"
 			photo.ReplyMarkup = markup
