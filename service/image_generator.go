@@ -7,6 +7,12 @@ import (
 	"log"
 	"strings"
 
+	"image"
+	_ "image/jpeg"
+	_ "image/png"
+	"net/http"
+
+	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/model/collectible"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/repository"
 	"github.com/fogleman/gg"
 	"github.com/golang/freetype/truetype"
@@ -169,6 +175,97 @@ func GenerateLeaderboardImage(client *mongo.Client, collection string, chatID in
 	err = dc.EncodePNG(buf)
 	if err != nil {
 		return nil, err
+	}
+
+	return buf.Bytes(), nil
+}
+
+// GenerateCollectibleImage fetches the background image from template.ImageURL
+// and overlays the serial number and owner name.
+func GenerateCollectibleImage(item collectible.Item, template collectible.Template, ownerName string) ([]byte, error) {
+	if template.ImageURL == "" {
+		return nil, fmt.Errorf("no image URL provided in template")
+	}
+
+	// 1. Fetch the background image
+	resp, err := http.Get(template.ImageURL)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch image: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("failed to fetch image, status: %d", resp.StatusCode)
+	}
+
+	bgImage, _, err := image.Decode(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode image: %w", err)
+	}
+
+	bounds := bgImage.Bounds()
+	width := bounds.Dx()
+	height := bounds.Dy()
+
+	dc := gg.NewContext(width, height)
+	dc.DrawImage(bgImage, 0, 0)
+
+	// Load font for overlay text
+	fontBold, err := truetype.Parse(gobold.TTF)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse font: %w", err)
+	}
+
+	// Calculate dynamic font size based on image height (e.g. 5% of height)
+	fontSize := float64(height) * 0.05
+	if fontSize < 20 {
+		fontSize = 20
+	}
+	faceBold := truetype.NewFace(fontBold, &truetype.Options{Size: fontSize})
+	dc.SetFontFace(faceBold)
+
+	// Draw Serial Number overlay (Top Left)
+	serialText := fmt.Sprintf("#%d", item.SerialNumber)
+
+	// Draw background box for serial number
+	w, h := dc.MeasureString(serialText)
+	paddingX := float64(width) * 0.02
+	paddingY := float64(height) * 0.02
+
+	rectWidth := w + paddingX*2
+	rectHeight := h + paddingY*2
+
+	// Orange/Gold Box for Serial Number
+	dc.SetColor(color.RGBA{R: 245, G: 166, B: 35, A: 230})
+	// Try to draw it with a rounded rectangle if gg supports it easily, otherwise standard
+	dc.DrawRoundedRectangle(0, 0, rectWidth, rectHeight, rectHeight*0.2)
+	dc.Fill()
+
+	// Text for serial number
+	dc.SetColor(color.RGBA{R: 0, G: 0, B: 0, A: 255})
+	dc.DrawStringAnchored(serialText, rectWidth/2, rectHeight/2, 0.5, 0.5)
+
+	// Draw Owner Name overlay (Bottom Left)
+	ownerText := fmt.Sprintf("Owner: %s", ownerName)
+	w2, h2 := dc.MeasureString(ownerText)
+
+	rectWidth2 := w2 + paddingX*2
+	rectHeight2 := h2 + paddingY*2
+
+	boxY := float64(height) - rectHeight2
+
+	// Dark semi-transparent box for owner
+	dc.SetColor(color.RGBA{R: 0, G: 0, B: 0, A: 180})
+	dc.DrawRoundedRectangle(0, boxY, rectWidth2, rectHeight2, rectHeight2*0.2)
+	dc.Fill()
+
+	// Text for owner
+	dc.SetColor(color.White)
+	dc.DrawStringAnchored(ownerText, rectWidth2/2, boxY + rectHeight2/2, 0.5, 0.5)
+
+	buf := new(bytes.Buffer)
+	if err := dc.EncodePNG(buf); err != nil {
+		return nil, fmt.Errorf("failed to encode resulting image: %w", err)
 	}
 
 	return buf.Bytes(), nil
