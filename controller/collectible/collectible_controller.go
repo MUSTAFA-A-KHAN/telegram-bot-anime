@@ -14,6 +14,7 @@ import (
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/view"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"go.mongodb.org/mongo-driver/mongo"
+	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/service"
 )
 
 var pendingMarketplaceListing = make(map[int64]string) // map[userID]itemID
@@ -100,13 +101,26 @@ func handleBuyPack(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery, clien
 	)
 
 	if template.ImageURL != "" {
-		photo := tgbotapi.NewPhotoShare(callback.Message.Chat.ID, template.ImageURL)
-		photo.Caption = text
-		photo.ParseMode = "Markdown"
-		photo.ReplyMarkup = markup
-		_, err := bot.Send(photo)
-		if err != nil {
-			log.Printf("send error: %v", err)
+		imgBytes, err := service.GenerateCollectibleImage(item, template, callback.From.FirstName)
+		if err == nil {
+			photo := tgbotapi.NewPhotoUpload(callback.Message.Chat.ID, tgbotapi.FileBytes{Name: "card.png", Bytes: imgBytes})
+			photo.Caption = text
+			photo.ParseMode = "Markdown"
+			photo.ReplyMarkup = markup
+			_, err = bot.Send(photo)
+			if err != nil {
+				log.Printf("send photo error: %v", err)
+			}
+		} else {
+			log.Printf("image generation error: %v, falling back to url", err)
+			photo := tgbotapi.NewPhotoShare(callback.Message.Chat.ID, template.ImageURL)
+			photo.Caption = text
+			photo.ParseMode = "Markdown"
+			photo.ReplyMarkup = markup
+			_, err := bot.Send(photo)
+			if err != nil {
+				log.Printf("send error: %v", err)
+			}
 		}
 	} else {
 		view.SendMessageWithButtons(bot, callback.Message.Chat.ID, text, markup)
