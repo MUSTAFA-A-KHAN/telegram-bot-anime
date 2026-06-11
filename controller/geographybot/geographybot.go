@@ -3,8 +3,10 @@ package geographybot
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"math/rand"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -110,12 +112,20 @@ type Country struct {
 	Flag    string `json:"flag"`
 }
 
+// Landmark represents a landmark and its image URL
+type Landmark struct {
+	Name     string `json:"name"`
+	Country  string `json:"country"`
+	ImageURL string `json:"image_url"`
+}
+
 var (
-	countryData []Country
-	dataLoaded  bool
+	countryData  []Country
+	landmarkData []Landmark
+	dataLoaded   bool
 )
 
-// LoadGeographyData loads the static country JSON dataset into memory
+// LoadGeographyData loads the static JSON datasets into memory
 func LoadGeographyData() error {
 	path := filepath.Join("controller", "geographybot", "countries.json")
 	file, err := os.Open(path)
@@ -136,6 +146,20 @@ func LoadGeographyData() error {
 		}
 	}
 	countryData = validCountries
+
+	landmarkPath := filepath.Join("controller", "geographybot", "landmarks.json")
+	lFile, err := os.Open(landmarkPath)
+	if err == nil {
+		defer lFile.Close()
+		if err := json.NewDecoder(lFile).Decode(&landmarkData); err != nil {
+			log.Printf("failed to decode landmarks.json: %v", err)
+		} else {
+			log.Printf("Loaded %d valid landmarks for Geography mode", len(landmarkData))
+		}
+	} else {
+		log.Printf("failed to open landmarks.json: %v", err)
+	}
+
 	dataLoaded = true
 
 	log.Printf("Loaded %d valid countries for Geography mode", len(countryData))
@@ -187,33 +211,61 @@ func startNewRound(bot *tgbotapi.BotAPI, chatID int64, client *mongo.Client) {
 	}
 
 	rand.Seed(time.Now().UnixNano())
-	targetIndex := rand.Intn(len(countryData))
-	target := countryData[targetIndex]
 
 	questionTypes := []string{"capital", "flag", "region"}
+	if len(landmarkData) >= 4 {
+		questionTypes = append(questionTypes, "landmark")
+	}
+
 	qType := questionTypes[rand.Intn(len(questionTypes))]
 
 	var answer string
 	var question string
 	var options []string
+	var targetCountryName string
+	var targetImageBytes []byte
 
-	switch qType {
-	case "capital":
-		answer = target.Capital
-		question = fmt.Sprintf("🌎 *Geography Mode*\n\nWhat is the capital of *%s %s*?", target.Flag, target.Name)
-	case "flag":
-		answer = target.Name
-		question = fmt.Sprintf("🌎 *Geography Mode*\n\nWhich country does this flag belong to: *%s*?", target.Flag)
-	case "region":
-		answer = target.Region
-		question = fmt.Sprintf("🌎 *Geography Mode*\n\nWhich region is *%s %s* located in?", target.Flag, target.Name)
+	// Pick target and generate distractors
+	if qType == "landmark" {
+		targetLandmark := landmarkData[rand.Intn(len(landmarkData))]
+		targetCountryName = targetLandmark.Country
+		answer = targetCountryName
+		question = fmt.Sprintf("🌎 *Geography Mode*\n\nWhich country is this landmark (%s) located in?", targetLandmark.Name)
+
+		// Fetch image
+		resp, err := http.Get(targetLandmark.ImageURL)
+		if err == nil {
+			defer resp.Body.Close()
+			targetImageBytes, _ = ioutil.ReadAll(resp.Body)
+		} else {
+			log.Printf("Failed to fetch landmark image: %v", err)
+			qType = "capital" // fallback
+		}
+	}
+
+	if qType != "landmark" {
+		targetIndex := rand.Intn(len(countryData))
+		target := countryData[targetIndex]
+		targetCountryName = target.Name
+
+		switch qType {
+		case "capital":
+			answer = target.Capital
+			question = fmt.Sprintf("🌎 *Geography Mode*\n\nWhat is the capital of *%s %s*?", target.Flag, target.Name)
+		case "flag":
+			answer = target.Name
+			question = fmt.Sprintf("🌎 *Geography Mode*\n\nWhich country does this flag belong to: *%s*?", target.Flag)
+		case "region":
+			answer = target.Region
+			question = fmt.Sprintf("🌎 *Geography Mode*\n\nWhich region is *%s %s* located in?", target.Flag, target.Name)
+		}
 	}
 
 	// Generate 3 random wrong options
 	wrongOptions := make([]string, 0, 3)
 	for len(wrongOptions) < 3 {
 		randIdx := rand.Intn(len(countryData))
-		if randIdx == targetIndex {
+		if countryData[randIdx].Name == targetCountryName {
 			continue
 		}
 		var wOpt string
@@ -224,6 +276,8 @@ func startNewRound(bot *tgbotapi.BotAPI, chatID int64, client *mongo.Client) {
 			wOpt = countryData[randIdx].Name
 		case "region":
 			wOpt = countryData[randIdx].Region
+		case "landmark":
+			wOpt = countryData[randIdx].Name
 		}
 
 		if wOpt == answer {
@@ -257,7 +311,7 @@ func startNewRound(bot *tgbotapi.BotAPI, chatID int64, client *mongo.Client) {
 
 	state.Lock()
 	state.Active = true
-	state.TargetCountry = target.Name
+	state.TargetCountry = targetCountryName
 	state.TargetAnswer = answer
 	state.QuestionType = qType
 	state.Options = options
@@ -282,7 +336,16 @@ func startNewRound(bot *tgbotapi.BotAPI, chatID int64, client *mongo.Client) {
 	}
 
 	markup := tgbotapi.NewInlineKeyboardMarkup(keyboard...)
-	view.SendMessageWithButtons(bot, chatID, question, markup)
+
+	if qType == "landmark" && len(targetImageBytes) > 0 {
+		photoMsg := tgbotapi.NewPhotoUpload(chatID, tgbotapi.FileBytes{Name: "landmark.jpg", Bytes: targetImageBytes})
+		photoMsg.Caption = question
+		photoMsg.ParseMode = "Markdown"
+		photoMsg.ReplyMarkup = markup
+		bot.Send(photoMsg)
+	} else {
+		view.SendMessageWithButtons(bot, chatID, question, markup)
+	}
 }
 
 // HandleGeographyCallback handles the inline button callbacks for MCQ
@@ -306,9 +369,9 @@ func HandleGeographyCallback(bot *tgbotapi.BotAPI, chatID int64, userID int, use
 	userAnswer := strings.TrimPrefix(data, "geo_ans_")
 	correctAnswer := state.TargetAnswer
 
-	// Update UI to remove buttons
-	editMsg := tgbotapi.NewEditMessageText(chatID, messageID, fmt.Sprintf("Question answered by %s.", userName))
-	bot.Send(editMsg)
+	// Update UI to remove buttons by updating only the reply markup
+	editMarkup := tgbotapi.NewEditMessageReplyMarkup(chatID, messageID, tgbotapi.InlineKeyboardMarkup{InlineKeyboard: make([][]tgbotapi.InlineKeyboardButton, 0)})
+	bot.Send(editMarkup)
 
 	if strings.EqualFold(userAnswer, correctAnswer) {
 		// Correct
