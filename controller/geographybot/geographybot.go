@@ -321,8 +321,9 @@ func HandleGeographyCallback(bot *tgbotapi.BotAPI, chatID int64, userID int, use
 			repository.InsertWordleBonusDoc(userID, userName, chatID, client, "GeographyPoints", points)
 		}
 
-		successMsg := fmt.Sprintf("✅ *Correct, %s!*\n\nThe answer was *%s*.\nYou earned %d Geography points! 🌍\n\n_Use /geography to play again._", userName, correctAnswer, points)
-		view.SendMessage(bot, chatID, successMsg)
+		successMsg := fmt.Sprintf("✅ *Correct, %s!*\n\nThe answer was *%s*.\nYou earned %d Geography points! 🌍", userName, correctAnswer, points)
+		markup := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Play Again 🌍", "geography_start")))
+		view.SendMessageWithButtons(bot, chatID, successMsg, markup)
 
 	} else {
 		// Wrong
@@ -330,8 +331,9 @@ func HandleGeographyCallback(bot *tgbotapi.BotAPI, chatID int64, userID int, use
 		state.PendingNewGame = false
 		state.Unlock()
 
-		failMsg := fmt.Sprintf("❌ *Incorrect, %s!*\n\nThe correct answer was *%s*.\n\n_Use /geography to play again._", userName, correctAnswer)
-		view.SendMessage(bot, chatID, failMsg)
+		failMsg := fmt.Sprintf("❌ *Incorrect, %s!*\n\nThe correct answer was *%s*.", userName, correctAnswer)
+		markup := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Play Again 🌍", "geography_start")))
+		view.SendMessageWithButtons(bot, chatID, failMsg, markup)
 	}
 
 	saveGeographyStateAsync(chatID, state)
@@ -364,8 +366,9 @@ func HandleGuess(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.
 			repository.InsertWordleBonusDoc(message.From.ID, message.From.FirstName, chatID, client, "GeographyPoints", points)
 		}
 
-		successMsg := fmt.Sprintf("✅ *Correct, %s!*\n\nThe answer was *%s*.\nYou earned %d Geography points! 🌍\n\n_Use /geography to play again._", message.From.FirstName, correctAnswer, points)
-		view.SendMessage(bot, chatID, successMsg)
+		successMsg := fmt.Sprintf("✅ *Correct, %s!*\n\nThe answer was *%s*.\nYou earned %d Geography points! 🌍", message.From.FirstName, correctAnswer, points)
+		markup := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Play Again 🌍", "geography_start")))
+		view.SendMessageWithButtons(bot, chatID, successMsg, markup)
 
 		saveGeographyStateAsync(chatID, state)
 	} else {
