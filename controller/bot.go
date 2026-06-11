@@ -383,6 +383,19 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		case "leaderstatsglobal":
 			result := service.LeaderBoardList(client, "CrocEnLeader", 0)
 			view.SendMessagehtml(bot, message.Chat.ID, result)
+		case "collectibles":
+			if message.Chat.IsPrivate() {
+				collectibleController.ShowHub(bot, message.Chat.ID, message.From.ID, client)
+			} else {
+				botUsername := bot.Self.UserName
+				link := fmt.Sprintf("https://t.me/%s?start=collectibles", botUsername)
+				markup := tgbotapi.NewInlineKeyboardMarkup(
+					tgbotapi.NewInlineKeyboardRow(
+						tgbotapi.NewInlineKeyboardButtonURL("🌟 Go to Collectibles Hub", link),
+					),
+				)
+				view.SendMessageWithButtons(bot, message.Chat.ID, "Click the button below to visit the Collectibles Hub!", markup)
+			}
 		case "shop":
 			if message.Chat.IsPrivate() {
 				// Handle shop in DM
@@ -719,6 +732,19 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 	case "leaderstats":
 		result := service.LeaderBoardList(client, "CrocEnLeader", message.Chat.ID)
 		view.SendMessagehtml(bot, message.Chat.ID, result)
+	case "collectibles":
+		if message.Chat.IsPrivate() {
+			collectibleController.ShowHub(bot, message.Chat.ID, message.From.ID, client)
+		} else {
+			botUsername := bot.Self.UserName
+			link := fmt.Sprintf("https://t.me/%s?start=collectibles", botUsername)
+			markup := tgbotapi.NewInlineKeyboardMarkup(
+				tgbotapi.NewInlineKeyboardRow(
+					tgbotapi.NewInlineKeyboardButtonURL("🌟 Go to Collectibles Hub", link),
+				),
+			)
+			view.SendMessageWithButtons(bot, message.Chat.ID, "Click the button below to visit the Collectibles Hub!", markup)
+		}
 	case "shop":
 		if message.Chat.IsPrivate() {
 			// Handle shop in DM
