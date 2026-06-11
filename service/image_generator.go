@@ -14,6 +14,7 @@ import (
 
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/model/collectible"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/repository"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/fogleman/gg"
 	"github.com/golang/freetype/truetype"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -180,15 +181,21 @@ func GenerateLeaderboardImage(client *mongo.Client, collection string, chatID in
 	return buf.Bytes(), nil
 }
 
-// GenerateCollectibleImage fetches the background image from template.ImageURL
+// GenerateCollectibleImage fetches the background image from template.ImageURL (which is a Telegram file_id)
 // and overlays the serial number and owner name.
-func GenerateCollectibleImage(item collectible.Item, template collectible.Template, ownerName string) ([]byte, error) {
+func GenerateCollectibleImage(bot *tgbotapi.BotAPI, item collectible.Item, template collectible.Template, ownerName string) ([]byte, error) {
 	if template.ImageURL == "" {
-		return nil, fmt.Errorf("no image URL provided in template")
+		return nil, fmt.Errorf("no image URL (file_id) provided in template")
 	}
 
-	// 1. Fetch the background image
-	resp, err := http.Get(template.ImageURL)
+	// 1. Resolve the file_id to a direct download URL
+	directURL, err := bot.GetFileDirectURL(template.ImageURL)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get direct file url from telegram: %w", err)
+	}
+
+	// 2. Fetch the background image
+	resp, err := http.Get(directURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch image: %w", err)
 	}
