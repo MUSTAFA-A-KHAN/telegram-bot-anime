@@ -12,6 +12,7 @@ import (
 	"unicode"
 
 	collectibleController "github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/collectible"
+	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/geographybot"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/scramybot"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/wordlebot"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/model"
@@ -269,6 +270,8 @@ func StartBot(token string) error {
 	loadSavedCategoryChatStates(client)
 	wordlebot.LoadSavedStates(client)
 	scramybot.LoadSavedStates(client)
+	geographybot.LoadSavedStates(client)
+	geographybot.LoadGeographyData()
 
 	if err := wordlebot.LoadWordleWords(); err != nil {
 		log.Printf("Warning: failed to load Wordle words: %v", err)
@@ -402,6 +405,9 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			return
 		case "scramy":
 			scramybot.HandleScramyCommand(bot, chatID, message.From.FirstName)
+			return
+		case "geography":
+			geographybot.HandleGeographyCommand(bot, chatID, message.From.FirstName, client)
 			return
 		case "exportdata":
 			if message.From.ID != int(adminID) {
@@ -730,6 +736,10 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			scramybot.HandleGuess(bot, message, client, chatID, message.Text)
 		}
 
+		if geographybot.IsGeographyActive(chatID) {
+			geographybot.HandleGuess(bot, message, client, chatID, message.Text)
+		}
+
 		// Check user's guess in DM
 		chatState.RLock()
 		word := chatState.Word
@@ -849,6 +859,9 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		return
 	case "scramy":
 		scramybot.HandleScramyCommand(bot, chatID, message.From.FirstName)
+		return
+	case "geography":
+		geographybot.HandleGeographyCommand(bot, chatID, message.From.FirstName, client)
 		return
 	case "stats":
 		buttons := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Word Guess Group", "statsgroup_wordguess"), tgbotapi.NewInlineKeyboardButtonData("Wordle Group", "statsgroup_wordle")), tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Scramy Group", "statsgroup_scramy")))
@@ -1137,6 +1150,10 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			scramybot.HandleGuess(bot, message, client, chatID, message.Text)
 		}
 
+		if geographybot.IsGeographyActive(chatID) {
+			geographybot.HandleGuess(bot, message, client, chatID, message.Text)
+		}
+
 		chatState.RLock()
 		word := chatState.Word
 		user := chatState.User
@@ -1203,6 +1220,10 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 
 // handleCallbackQuery processes incoming callback queries and handles the "explain" action.
 func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery, client *mongo.Client) {
+	if strings.HasPrefix(callback.Data, "geo_ans_") {
+		geographybot.HandleGeographyCallback(bot, callback.Message.Chat.ID, callback.From.ID, callback.From.FirstName, callback.Data, callback.ID, callback.Message.MessageID, client)
+		return
+	}
 	if handleShopCallback(bot, callback, client) {
 		return
 	}
@@ -1645,6 +1666,13 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 			bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Cancelled new game request."))
 		} else {
 			bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "No pending game request to cancel."))
+		}
+		return
+	case "cancel_new_geography":
+		if geographybot.CancelPendingGame(bot, chatID, callback.From.FirstName) {
+			bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Cancelled new Geography game request."))
+		} else {
+			bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "No pending Geography game request to cancel."))
 		}
 		return
 	case "scramy_start":
