@@ -101,7 +101,7 @@ func handleBuyPack(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery, clien
 	)
 
 	if template.ImageURL != "" {
-		imgBytes, err := service.GenerateCollectibleImage(item, template, callback.From.FirstName)
+		imgBytes, err := service.GenerateCollectibleImage(bot, item, template, callback.From.FirstName)
 		if err == nil {
 			photo := tgbotapi.NewPhotoUpload(callback.Message.Chat.ID, tgbotapi.FileBytes{Name: "card.png", Bytes: imgBytes})
 			photo.Caption = text
