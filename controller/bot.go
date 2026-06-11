@@ -1451,13 +1451,6 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 			bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "No pending game request to cancel."))
 		}
 		return
-	case "cancel_new_geography":
-		if geographybot.CancelPendingGame(bot, chatID, callback.From.FirstName) {
-			bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Cancelled new Geography game request."))
-		} else {
-			bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "No pending Geography game request to cancel."))
-		}
-		return
 	case "scramy_start":
 		scramybot.HandleScramyCommand(bot, chatID, callback.From.FirstName)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Scramy Started!"))
