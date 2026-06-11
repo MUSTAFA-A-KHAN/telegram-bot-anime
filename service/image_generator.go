@@ -270,6 +270,39 @@ func GenerateCollectibleImage(bot *tgbotapi.BotAPI, item collectible.Item, templ
 	dc.SetColor(color.White)
 	dc.DrawStringAnchored(ownerText, rectWidth2/2, boxY + rectHeight2/2, 0.5, 0.5)
 
+	// Draw Rarity overlay (Bottom Right)
+	rarityText := string(template.Rarity)
+	w3, h3 := dc.MeasureString(rarityText)
+
+	rectWidth3 := w3 + paddingX*2
+	rectHeight3 := h3 + paddingY*2
+
+	rarityBoxX := float64(width) - rectWidth3
+	rarityBoxY := float64(height) - rectHeight3
+
+	// Blue/Dark box for Rarity
+	dc.SetColor(color.RGBA{R: 20, G: 30, B: 60, A: 200})
+	dc.DrawRoundedRectangle(rarityBoxX, rarityBoxY, rectWidth3, rectHeight3, rectHeight3*0.2)
+	dc.Fill()
+
+	// Try to match color based on Rarity, default to White
+	var rarityColor color.Color = color.White
+	switch template.Rarity {
+	case collectible.RarityCommon:
+		rarityColor = color.RGBA{R: 200, G: 200, B: 200, A: 255} // Gray
+	case collectible.RarityUncommon:
+		rarityColor = color.RGBA{R: 50, G: 205, B: 50, A: 255} // Green
+	case collectible.RarityRare:
+		rarityColor = color.RGBA{R: 30, G: 144, B: 255, A: 255} // Blue
+	case collectible.RarityEpic:
+		rarityColor = color.RGBA{R: 138, G: 43, B: 226, A: 255} // Purple
+	case collectible.RarityLegendary:
+		rarityColor = color.RGBA{R: 255, G: 215, B: 0, A: 255} // Gold
+	}
+
+	dc.SetColor(rarityColor)
+	dc.DrawStringAnchored(rarityText, rarityBoxX + rectWidth3/2, rarityBoxY + rectHeight3/2, 0.5, 0.5)
+
 	buf := new(bytes.Buffer)
 	if err := dc.EncodePNG(buf); err != nil {
 		return nil, fmt.Errorf("failed to encode resulting image: %w", err)
