@@ -21,15 +21,15 @@ import (
 
 // GeographyStateDoc is the MongoDB-serializable version of GeographyState
 type GeographyStateDoc struct {
-	ChatID         int64    `bson:"_id"`
-	Active         bool     `bson:"active"`
-	QuestionType   string   `bson:"question_type"`
-	TargetCountry  string   `bson:"target_country"`
-	TargetAnswer   string   `bson:"target_answer"`
-	Options        []string `bson:"options"`
-	Attempts       int      `bson:"attempts"`
-	MaxAttempts    int      `bson:"max_attempts"`
-	PendingNewGame bool     `bson:"pending_new_game"`
+	ChatID         int64          `bson:"_id"`
+	Active         bool           `bson:"active"`
+	QuestionType   string         `bson:"question_type"`
+	TargetCountry  string         `bson:"target_country"`
+	TargetAnswer   string         `bson:"target_answer"`
+	Options        []string       `bson:"options"`
+	UserAttempts   map[string]int `bson:"user_attempts"`
+	MaxAttempts    int            `bson:"max_attempts"`
+	PendingNewGame bool           `bson:"pending_new_game"`
 }
 
 // GeographyState holds the state for a Geography game in a specific chat.
@@ -40,7 +40,7 @@ type GeographyState struct {
 	TargetCountry  string
 	TargetAnswer   string
 	Options        []string
-	Attempts       int
+	UserAttempts   map[int64]int
 	MaxAttempts    int
 	PendingNewGame bool
 	CancelChan     chan bool
@@ -54,6 +54,11 @@ var (
 // saveGeographyStateAsync asynchronously saves the Geography state to MongoDB
 func saveGeographyStateAsync(chatID int64, state *GeographyState) {
 	state.RLock()
+	userAttemptsDoc := make(map[string]int)
+	for userID, attempts := range state.UserAttempts {
+		userAttemptsDoc[fmt.Sprintf("%d", userID)] = attempts
+	}
+
 	doc := GeographyStateDoc{
 		ChatID:         chatID,
 		Active:         state.Active,
@@ -61,7 +66,7 @@ func saveGeographyStateAsync(chatID int64, state *GeographyState) {
 		TargetCountry:  state.TargetCountry,
 		TargetAnswer:   state.TargetAnswer,
 		Options:        state.Options,
-		Attempts:       state.Attempts,
+		UserAttempts:   userAttemptsDoc,
 		MaxAttempts:    state.MaxAttempts,
 		PendingNewGame: state.PendingNewGame,
 	}
@@ -88,13 +93,20 @@ func LoadSavedStates(client *mongo.Client) {
 	defer geographyMutex.Unlock()
 
 	for _, doc := range results {
+		userAttempts := make(map[int64]int)
+		for strUserID, attempts := range doc.UserAttempts {
+			var userID int64
+			fmt.Sscanf(strUserID, "%d", &userID)
+			userAttempts[userID] = attempts
+		}
+
 		gs := &GeographyState{
 			Active:         doc.Active,
 			QuestionType:   doc.QuestionType,
 			TargetCountry:  doc.TargetCountry,
 			TargetAnswer:   doc.TargetAnswer,
 			Options:        doc.Options,
-			Attempts:       doc.Attempts,
+			UserAttempts:   userAttempts,
 			MaxAttempts:    doc.MaxAttempts,
 			PendingNewGame: doc.PendingNewGame,
 			CancelChan:     make(chan bool, 1),
@@ -329,7 +341,7 @@ func startNewRound(bot *tgbotapi.BotAPI, chatID int64, client *mongo.Client) {
 	state.TargetAnswer = answer
 	state.QuestionType = qType
 	state.Options = options
-	state.Attempts = 0
+	state.UserAttempts = make(map[int64]int)
 	if isTextMode {
 		state.MaxAttempts = 5 // 5 attempts for text mode
 	} else {
@@ -457,6 +469,18 @@ func HandleGuess(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.
 	}
 
 	correctAnswer := state.TargetAnswer
+
+	settings := GetChatSettings(chatID, client)
+	isTextMode := settings.GeographyMode == "text"
+	userID := int64(message.From.ID)
+
+	if isTextMode {
+		if state.UserAttempts[userID] >= state.MaxAttempts {
+			state.Unlock()
+			return // User already reached max attempts, ignore
+		}
+	}
+
 	if strings.EqualFold(strings.TrimSpace(text), correctAnswer) {
 		state.Active = false
 		state.PendingNewGame = true
@@ -473,21 +497,19 @@ func HandleGuess(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.
 
 		saveGeographyStateAsync(chatID, state)
 	} else {
-		settings := GetChatSettings(chatID, client)
-		if settings.GeographyMode == "text" {
-			state.Attempts++
-			if state.Attempts >= state.MaxAttempts {
-				state.Active = false
-				state.PendingNewGame = false
-				state.Unlock()
+		if isTextMode {
+			attempts := state.UserAttempts[userID]
+			state.UserAttempts[userID] = attempts + 1
 
-				failMsg := fmt.Sprintf("❌ *Incorrect, %s!*\n\nYou've used all %d attempts.\nThe correct answer was *%s*.", message.From.FirstName, state.MaxAttempts, correctAnswer)
-				markup := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Play Again 🌍", "geography_start")))
-				view.SendMessageWithButtons(bot, chatID, failMsg, markup)
+			if state.UserAttempts[userID] >= state.MaxAttempts {
+				state.Unlock()
+				failMsg := fmt.Sprintf("❌ *Incorrect, %s!*\n\nYou've used all %d attempts.", message.From.FirstName, state.MaxAttempts)
+				view.SendMessage(bot, chatID, failMsg)
 				saveGeographyStateAsync(chatID, state)
 				return
 			}
-			attemptsLeft := state.MaxAttempts - state.Attempts
+
+			attemptsLeft := state.MaxAttempts - state.UserAttempts[userID]
 			state.Unlock()
 			saveGeographyStateAsync(chatID, state)
 
