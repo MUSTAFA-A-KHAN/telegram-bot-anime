@@ -390,7 +390,7 @@ func startNewRound(bot *tgbotapi.BotAPI, chatID int64, client *mongo.Client) {
 		if !isTextMode {
 			view.SendMessageWithButtons(bot, chatID, question, markup)
 		} else {
-			view.SendMessage(bot, chatID, question)
+			view.SendMessageMarkdown(bot, chatID, question)
 		}
 	}
 }
