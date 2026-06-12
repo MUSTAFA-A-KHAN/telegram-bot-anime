@@ -60,6 +60,8 @@ func LeaderBoardListButtons(client *mongo.Client, collection string, chatID int6
 			score += " 🪙"
 		} else if collection == "ScramyEn" {
 			score += " 💎"
+		} else if collection == "GeographyPoints" {
+			score += " 🌍"
 		}
 
 		rankDisplay := fmt.Sprintf("%d", i+1)
@@ -89,6 +91,7 @@ func LeaderBoardListButtons(client *mongo.Client, collection string, chatID int6
 	wordGuessLabel := "Word Guess"
 	wordleLabel := "Wordle"
 	scramyLabel := "Scramy"
+	geographyLabel := "Geography"
 
 	if strings.HasSuffix(callbackData, "wordguess") {
 		wordGuessLabel = "✅ " + wordGuessLabel
@@ -96,6 +99,8 @@ func LeaderBoardListButtons(client *mongo.Client, collection string, chatID int6
 		wordleLabel = "✅ " + wordleLabel
 	} else if strings.HasSuffix(callbackData, "scramy") {
 		scramyLabel = "✅ " + scramyLabel
+	} else if strings.HasSuffix(callbackData, "geography") {
+		geographyLabel = "✅ " + geographyLabel
 	}
 
 	var navPrefix string
@@ -104,11 +109,13 @@ func LeaderBoardListButtons(client *mongo.Client, collection string, chatID int6
 		wordGuessLabel += " Global"
 		wordleLabel += " Global"
 		scramyLabel += " Global"
+		geographyLabel += " Global"
 	} else {
 		navPrefix = "statsgroup_"
 		wordGuessLabel += " Group"
 		wordleLabel += " Group"
 		scramyLabel += " Group"
+		geographyLabel += " Group"
 	}
 
 	navRow1 := []view.CustomInlineKeyboardButton{
@@ -117,6 +124,7 @@ func LeaderBoardListButtons(client *mongo.Client, collection string, chatID int6
 	}
 	navRow2 := []view.CustomInlineKeyboardButton{
 		{Text: scramyLabel, CallbackData: navPrefix + "scramy"},
+		{Text: geographyLabel, CallbackData: navPrefix + "geography"},
 	}
 
 	buttons = append(buttons, navRow1)

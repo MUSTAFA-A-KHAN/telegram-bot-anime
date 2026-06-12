@@ -214,7 +214,7 @@ func CountIDOccurrences(client *mongo.Client, collection string, chatID int64) (
 			{Key: "count", Value: bson.D{{Key: "$sum", Value: bson.D{{Key: "$ifNull", Value: bson.A{"$Points", 25}}}}}},
 			{Key: "Name", Value: bson.D{{Key: "$first", Value: "$Name"}}},
 		}}}
-	} else if collection == "ScramyEn" {
+	} else if collection == "ScramyEn" || collection == "GeographyPoints" {
 		groupStage = bson.D{{"$group", bson.D{
 			{Key: "_id", Value: "$ID"},
 			{Key: "count", Value: bson.D{{Key: "$sum", Value: "$Points"}}},
@@ -311,7 +311,7 @@ func GetUserStatsByID(client *mongo.Client, collection string, userID int) (map[
 			{Key: "count", Value: bson.D{{Key: "$sum", Value: bson.D{{Key: "$ifNull", Value: bson.A{"$Points", 25}}}}}},
 			{Key: "Name", Value: bson.D{{Key: "$first", Value: "$Name"}}},
 		}}}
-	} else if collection == "ScramyEn" {
+	} else if collection == "ScramyEn" || collection == "GeographyPoints" {
 		groupStage = bson.D{{"$group", bson.D{
 			{Key: "_id", Value: "$ID"},
 			{Key: "count", Value: bson.D{{Key: "$sum", Value: "$Points"}}},

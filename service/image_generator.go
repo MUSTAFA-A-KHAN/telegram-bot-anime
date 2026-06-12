@@ -116,6 +116,8 @@ func GenerateLeaderboardImage(client *mongo.Client, collection string, chatID in
 				score += " pts"
 			} else if collection == "ScramyEn" {
 				score += " pts"
+			} else if collection == "GeographyPoints" {
+				score += " pts"
 			}
 
 			rankDisplay := fmt.Sprintf("#%d", i+1)
