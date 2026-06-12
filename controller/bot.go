@@ -722,9 +722,20 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			),
 			tgbotapi.NewInlineKeyboardRow(
 				tgbotapi.NewInlineKeyboardButtonData("Scramy Letters 🔠", "setting_scramy_letters"),
+				tgbotapi.NewInlineKeyboardButtonData("Geography Mode 🌍", "setting_geography_mode"),
 			),
 		)
 		view.SendMessageWithButtons(bot, message.Chat.ID, "⚙️ **Settings**\nChoose a setting to configure:", buttons)
+	case "geosettings":
+		buttons := tgbotapi.NewInlineKeyboardMarkup(
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("MCQ Mode (Multiple Choice)", "setting_geo_mode_mcq"),
+			),
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("Text Guess Mode", "setting_geo_mode_text"),
+			),
+		)
+		view.SendMessageWithButtons(bot, message.Chat.ID, "⚙️ *Geography Mode*\nChoose how you want to play Geography:\n- *MCQ Mode*: Buttons to select the answer.\n- *Text Guess Mode*: Type out your guess (5 attempts).", buttons)
 	case "stats":
 		buttons := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Word Guess Group", "statsgroup_wordguess"), tgbotapi.NewInlineKeyboardButtonData("Wordle Group", "statsgroup_wordle")), tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Scramy Group", "statsgroup_scramy")))
 		view.SendMessageWithButtons(bot, chatID, "🐊🇮🇳\n📊 Choose group stats to view:", buttons)
@@ -1215,6 +1226,51 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		bot.Send(editMsg)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
 		return
+	case "setting_geography_mode":
+		buttons := tgbotapi.NewInlineKeyboardMarkup(
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("MCQ Mode (Multiple Choice)", "setting_geo_mode_mcq"),
+			),
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("Text Guess Mode", "setting_geo_mode_text"),
+			),
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("🔙 Back", "settings_main"),
+			),
+		)
+		editMsg := tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, "⚙️ *Geography Mode*\nChoose how you want to play Geography:\n- *MCQ Mode*: Buttons to select the answer.\n- *Text Guess Mode*: Type out your guess (5 attempts).")
+		editMsg.ReplyMarkup = &buttons
+		editMsg.ParseMode = tgbotapi.ModeMarkdown
+		bot.Send(editMsg)
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
+		return
+	case "setting_geo_mode_mcq", "setting_geo_mode_text":
+		mode := "mcq"
+		if callback.Data == "setting_geo_mode_text" {
+			mode = "text"
+		}
+		err := geographybot.UpdateGeographyMode(chatID, mode, client)
+		if err != nil {
+			log.Printf("Failed to update geography mode: %v", err)
+			bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Failed to update setting."))
+			return
+		}
+		modeStr := "MCQ Mode"
+		if mode == "text" {
+			modeStr = "Text Guess Mode"
+		}
+
+		buttons := tgbotapi.NewInlineKeyboardMarkup(
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("🔙 Back to Settings", "settings_main"),
+			),
+		)
+		editMsg := tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, fmt.Sprintf("✅ *Geography mode updated to %s!*", modeStr))
+		editMsg.ReplyMarkup = &buttons
+		editMsg.ParseMode = tgbotapi.ModeMarkdown
+		bot.Send(editMsg)
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Settings saved!"))
+		return
 	case "setting_scramy_letters":
 		buttons := tgbotapi.NewInlineKeyboardMarkup(
 			tgbotapi.NewInlineKeyboardRow(
@@ -1294,6 +1350,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 			),
 			tgbotapi.NewInlineKeyboardRow(
 				tgbotapi.NewInlineKeyboardButtonData("Scramy Letters 🔠", "setting_scramy_letters"),
+				tgbotapi.NewInlineKeyboardButtonData("Geography Mode 🌍", "setting_geography_mode"),
 			),
 		)
 		editMsg := tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, "⚙️ *Settings*\nChoose a setting to configure:")
