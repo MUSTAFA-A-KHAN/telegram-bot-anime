@@ -194,7 +194,8 @@ func HandleGeographyCommand(bot *tgbotapi.BotAPI, chatID int64, userName string,
 	state.Lock()
 	if state.Active {
 		state.Unlock()
-		view.SendMessage(bot, chatID, "A Geography game is already active! Answer the current question or wait for it to finish.")
+		msg, _ := view.SendMessage(bot, chatID, "A Geography game is already active! Answer the current question or wait for it to finish.")
+		view.DeleteMessageAfterDelay(bot, chatID, msg.MessageID, 2*time.Second)
 		return
 	}
 	state.PendingNewGame = false
@@ -234,7 +235,7 @@ func startNewRound(bot *tgbotapi.BotAPI, chatID int64, client *mongo.Client) {
 
 		// Fetch image
 		// resp, err := http.Get(targetLandmark.ImageURL)
-client := &http.Client{}
+		client := &http.Client{}
 
 		req, _ := http.NewRequest("GET", targetLandmark.ImageURL, nil)
 		req.Header.Set(
@@ -352,7 +353,12 @@ client := &http.Client{}
 		photoMsg.Caption = question
 		photoMsg.ParseMode = "Markdown"
 		photoMsg.ReplyMarkup = markup
-		bot.Send(photoMsg)
+		_, err := SafeSend(bot, photoMsg, "")
+		if err != nil {
+			log.Printf("Failed to send landmark question: %v", err)
+			// Fallback to text question if image fails
+			view.SendMessageWithButtons(bot, chatID, question, markup)
+		}
 	} else {
 		view.SendMessageWithButtons(bot, chatID, question, markup)
 	}
@@ -381,7 +387,10 @@ func HandleGeographyCallback(bot *tgbotapi.BotAPI, chatID int64, userID int, use
 
 	// Update UI to remove buttons by updating only the reply markup
 	editMarkup := tgbotapi.NewEditMessageReplyMarkup(chatID, messageID, tgbotapi.InlineKeyboardMarkup{InlineKeyboard: make([][]tgbotapi.InlineKeyboardButton, 0)})
-	bot.Send(editMarkup)
+	_, err := SafeSend(bot, editMarkup, callbackQueryID)
+	if err != nil {
+		log.Printf("Failed to edit message reply markup: %v", err)
+	}
 
 	if strings.EqualFold(userAnswer, correctAnswer) {
 		// Correct
@@ -464,4 +473,63 @@ func CancelGeography(chatID int64) bool {
 
 	saveGeographyStateAsync(chatID, state)
 	return true
+}
+
+func SafeSend(
+	bot *tgbotapi.BotAPI,
+	c tgbotapi.Chattable,
+	callbackQueryID string,
+) (tgbotapi.Message, error) {
+
+	var msg tgbotapi.Message
+
+	for attempt := 0; attempt < 3; attempt++ {
+
+		sentMsg, err := bot.Send(c)
+		if err == nil {
+			return sentMsg, nil
+		}
+
+		msg = sentMsg
+
+		log.Printf(
+			"Telegram send failed (attempt %d/3): %v",
+			attempt+1,
+			err,
+		)
+
+		// Handle Telegram rate limit
+		if apiErr, ok := err.(*tgbotapi.Error); ok {
+
+			retryAfter := apiErr.ResponseParameters.RetryAfter
+
+			if retryAfter > 0 {
+
+				log.Printf(
+					"Rate limited by Telegram. Waiting %d seconds...",
+					retryAfter,
+				)
+
+				if callbackQueryID != "" {
+					_, _ = bot.AnswerCallbackQuery(
+						tgbotapi.NewCallback(
+							callbackQueryID,
+							fmt.Sprintf(
+								"Please wait %d seconds and try again.",
+								retryAfter,
+							),
+						),
+					)
+				}
+
+				time.Sleep(time.Duration(retryAfter) * time.Second)
+				continue
+			}
+		}
+
+		// Non-rate-limit error
+		return msg, err
+	}
+
+	return msg, fmt.Errorf("max retries exceeded")
 }

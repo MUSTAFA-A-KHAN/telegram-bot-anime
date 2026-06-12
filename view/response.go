@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"strconv"
+	"time"
 
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/model"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
@@ -204,4 +206,13 @@ func EditMessageMediaWithButtons(bot *tgbotapi.BotAPI, chatID int64, messageID i
 
 	_, err = bot.MakeRequest("editMessageMedia", params)
 	return err
+}
+func DeleteMessageAfterDelay(bot *tgbotapi.BotAPI, chatID int64, messageID int, delay time.Duration) {
+	time.Sleep(1 * time.Second)
+	deleteMsg := tgbotapi.NewDeleteMessage(chatID, messageID)
+	_, err := bot.DeleteMessage(deleteMsg)
+	if err != nil {
+		log.Printf("Failed to delete message: %v", err)
+	}
+
 }

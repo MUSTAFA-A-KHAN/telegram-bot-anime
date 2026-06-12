@@ -860,6 +860,12 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 	case "geography":
 		geographybot.HandleGeographyCommand(bot, chatID, message.From.FirstName, client)
 		return
+	case "cancelgeo":
+		if geographybot.CancelGeography(chatID) {
+			view.SendMessage(bot, chatID, "Geography game cancelled.")
+		} else {
+			view.SendMessage(bot, chatID, "No active Geography game.")
+		}
 	case "word":
 		chatState.RLock()
 		wordEmpty := chatState.Word == ""
@@ -957,7 +963,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		chatState.LastHintTimestamp = time.Now()
 		chatState.LastHintTypeSent = 1 - lastHintType
 		chatState.Unlock()
-			saveChatStateAsync(chatID, chatState)
+		saveChatStateAsync(chatID, chatState)
 	case "reveal":
 		chatState.RLock()
 		word := chatState.Word
@@ -1491,7 +1497,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 			word, err := model.GetRandomWord()
 			if err != nil {
 				chatState.Unlock()
-			saveChatStateAsync(chatID, chatState)
+				saveChatStateAsync(chatID, chatState)
 				return
 			}
 			customWordLink := fmt.Sprintf("https://t.me/%s?start=custom_word_%d", bot.Self.UserName, chatID)
@@ -1534,7 +1540,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		chatState.Leader = callback.From.FirstName
 		chatState.LeadTimestamp = time.Now()
 		chatState.Unlock()
-			saveChatStateAsync(chatID, chatState)
+		saveChatStateAsync(chatID, chatState)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, chatState.Word))
 
 	case "next":
@@ -1573,7 +1579,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 			log.Printf("Failed to delete message on droplead: %v", err)
 		}
 		chatState.Unlock()
-			saveChatStateAsync(chatID, chatState)
+		saveChatStateAsync(chatID, chatState)
 		buttons := createSingleButtonKeyboard("🌟 Claim Leadership 🙋", "explain")
 		view.SendMessageWithButtons(bot, callback.Message.Chat.ID, fmt.Sprintf("%s refused to lead -> %s \n", callback.From.FirstName, chatState.Word), buttons)
 		chatState.reset(chatID)
@@ -1601,7 +1607,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 				chatState.LastHintTimestamp = time.Time{}
 				chatState.LastHintTypeSent = 0
 				chatState.Unlock()
-			saveChatStateAsync(chatID, chatState)
+				saveChatStateAsync(chatID, chatState)
 			} else {
 				buttons := createMultiButtonKeyboard([][]string{
 					{" 🗣️ Explain ", "explain"},
@@ -1648,7 +1654,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		chatState.LastHintTimestamp = time.Now()
 		chatState.LastHintTypeSent = 1 - lastHintType
 		chatState.Unlock()
-			saveChatStateAsync(chatID, chatState)
+		saveChatStateAsync(chatID, chatState)
 
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
 	default:
