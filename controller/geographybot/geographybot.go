@@ -233,7 +233,17 @@ func startNewRound(bot *tgbotapi.BotAPI, chatID int64, client *mongo.Client) {
 		question = fmt.Sprintf("🌎 *Geography Mode*\n\nWhich country is this landmark (%s) located in?", targetLandmark.Name)
 
 		// Fetch image
-		resp, err := http.Get(targetLandmark.ImageURL)
+		// resp, err := http.Get(targetLandmark.ImageURL)
+client := &http.Client{}
+
+		req, _ := http.NewRequest("GET", targetLandmark.ImageURL, nil)
+		req.Header.Set(
+			"User-Agent",
+			"CrocoRebirthBot/1.0",
+		)
+
+		resp, err := client.Do(req)
+
 		if err == nil {
 			defer resp.Body.Close()
 			targetImageBytes, _ = ioutil.ReadAll(resp.Body)
@@ -437,4 +447,21 @@ func HandleGuess(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.
 	} else {
 		state.Unlock()
 	}
+}
+func CancelGeography(chatID int64) bool {
+	geographyMutex.RLock()
+	state, exists := geographyStates[chatID]
+	geographyMutex.RUnlock()
+
+	if !exists {
+		return false
+	}
+
+	state.Lock()
+	state.Active = false
+	state.PendingNewGame = false
+	state.Unlock()
+
+	saveGeographyStateAsync(chatID, state)
+	return true
 }
