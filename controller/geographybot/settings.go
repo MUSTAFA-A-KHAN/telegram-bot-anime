@@ -26,7 +26,9 @@ func GetChatSettings(chatID int64, client *mongo.Client) *ChatSettings {
 	settingsMutex.RUnlock()
 
 	if ok {
-		return settings
+		// Return a copy to prevent data races on concurrent field reads/writes
+		copySettings := *settings
+		return &copySettings
 	}
 
 	// Default settings
@@ -47,7 +49,9 @@ func GetChatSettings(chatID int64, client *mongo.Client) *ChatSettings {
 	}
 
 	settingsMutex.Lock()
-	settingsCache[chatID] = settings
+	// Store a copy in the cache
+	cacheSettings := *settings
+	settingsCache[chatID] = &cacheSettings
 	settingsMutex.Unlock()
 
 	return settings
@@ -55,10 +59,12 @@ func GetChatSettings(chatID int64, client *mongo.Client) *ChatSettings {
 
 func UpdateGeographyMode(chatID int64, mode string, client *mongo.Client) error {
 	settings := GetChatSettings(chatID, client)
+	settings.GeographyMode = mode
 
 	settingsMutex.Lock()
-	settings.GeographyMode = mode
-	settingsCache[chatID] = settings
+	// Store a copy in the cache
+	cacheSettings := *settings
+	settingsCache[chatID] = &cacheSettings
 	settingsMutex.Unlock()
 
 	if client != nil {
