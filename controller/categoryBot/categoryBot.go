@@ -409,6 +409,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		case "geography":
 			geographybot.HandleGeographyCommand(bot, chatID, message.From.FirstName, client)
 			return
+
 		case "cancelgeo":
 			if geographybot.CancelGeography(chatID) {
 				view.SendMessage(bot, chatID, "Geography game cancelled.")
@@ -881,6 +882,12 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 	case "geography":
 		geographybot.HandleGeographyCommand(bot, chatID, message.From.FirstName, client)
 		return
+	case "cancelgeo":
+		if geographybot.CancelGeography(chatID) {
+			view.SendMessage(bot, chatID, "Geography game cancelled.")
+		} else {
+			view.SendMessage(bot, chatID, "No active Geography game.")
+		}
 	case "stats":
 		buttons := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Word Guess Group", "statsgroup_wordguess"), tgbotapi.NewInlineKeyboardButtonData("Wordle Group", "statsgroup_wordle")), tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Scramy Group", "statsgroup_scramy")))
 		view.SendMessageWithButtons(bot, chatID, "🐊🇮🇳\n📊 Choose group stats to view:", buttons)
