@@ -1305,6 +1305,8 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		scramybot.UpdateScramyLetterView(chatID, "squared", client)
 		editMsg := tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, "✅ Scramy letters updated to **Squared**.")
 		editMsg.ParseMode = tgbotapi.ModeMarkdown
+		buttons := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("🔙 Back to Settings", "settings_main")))
+		editMsg.ReplyMarkup = &buttons
 		bot.Send(editMsg)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Scramy set to Squared"))
 		return
@@ -1312,6 +1314,8 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		scramybot.UpdateScramyLetterView(chatID, "normal", client)
 		editMsg := tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, "✅ Scramy letters updated to **Normal**.")
 		editMsg.ParseMode = tgbotapi.ModeMarkdown
+		buttons := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("🔙 Back to Settings", "settings_main")))
+		editMsg.ReplyMarkup = &buttons
 		bot.Send(editMsg)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Scramy set to Normal"))
 		return
@@ -1437,6 +1441,8 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		wordlebot.UpdateWordleViewType(chatID, "text", client)
 		editMsg := tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, "✅ Wordle view updated to **Text**.")
 		editMsg.ParseMode = tgbotapi.ModeMarkdown
+		buttons := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("🔙 Back to Settings", "settings_main")))
+		editMsg.ReplyMarkup = &buttons
 		bot.Send(editMsg)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "View set to Text"))
 		return
@@ -1444,6 +1450,8 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		wordlebot.UpdateWordleViewType(chatID, "image", client)
 		editMsg := tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, "✅ Wordle view updated to **Image**.")
 		editMsg.ParseMode = tgbotapi.ModeMarkdown
+		buttons := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("🔙 Back to Settings", "settings_main")))
+		editMsg.ReplyMarkup = &buttons
 		bot.Send(editMsg)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "View set to Image"))
 		return
@@ -1451,6 +1459,8 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		wordlebot.UpdateWordleColor(chatID, "classic", client)
 		editMsg := tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, "✅ Wordle color updated to **Classic** (🟥).")
 		editMsg.ParseMode = tgbotapi.ModeMarkdown
+		buttons := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("🔙 Back to Settings", "settings_main")))
+		editMsg.ReplyMarkup = &buttons
 		bot.Send(editMsg)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Color set to Classic"))
 		return
@@ -1458,6 +1468,8 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		wordlebot.UpdateWordleColor(chatID, "dark", client)
 		editMsg := tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, "✅ Wordle color updated to **Dark** (⬛).")
 		editMsg.ParseMode = tgbotapi.ModeMarkdown
+		buttons := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("🔙 Back to Settings", "settings_main")))
+		editMsg.ReplyMarkup = &buttons
 		bot.Send(editMsg)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Color set to Dark"))
 		return
@@ -1465,6 +1477,8 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		wordlebot.UpdateWordleColor(chatID, "light", client)
 		editMsg := tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, "✅ Wordle color updated to **Light** (⬜).")
 		editMsg.ParseMode = tgbotapi.ModeMarkdown
+		buttons := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("🔙 Back to Settings", "settings_main")))
+		editMsg.ReplyMarkup = &buttons
 		bot.Send(editMsg)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Color set to Light"))
 		return

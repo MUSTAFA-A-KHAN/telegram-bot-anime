@@ -4,3 +4,8 @@
 
 **Action:** Ensure all multi-level inline keyboard menus have a "🔙 Back" button to smoothly return to the previous level without abandoning the menu structure entirely.
 ## 2026-06-10 - Add ForceReply to User Prompts\n**Learning:** To prompt users for specific textual input (e.g., asking for a price or value), using a standard message can be confusing. Using `tgbotapi.ForceReply{ForceReply: true}` automatically opens their keyboard and sets their message as a reply, improving the UX and clarifying intent.\n**Action:** When intercepting user input in a conversation flow, attach `ForceReply` to the prompt message to explicitly guide the user to reply.
+## 2024-05-18 - Added Back Buttons to Terminal Settings Prompts
+
+**Learning:** When users update a setting from a main sub-menu (e.g., selecting Wordle color "Classic"), the resulting confirmation message ("✅ Wordle color updated to Classic") often strips away the inline keyboard, stranding the user. They must manually dismiss the message and re-invoke the settings menu to continue customizing.
+
+**Action:** Ensure all multi-level inline keyboard menus, especially terminal confirmation messages indicating a successful state change, always include a "🔙 Back" button (or "🔙 Back to Settings") to smoothly return the user to the previous level without abandoning the menu structure entirely.
