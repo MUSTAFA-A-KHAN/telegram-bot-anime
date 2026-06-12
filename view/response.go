@@ -47,6 +47,12 @@ func SendMessage(bot *tgbotapi.BotAPI, chatID int64, text string) (tgbotapi.Mess
 	res, err := bot.Send(msg)
 	return res, err
 }
+func SendMessageMarkdown(bot *tgbotapi.BotAPI, chatID int64, text string) (tgbotapi.Message, error) {
+	msg := tgbotapi.NewMessage(chatID, text)
+	msg.ParseMode = tgbotapi.ModeMarkdown
+	res, err := bot.Send(msg)
+	return res, err
+}
 
 // Only works  with telegram premium accounts and the effect ID must be valid and available to the bot. If the effect ID is invalid or not available, the message will be sent without the effect.
 func SendMessageWithEffectID(bot *tgbotapi.BotAPI, chatID int64, text string, effectID string) (tgbotapi.Message, error) {
