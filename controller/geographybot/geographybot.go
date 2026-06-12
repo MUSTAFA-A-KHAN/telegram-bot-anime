@@ -320,6 +320,9 @@ func startNewRound(bot *tgbotapi.BotAPI, chatID int64, client *mongo.Client) {
 	state := geographyStates[chatID]
 	geographyMutex.RUnlock()
 
+	settings := GetChatSettings(chatID, client)
+	isTextMode := settings.GeographyMode == "text"
+
 	state.Lock()
 	state.Active = true
 	state.TargetCountry = targetCountryName
@@ -327,40 +330,56 @@ func startNewRound(bot *tgbotapi.BotAPI, chatID int64, client *mongo.Client) {
 	state.QuestionType = qType
 	state.Options = options
 	state.Attempts = 0
-	state.MaxAttempts = 1 // 1 attempt for MCQ
+	if isTextMode {
+		state.MaxAttempts = 5 // 5 attempts for text mode
+	} else {
+		state.MaxAttempts = 1 // 1 attempt for MCQ
+	}
 	state.Unlock()
 
 	saveGeographyStateAsync(chatID, state)
 
-	// Send Question with Inline Buttons
-	var keyboard [][]tgbotapi.InlineKeyboardButton
-	// 2 buttons per row
-	for i := 0; i < len(options); i += 2 {
-		var row []tgbotapi.InlineKeyboardButton
-		btn1 := tgbotapi.NewInlineKeyboardButtonData(options[i], "geo_ans_"+options[i])
-		row = append(row, btn1)
-		if i+1 < len(options) {
-			btn2 := tgbotapi.NewInlineKeyboardButtonData(options[i+1], "geo_ans_"+options[i+1])
-			row = append(row, btn2)
+	// Send Question with Inline Buttons if MCQ, otherwise just text
+	var markup tgbotapi.InlineKeyboardMarkup
+	if !isTextMode {
+		var keyboard [][]tgbotapi.InlineKeyboardButton
+		// 2 buttons per row
+		for i := 0; i < len(options); i += 2 {
+			var row []tgbotapi.InlineKeyboardButton
+			btn1 := tgbotapi.NewInlineKeyboardButtonData(options[i], "geo_ans_"+options[i])
+			row = append(row, btn1)
+			if i+1 < len(options) {
+				btn2 := tgbotapi.NewInlineKeyboardButtonData(options[i+1], "geo_ans_"+options[i+1])
+				row = append(row, btn2)
+			}
+			keyboard = append(keyboard, row)
 		}
-		keyboard = append(keyboard, row)
+		markup = tgbotapi.NewInlineKeyboardMarkup(keyboard...)
 	}
-
-	markup := tgbotapi.NewInlineKeyboardMarkup(keyboard...)
 
 	if qType == "landmark" && len(targetImageBytes) > 0 {
 		photoMsg := tgbotapi.NewPhotoUpload(chatID, tgbotapi.FileBytes{Name: "landmark.jpg", Bytes: targetImageBytes})
 		photoMsg.Caption = question
 		photoMsg.ParseMode = "Markdown"
-		photoMsg.ReplyMarkup = markup
+		if !isTextMode {
+			photoMsg.ReplyMarkup = markup
+		}
 		_, err := SafeSend(bot, photoMsg, "")
 		if err != nil {
 			log.Printf("Failed to send landmark question: %v", err)
 			// Fallback to text question if image fails
-			view.SendMessageWithButtons(bot, chatID, question, markup)
+			if !isTextMode {
+				view.SendMessageWithButtons(bot, chatID, question, markup)
+			} else {
+				view.SendMessage(bot, chatID, question)
+			}
 		}
 	} else {
-		view.SendMessageWithButtons(bot, chatID, question, markup)
+		if !isTextMode {
+			view.SendMessageWithButtons(bot, chatID, question, markup)
+		} else {
+			view.SendMessage(bot, chatID, question)
+		}
 	}
 }
 
@@ -454,7 +473,29 @@ func HandleGuess(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.
 
 		saveGeographyStateAsync(chatID, state)
 	} else {
-		state.Unlock()
+		settings := GetChatSettings(chatID, client)
+		if settings.GeographyMode == "text" {
+			state.Attempts++
+			if state.Attempts >= state.MaxAttempts {
+				state.Active = false
+				state.PendingNewGame = false
+				state.Unlock()
+
+				failMsg := fmt.Sprintf("❌ *Incorrect, %s!*\n\nYou've used all %d attempts.\nThe correct answer was *%s*.", message.From.FirstName, state.MaxAttempts, correctAnswer)
+				markup := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Play Again 🌍", "geography_start")))
+				view.SendMessageWithButtons(bot, chatID, failMsg, markup)
+				saveGeographyStateAsync(chatID, state)
+				return
+			}
+			attemptsLeft := state.MaxAttempts - state.Attempts
+			state.Unlock()
+			saveGeographyStateAsync(chatID, state)
+
+			failMsg := fmt.Sprintf("❌ *Incorrect, %s!*\n\nAttempts left: %d", message.From.FirstName, attemptsLeft)
+			view.SendMessage(bot, chatID, failMsg)
+		} else {
+			state.Unlock()
+		}
 	}
 }
 func CancelGeography(chatID int64) bool {
