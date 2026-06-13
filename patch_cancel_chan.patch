@@ -1,0 +1,46 @@
+--- controller/geographybot/geographybot.go
++++ controller/geographybot/geographybot.go
+@@ -482,6 +482,10 @@
+		state.Active = false
+		state.PendingNewGame = true
+		state.Unlock()
++		select {
++		case state.CancelChan <- true:
++		default:
++		}
+
+		points := 5 // standard geography points
+		if client != nil {
+@@ -494,6 +498,10 @@
+		state.Active = false
+		state.PendingNewGame = false
+		state.Unlock()
++		select {
++		case state.CancelChan <- true:
++		default:
++		}
+
+		failMsg := fmt.Sprintf("❌ *Incorrect, %s!*\n\nThe correct answer was *%s*.", userName, correctAnswer)
+		markup := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Play Again 🌍", "geography_start")))
+@@ -588,6 +596,10 @@
+		state.Active = false
+		state.PendingNewGame = true
+		state.Unlock()
++		select {
++		case state.CancelChan <- true:
++		default:
++		}
+
+		points := 5
+		if client != nil {
+@@ -628,6 +640,10 @@
+	state.Active = false
+	state.PendingNewGame = false
+	state.Unlock()
++	select {
++	case state.CancelChan <- true:
++	default:
++	}
+
+	saveGeographyStateAsync(chatID, state)
+	return true

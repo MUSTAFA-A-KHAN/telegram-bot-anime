@@ -1,0 +1,17 @@
+--- controller/geographybot/geographybot.go
++++ controller/geographybot/geographybot.go
+@@ -355,6 +355,14 @@
+
+	saveGeographyStateAsync(chatID, state)
+
++	// Clean out any existing cancel signal just in case
++	select {
++	case <-state.CancelChan:
++	default:
++	}
++
++	startTimer(bot, chatID, state)
++
+	// Send Question with Inline Buttons if MCQ, otherwise just text
+	var markup tgbotapi.InlineKeyboardMarkup
+	if !isTextMode {
