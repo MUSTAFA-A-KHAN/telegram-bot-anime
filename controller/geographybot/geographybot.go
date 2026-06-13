@@ -12,11 +12,15 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode"
 
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/repository"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/view"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"go.mongodb.org/mongo-driver/mongo"
+	"golang.org/x/text/runes"
+	"golang.org/x/text/transform"
+	"golang.org/x/text/unicode/norm"
 )
 
 // GeographyStateDoc is the MongoDB-serializable version of GeographyState
@@ -496,6 +500,39 @@ func HandleGeographyCallback(bot *tgbotapi.BotAPI, chatID int64, userID int, use
 	saveGeographyStateAsync(chatID, state)
 }
 
+func normalizeAnswer(s string) string {
+	t := transform.Chain(norm.NFD, runes.Remove(runes.In(unicode.Mn)), norm.NFC)
+	s, _, _ = transform.String(t, s)
+
+	s = strings.ToLower(s)
+
+	var words []string
+	currentWord := strings.Builder{}
+
+	for _, r := range s {
+		if unicode.IsLetter(r) || unicode.IsDigit(r) {
+			currentWord.WriteRune(r)
+		} else {
+			if currentWord.Len() > 0 {
+				words = append(words, currentWord.String())
+				currentWord.Reset()
+			}
+		}
+	}
+	if currentWord.Len() > 0 {
+		words = append(words, currentWord.String())
+	}
+
+	var finalWords []string
+	for _, w := range words {
+		if w != "and" {
+			finalWords = append(finalWords, w)
+		}
+	}
+
+	return strings.Join(finalWords, "")
+}
+
 // HandleGuess handles exact text match guesses
 func HandleGuess(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.Client, chatID int64, text string) {
 	geographyMutex.RLock()
@@ -519,13 +556,31 @@ func HandleGuess(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.
 	userID := int64(message.From.ID)
 
 	if isTextMode {
+		// Only consider messages replied to the bot OR mentioning the bot
+		isReplyToBot := message.ReplyToMessage != nil && message.ReplyToMessage.From != nil && message.ReplyToMessage.From.ID == bot.Self.ID
+		botMention := fmt.Sprintf("@%s", bot.Self.UserName)
+		mentionsBot := strings.Contains(strings.ToLower(text), strings.ToLower(botMention))
+
+		if !isReplyToBot && !mentionsBot {
+			state.Unlock()
+			return
+		}
+
 		if state.UserAttempts[userID] >= state.MaxAttempts {
 			state.Unlock()
 			return // User already reached max attempts, ignore
 		}
+
+		if mentionsBot {
+			// Strip the mention from the text
+			text = strings.ReplaceAll(strings.ToLower(text), strings.ToLower(botMention), " ")
+		}
 	}
 
-	if strings.EqualFold(strings.TrimSpace(text), correctAnswer) {
+	normGuess := normalizeAnswer(text)
+	normAns := normalizeAnswer(correctAnswer)
+
+	if normGuess == normAns {
 		state.Active = false
 		state.PendingNewGame = true
 		state.Unlock()
