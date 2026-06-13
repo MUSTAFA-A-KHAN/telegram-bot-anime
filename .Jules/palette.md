@@ -4,3 +4,6 @@
 
 **Action:** Ensure all multi-level inline keyboard menus have a "🔙 Back" button to smoothly return to the previous level without abandoning the menu structure entirely.
 ## 2026-06-10 - Add ForceReply to User Prompts\n**Learning:** To prompt users for specific textual input (e.g., asking for a price or value), using a standard message can be confusing. Using `tgbotapi.ForceReply{ForceReply: true}` automatically opens their keyboard and sets their message as a reply, improving the UX and clarifying intent.\n**Action:** When intercepting user input in a conversation flow, attach `ForceReply` to the prompt message to explicitly guide the user to reply.
+## $(date +%Y-%m-%d) - Add ForceReply to user input messages
+**Learning:** For interactive text-guessing interactions that requires user context, a simple message might be missed or require manual 'replying'. Adding ForceReply to the message ensures the user prompt keyboard forces the user to reply to the bot message, linking the contexts seamlessly.
+**Action:** When creating text prompts in Telegram Bots that wait for user inputs to update a specific state (like a custom word), attach `ForceReply` to the sent message using `tgbotapi.ForceReply{ForceReply: true}`.

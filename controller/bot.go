@@ -324,7 +324,9 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 							customWordMutex.Lock()
 							customWordState[int64(message.From.ID)] = groupChatID
 							customWordMutex.Unlock()
-							view.SendMessage(bot, chatID, "Type the word you want the group to guess (must be a valid English word):")
+							msg := tgbotapi.NewMessage(chatID, "Type the word you want the group to guess (must be a valid English word):")
+							msg.ReplyMarkup = tgbotapi.ForceReply{ForceReply: true}
+							bot.Send(msg)
 						} else {
 							view.SendMessage(bot, chatID, "You are not the current leader in that group.")
 						}
