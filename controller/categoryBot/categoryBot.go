@@ -38,13 +38,14 @@ func MessageToJSONString(message *tgbotapi.Message) (string, error) {
 func escapeMarkdownV2(text string) string {
 	var builder strings.Builder
 	builder.Grow(len(text) + len(text)/4) // Rough estimate for escaped string
-	for _, char := range text {
+	for i := 0; i < len(text); i++ {
+		char := text[i]
 		switch char {
 		case '_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!':
 			builder.WriteByte('\\')
-			builder.WriteRune(char)
+			builder.WriteByte(char)
 		default:
-			builder.WriteRune(char)
+			builder.WriteByte(char)
 		}
 	}
 	return builder.String()
