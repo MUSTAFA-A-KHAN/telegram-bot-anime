@@ -484,10 +484,6 @@ func HandleGeographyCallback(bot *tgbotapi.BotAPI, chatID int64, userID int, use
 		state.Active = false
 		state.PendingNewGame = true
 		state.Unlock()
-		select {
-		case state.CancelChan <- true:
-		default:
-		}
 
 		points := 5 // standard geography points
 		if client != nil {
@@ -503,10 +499,6 @@ func HandleGeographyCallback(bot *tgbotapi.BotAPI, chatID int64, userID int, use
 		state.Active = false
 		state.PendingNewGame = false
 		state.Unlock()
-		select {
-		case state.CancelChan <- true:
-		default:
-		}
 
 		failMsg := fmt.Sprintf("❌ *Incorrect, %s!*\n\nThe correct answer was *%s*.", userName, correctAnswer)
 		markup := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Play Again 🌍", "geography_start")))
@@ -600,10 +592,6 @@ func HandleGuess(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.
 		state.Active = false
 		state.PendingNewGame = true
 		state.Unlock()
-		select {
-		case state.CancelChan <- true:
-		default:
-		}
 
 		points := 5
 		if client != nil {
@@ -652,10 +640,6 @@ func CancelGeography(chatID int64) bool {
 	state.Active = false
 	state.PendingNewGame = false
 	state.Unlock()
-	select {
-	case state.CancelChan <- true:
-	default:
-	}
 
 	saveGeographyStateAsync(chatID, state)
 	return true
