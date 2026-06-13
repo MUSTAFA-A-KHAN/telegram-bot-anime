@@ -33,3 +33,7 @@
 ## 2025-02-23 - Optimize String Normalization by bypassing Rune extraction for ASCII
 **Learning:** `for _, r := range s` combined with `unicode.ToLower` introduces unnecessary overhead for standard ASCII texts due to rune decoding, memory allocs for utf8 lookups, and function calls.
 **Action:** Iterate string byte-by-byte (`for i:=0; i<len(s); { c:=s[i]... }`). For characters `< utf8.RuneSelf`, handle logic (e.g., casing, space/letter checking) inline directly using ASCII byte math (`c+32`). Keep rune fallback for non-ASCII characters.
+
+## 2025-02-23 - Optimize String Iteration in escape functions
+**Learning:** Iterating over a string using `for _, char := range text` implicitly decodes UTF-8 runes for every character. In functions that primarily check and modify ASCII characters (like escaping Markdown formatting symbols), this rune decoding adds unnecessary CPU and memory overhead compared to direct byte access.
+**Action:** Replace `for _, char := range text` with a byte-indexed loop (`for i := 0; i < len(text); i++`) when searching for and appending ASCII-only characters using `strings.Builder`. Write directly via `builder.WriteByte()` instead of `builder.WriteRune()` to bypass decoding overhead.
