@@ -225,9 +225,34 @@ func startNewRound(bot *tgbotapi.BotAPI, chatID int64, client *mongo.Client) {
 
 	rand.Seed(time.Now().UnixNano())
 
-	questionTypes := []string{"capital", "flag", "region"}
+	settings := GetChatSettings(chatID, client)
+
+	// Build active question types based on settings
+	var questionTypes []string
+	if settings.QuestionTypes == nil || settings.QuestionTypes["capital"] {
+		questionTypes = append(questionTypes, "capital")
+	}
+	if settings.QuestionTypes == nil || settings.QuestionTypes["flag"] {
+		questionTypes = append(questionTypes, "flag")
+	}
+	if settings.QuestionTypes == nil || settings.QuestionTypes["region"] {
+		questionTypes = append(questionTypes, "region")
+	}
 	if len(landmarkData) >= 4 {
-		questionTypes = append(questionTypes, "landmark")
+		if settings.QuestionTypes == nil || settings.QuestionTypes["landmark"] {
+			questionTypes = append(questionTypes, "landmark")
+		}
+		if settings.QuestionTypes == nil || settings.QuestionTypes["landmark_name"] {
+			questionTypes = append(questionTypes, "landmark_name")
+		}
+	}
+	if settings.QuestionTypes == nil || settings.QuestionTypes["country_from_capital"] {
+		questionTypes = append(questionTypes, "country_from_capital")
+	}
+
+	if len(questionTypes) == 0 {
+		view.SendMessage(bot, chatID, "No Geography question types are currently enabled in the settings. Defaulting to capitals.")
+		questionTypes = append(questionTypes, "capital")
 	}
 
 	qType := questionTypes[rand.Intn(len(questionTypes))]
@@ -239,15 +264,20 @@ func startNewRound(bot *tgbotapi.BotAPI, chatID int64, client *mongo.Client) {
 	var targetImageBytes []byte
 
 	// Pick target and generate distractors
-	if qType == "landmark" {
+	if qType == "landmark" || qType == "landmark_name" {
 		targetLandmark := landmarkData[rand.Intn(len(landmarkData))]
 		targetCountryName = targetLandmark.Country
-		answer = targetCountryName
-		question = fmt.Sprintf("🌎 *Geography Mode*\n\nWhich country is this landmark (%s) located in?", targetLandmark.Name)
+
+		if qType == "landmark" {
+			answer = targetCountryName
+			question = fmt.Sprintf("🌎 *Geography Mode*\n\nWhich country is this landmark (%s) located in?", targetLandmark.Name)
+		} else {
+			answer = targetLandmark.Name
+			question = fmt.Sprintf("🌎 *Geography Mode*\n\nWhat is the name of this landmark located in %s?", targetLandmark.Country)
+		}
 
 		// Fetch image
-		// resp, err := http.Get(targetLandmark.ImageURL)
-		client := &http.Client{}
+		httpClient := &http.Client{}
 
 		req, _ := http.NewRequest("GET", targetLandmark.ImageURL, nil)
 		req.Header.Set(
@@ -255,7 +285,7 @@ func startNewRound(bot *tgbotapi.BotAPI, chatID int64, client *mongo.Client) {
 			"CrocoRebirthBot/1.0",
 		)
 
-		resp, err := client.Do(req)
+		resp, err := httpClient.Do(req)
 
 		if err == nil {
 			defer resp.Body.Close()
@@ -266,7 +296,7 @@ func startNewRound(bot *tgbotapi.BotAPI, chatID int64, client *mongo.Client) {
 		}
 	}
 
-	if qType != "landmark" {
+	if qType != "landmark" && qType != "landmark_name" {
 		targetIndex := rand.Intn(len(countryData))
 		target := countryData[targetIndex]
 		targetCountryName = target.Name
@@ -281,26 +311,41 @@ func startNewRound(bot *tgbotapi.BotAPI, chatID int64, client *mongo.Client) {
 		case "region":
 			answer = target.Region
 			question = fmt.Sprintf("🌎 *Geography Mode*\n\nWhich region is *%s %s* located in?", target.Flag, target.Name)
+		case "country_from_capital":
+			answer = target.Name
+			question = fmt.Sprintf("🌎 *Geography Mode*\n\nWhich country's capital is *%s*?", target.Capital)
 		}
 	}
 
 	// Generate 3 random wrong options
 	wrongOptions := make([]string, 0, 3)
+
 	for len(wrongOptions) < 3 {
-		randIdx := rand.Intn(len(countryData))
-		if countryData[randIdx].Name == targetCountryName {
-			continue
-		}
 		var wOpt string
-		switch qType {
-		case "capital":
-			wOpt = countryData[randIdx].Capital
-		case "flag":
-			wOpt = countryData[randIdx].Name
-		case "region":
-			wOpt = countryData[randIdx].Region
-		case "landmark":
-			wOpt = countryData[randIdx].Name
+
+		if qType == "landmark_name" {
+			randIdx := rand.Intn(len(landmarkData))
+			if landmarkData[randIdx].Name == answer {
+				continue
+			}
+			wOpt = landmarkData[randIdx].Name
+		} else {
+			randIdx := rand.Intn(len(countryData))
+			if countryData[randIdx].Name == targetCountryName {
+				continue
+			}
+			switch qType {
+			case "capital":
+				wOpt = countryData[randIdx].Capital
+			case "flag":
+				wOpt = countryData[randIdx].Name
+			case "region":
+				wOpt = countryData[randIdx].Region
+			case "landmark":
+				wOpt = countryData[randIdx].Name
+			case "country_from_capital":
+				wOpt = countryData[randIdx].Name
+			}
 		}
 
 		if wOpt == answer {
@@ -332,7 +377,6 @@ func startNewRound(bot *tgbotapi.BotAPI, chatID int64, client *mongo.Client) {
 	state := geographyStates[chatID]
 	geographyMutex.RUnlock()
 
-	settings := GetChatSettings(chatID, client)
 	isTextMode := settings.GeographyMode == "text"
 
 	state.Lock()
@@ -369,7 +413,7 @@ func startNewRound(bot *tgbotapi.BotAPI, chatID int64, client *mongo.Client) {
 		markup = tgbotapi.NewInlineKeyboardMarkup(keyboard...)
 	}
 
-	if qType == "landmark" && len(targetImageBytes) > 0 {
+	if (qType == "landmark" || qType == "landmark_name") && len(targetImageBytes) > 0 {
 		photoMsg := tgbotapi.NewPhotoUpload(chatID, tgbotapi.FileBytes{Name: "landmark.jpg", Bytes: targetImageBytes})
 		photoMsg.Caption = question
 		photoMsg.ParseMode = "Markdown"
