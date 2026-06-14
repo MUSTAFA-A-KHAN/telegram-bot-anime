@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Viewer</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>Telegram Bot Data Viewer</h1>
+    </header>
+    <main>
+        <div class="controls">
+            <select id="data-selector">
+                <option value="" disabled selected>Select a dataset to view...</option>
+                <optgroup label="Geography Bot">
+                    <option value="geography_countries">Countries (JSON)</option>
+                    <option value="geography_landmarks">Landmarks (JSON)</option>
+                </optgroup>
+                <optgroup label="Word Games">
+                    <option value="words_txt">Words (TXT)</option>
+                    <option value="allowed_words_txt">Allowed Words (TXT)</option>
+                    <option value="scramy_words_txt">Scramy Words (TXT)</option>
+                    <option value="scramy_allowed_words_txt">Scramy Allowed Words (TXT)</option>
+                </optgroup>
+                <optgroup label="Other">
+                    <option value="translator_banned_users">Banned Users (JSON)</option>
+                </optgroup>
+            </select>
+            <input type="text" id="search-input" placeholder="Search data..." disabled>
+        </div>
+
+        <div id="loading" class="hidden">Loading data...</div>
+        <div id="error" class="hidden error-message"></div>
+
+        <div id="data-container">
+            <p class="placeholder-text">Please select a dataset to view its contents.</p>
+        </div>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+</html>
