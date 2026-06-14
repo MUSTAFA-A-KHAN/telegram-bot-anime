@@ -224,7 +224,5 @@
   { "emotes": "👧👻♨️", "answers": ["Spirited Away"] },
   { "emotes": "🧛‍♂️🌙⚔️", "answers": ["Seraph of the End"] },
   { "emotes": "👼🩸🗡️", "answers": ["Seraph of the End"] },
-  { "emotes": "⚔️🦄👧", "answers": ["Revolutionary Girl Utena"] },
-  { "emotes": "⏰💀👧", "answers": ["Erased"] },
-  { "emotes": "👦📅🔄", "answers": ["Erased"] }
+  { "emotes": "⚔️🦄👧", "answers": ["Revolutionary Girl Utena"] }
 ]
