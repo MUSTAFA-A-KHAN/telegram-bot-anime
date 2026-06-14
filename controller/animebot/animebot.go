@@ -9,11 +9,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/repository"
+	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/view"
 	"github.com/agnivade/levenshtein"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"go.mongodb.org/mongo-driver/mongo"
-	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/repository"
-	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/view"
 )
 
 type AnimeData struct {
@@ -67,7 +67,7 @@ func HandleAnimeCommand(bot *tgbotapi.BotAPI, chatID int64, client *mongo.Client
 	}
 
 	text := "<b>Anime Emote Guess!</b>\n\nGuess the anime or character from these emotes:\n" + question.Emotes + "\n\nType your guess!"
-	view.SendMessage(bot, chatID, text)
+	view.SendMessagehtml(bot, chatID, text)
 }
 
 func IsAnimeActive(chatID int64) bool {
@@ -109,10 +109,10 @@ func HandleGuess(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.
 		points := 10
 		go repository.InsertWordleBonusDoc(message.From.ID, message.From.FirstName, chatID, client, "AnimePoints", points)
 
-		view.SendMessage(bot, chatID, "🎉 Correct! It was <b>"+bestAnswer+"</b>!\nYou earned "+strconv.Itoa(points)+" points!")
+		view.SendMessagehtml(bot, chatID, "🎉 Correct! It was <b>"+bestAnswer+"</b>!\nYou earned "+strconv.Itoa(points)+" points!")
 	} else {
 		// Not correct, maybe close but give a generic message
-		// view.SendMessage(bot, chatID, "❌ Nope, try again!")
+		// view.SendMessagehtml(bot, chatID, "❌ Nope, try again!")
 	}
 }
 

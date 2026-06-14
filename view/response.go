@@ -44,6 +44,7 @@ const CustomWordMessageEffectID = "5066576334143095943"
 
 func SendMessage(bot *tgbotapi.BotAPI, chatID int64, text string) (tgbotapi.Message, error) {
 	msg := tgbotapi.NewMessage(chatID, text)
+	msg.ParseMode = tgbotapi.ModeMarkdown
 	res, err := bot.Send(msg)
 	return res, err
 }
