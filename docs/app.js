@@ -417,18 +417,18 @@ function renderJson(query) {
             }
         });
 
-        if (hasImage) {
+        if (hasImage || (headers.size > 0 && headers.size < 10)) {
             const grid = document.createElement('div');
             grid.className = 'card-grid';
 
-            const maxItems = 100; // Limit cards to avoid performance issues with many images
+            const maxItems = hasImage ? 100 : 500; // Limit cards to avoid performance issues
             const itemsToRender = dataToRender.slice(0, maxItems);
 
             itemsToRender.forEach(item => {
                 const card = document.createElement('div');
                 card.className = 'data-card';
 
-                if (item.image_url) {
+                if (hasImage && item.image_url) {
                     const img = document.createElement('img');
                     img.src = item.image_url;
                     img.className = 'card-image';
@@ -446,7 +446,20 @@ function renderJson(query) {
                     if (val !== undefined) {
                         const row = document.createElement('div');
                         row.className = 'card-row';
-                        row.innerHTML = `<span class="card-label">${h.toUpperCase()}:</span> <span class="card-value">${typeof val === 'object' ? JSON.stringify(val) : val}</span>`;
+
+                        const labelSpan = document.createElement('span');
+                        labelSpan.className = 'card-label';
+                        labelSpan.textContent = h.toUpperCase() + ':';
+
+                        const valueSpan = document.createElement('span');
+                        valueSpan.className = 'card-value';
+                        valueSpan.textContent = typeof val === 'object' ? JSON.stringify(val) : val;
+
+                        row.appendChild(labelSpan);
+                        // Add a small space between label and value
+                        row.appendChild(document.createTextNode(' '));
+                        row.appendChild(valueSpan);
+
                         content.appendChild(row);
                     }
                 });
@@ -462,44 +475,6 @@ function renderJson(query) {
                 p.className = 'mission-log';
                 p.style.textAlign = 'center';
                 p.textContent = `[ DISPLAYING ${maxItems} OF ${dataToRender.length} FRAGMENTS ]`;
-                container.appendChild(p);
-            }
-            return;
-        } else if (headers.size > 0 && headers.size < 10) {
-            const table = document.createElement('table');
-            const thead = document.createElement('thead');
-            const trHead = document.createElement('tr');
-
-            headers.forEach(h => {
-                const th = document.createElement('th');
-                th.textContent = h.toUpperCase();
-                trHead.appendChild(th);
-            });
-            thead.appendChild(trHead);
-            table.appendChild(thead);
-
-            const tbody = document.createElement('tbody');
-            const maxItems = 500;
-            const itemsToRender = dataToRender.slice(0, maxItems);
-
-            itemsToRender.forEach(item => {
-                const tr = document.createElement('tr');
-                headers.forEach(h => {
-                    const td = document.createElement('td');
-                    let val = item[h];
-                    td.textContent = typeof val === 'object' ? JSON.stringify(val) : (val !== undefined ? val : '-');
-                    tr.appendChild(td);
-                });
-                tbody.appendChild(tr);
-            });
-            table.appendChild(tbody);
-            container.appendChild(table);
-
-            if (dataToRender.length > maxItems) {
-                const p = document.createElement('p');
-                p.className = 'mission-log';
-                p.style.textAlign = 'center';
-                p.textContent = `[ DISPLAYING 500 OF ${dataToRender.length} FRAGMENTS ]`;
                 container.appendChild(p);
             }
             return;
