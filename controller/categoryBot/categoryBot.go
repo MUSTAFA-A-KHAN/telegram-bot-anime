@@ -13,6 +13,7 @@ import (
 
 	collectibleController "github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/collectible"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/geographybot"
+	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/translator"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/scramybot"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/wordlebot"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/model"
@@ -411,6 +412,9 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			return
 		case "geography":
 			geographybot.HandleGeographyCommand(bot, chatID, message.From.FirstName, client)
+			return
+		case "geohint":
+			geographybot.HandleGeographyHint(bot, message, client, chatID, translator.NewTextTranslator())
 			return
 
 		case "cancelgeo":
@@ -884,6 +888,9 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		return
 	case "geography":
 		geographybot.HandleGeographyCommand(bot, chatID, message.From.FirstName, client)
+		return
+	case "geohint":
+		geographybot.HandleGeographyHint(bot, message, client, chatID, translator.NewTextTranslator())
 		return
 	case "cancelgeo":
 		if geographybot.CancelGeography(chatID) {
