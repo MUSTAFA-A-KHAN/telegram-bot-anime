@@ -244,10 +244,11 @@ body, html {
     transition: opacity 0.5s ease, transform 0.5s ease;
 }
 
-#data-terminal.hidden {
+#data-terminal.hidden, .hidden {
     opacity: 0;
     pointer-events: none;
     transform: scale(0.95);
+    display: none !important;
 }
 
 .terminal-header {
@@ -265,18 +266,84 @@ body, html {
     font-size: 0.9rem;
 }
 
-#close-terminal {
+.terminal-actions {
+    display: flex;
+    gap: 1.5rem;
+}
+
+#close-terminal, #save-terminal {
     background: none;
     border: none;
-    color: var(--accent-red);
     font-family: 'Space Mono', monospace;
     cursor: pointer;
     font-size: 0.9rem;
-    transition: color 0.3s ease;
+    transition: all 0.3s ease;
 }
+
+#close-terminal {
+    color: var(--accent-red);
+}
+
 #close-terminal:hover {
     color: #fff;
     text-shadow: 0 0 10px var(--accent-red);
+}
+
+#save-terminal {
+    color: var(--text-primary);
+}
+
+#save-terminal:hover {
+    color: #fff;
+    text-shadow: 0 0 10px var(--text-primary);
+}
+
+.edit-btn {
+    background: transparent;
+    border: 1px solid var(--accent-blue);
+    color: var(--accent-blue);
+    padding: 0.4rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-top: 1rem;
+    width: 100%;
+}
+
+.edit-btn:hover {
+    background: var(--accent-blue);
+    color: var(--bg-main);
+}
+
+.add-record-btn {
+    background: rgba(0, 255, 170, 0.1);
+    border: 1px solid var(--text-primary);
+    color: var(--text-primary);
+    padding: 1rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-bottom: 1.5rem;
+    width: 100%;
+    text-align: center;
+}
+
+.add-record-btn:hover {
+    background: var(--text-primary);
+    color: var(--bg-main);
+}
+
+.edit-input {
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid var(--accent-blue);
+    color: var(--text-primary);
+    font-family: 'Space Mono', monospace;
+    padding: 0.2rem;
+    width: 100%;
+    box-sizing: border-box;
+    margin-top: 0.2rem;
 }
 
 .terminal-controls {
