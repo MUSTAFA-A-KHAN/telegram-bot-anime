@@ -25,29 +25,33 @@ import (
 
 // GeographyStateDoc is the MongoDB-serializable version of GeographyState
 type GeographyStateDoc struct {
-	ChatID         int64          `bson:"_id"`
-	Active         bool           `bson:"active"`
-	QuestionType   string         `bson:"question_type"`
-	TargetCountry  string         `bson:"target_country"`
-	TargetAnswer   string         `bson:"target_answer"`
-	Options        []string       `bson:"options"`
-	UserAttempts   map[string]int `bson:"user_attempts"`
-	MaxAttempts    int            `bson:"max_attempts"`
-	PendingNewGame bool           `bson:"pending_new_game"`
+	ChatID            int64          `bson:"_id"`
+	Active            bool           `bson:"active"`
+	QuestionType      string         `bson:"question_type"`
+	TargetCountry     string         `bson:"target_country"`
+	TargetAnswer      string         `bson:"target_answer"`
+	Options           []string       `bson:"options"`
+	UserAttempts      map[string]int `bson:"user_attempts"`
+	MaxAttempts       int            `bson:"max_attempts"`
+	PendingNewGame    bool           `bson:"pending_new_game"`
+	LastHintTimestamp time.Time      `bson:"last_hint_timestamp"`
+	LastHintTypeSent  int            `bson:"last_hint_type_sent"`
 }
 
 // GeographyState holds the state for a Geography game in a specific chat.
 type GeographyState struct {
 	sync.RWMutex
-	Active         bool
-	QuestionType   string // "capital", "flag", "region"
-	TargetCountry  string
-	TargetAnswer   string
-	Options        []string
-	UserAttempts   map[int64]int
-	MaxAttempts    int
-	PendingNewGame bool
-	CancelChan     chan bool
+	Active            bool
+	QuestionType      string // "capital", "flag", "region"
+	TargetCountry     string
+	TargetAnswer      string
+	Options           []string
+	UserAttempts      map[int64]int
+	MaxAttempts       int
+	PendingNewGame    bool
+	CancelChan        chan bool
+	LastHintTimestamp time.Time
+	LastHintTypeSent  int
 }
 
 var (
@@ -64,15 +68,17 @@ func saveGeographyStateAsync(chatID int64, state *GeographyState) {
 	}
 
 	doc := GeographyStateDoc{
-		ChatID:         chatID,
-		Active:         state.Active,
-		QuestionType:   state.QuestionType,
-		TargetCountry:  state.TargetCountry,
-		TargetAnswer:   state.TargetAnswer,
-		Options:        state.Options,
-		UserAttempts:   userAttemptsDoc,
-		MaxAttempts:    state.MaxAttempts,
-		PendingNewGame: state.PendingNewGame,
+		ChatID:            chatID,
+		Active:            state.Active,
+		QuestionType:      state.QuestionType,
+		TargetCountry:     state.TargetCountry,
+		TargetAnswer:      state.TargetAnswer,
+		Options:           state.Options,
+		UserAttempts:      userAttemptsDoc,
+		MaxAttempts:       state.MaxAttempts,
+		PendingNewGame:    state.PendingNewGame,
+		LastHintTimestamp: state.LastHintTimestamp,
+		LastHintTypeSent:  state.LastHintTypeSent,
 	}
 	state.RUnlock()
 
@@ -105,15 +111,17 @@ func LoadSavedStates(client *mongo.Client) {
 		}
 
 		gs := &GeographyState{
-			Active:         doc.Active,
-			QuestionType:   doc.QuestionType,
-			TargetCountry:  doc.TargetCountry,
-			TargetAnswer:   doc.TargetAnswer,
-			Options:        doc.Options,
-			UserAttempts:   userAttempts,
-			MaxAttempts:    doc.MaxAttempts,
-			PendingNewGame: doc.PendingNewGame,
-			CancelChan:     make(chan bool, 1),
+			Active:            doc.Active,
+			QuestionType:      doc.QuestionType,
+			TargetCountry:     doc.TargetCountry,
+			TargetAnswer:      doc.TargetAnswer,
+			Options:           doc.Options,
+			UserAttempts:      userAttempts,
+			MaxAttempts:       doc.MaxAttempts,
+			PendingNewGame:    doc.PendingNewGame,
+			CancelChan:        make(chan bool, 1),
+			LastHintTimestamp: doc.LastHintTimestamp,
+			LastHintTypeSent:  doc.LastHintTypeSent,
 		}
 		geographyStates[doc.ChatID] = gs
 	}
@@ -744,4 +752,63 @@ func SafeSend(
 	}
 
 	return msg, fmt.Errorf("max retries exceeded")
+}
+
+// HandleGeographyHint handles user request for a hint in text mode
+func HandleGeographyHint(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.Client, chatID int64, translatorService interface{ GetHintForGeography(string) string }) {
+	geographyMutex.RLock()
+	state, exists := geographyStates[chatID]
+	geographyMutex.RUnlock()
+
+	if !exists {
+		return
+	}
+
+	state.Lock()
+	if !state.Active {
+		state.Unlock()
+		return
+	}
+
+	settings := GetChatSettings(chatID, client)
+	if settings.GeographyMode != "text" {
+		state.Unlock()
+		view.SendMessage(bot, chatID, "Hints are only available in text mode.")
+		return
+	}
+
+	correctAnswer := state.TargetAnswer
+	lastHint := state.LastHintTimestamp
+	state.Unlock()
+
+	if !lastHint.IsZero() && time.Since(lastHint) < 8*time.Second {
+		view.SendMessage(bot, chatID, "Please take a moment to think before asking for another hint.")
+		return
+	}
+
+	hintMsg := tgbotapi.NewMessage(chatID, "Thinking...")
+	sentHintMsg, err := bot.Send(hintMsg)
+	if err != nil {
+		log.Printf("Failed to send thinking msg: %v", err)
+	}
+
+	// Fetch hint
+	hint := translatorService.GetHintForGeography(correctAnswer)
+
+	if hint == "something went wrong" {
+		hint = "Sorry, I couldn't generate a hint right now. 😔"
+	}
+
+	if sentHintMsg.MessageID != 0 {
+		editMsg := tgbotapi.NewEditMessageText(chatID, sentHintMsg.MessageID, hint)
+		bot.Send(editMsg)
+	} else {
+		view.SendMessage(bot, chatID, hint)
+	}
+
+	state.Lock()
+	state.LastHintTimestamp = time.Now()
+	state.Unlock()
+
+	saveGeographyStateAsync(chatID, state)
 }
