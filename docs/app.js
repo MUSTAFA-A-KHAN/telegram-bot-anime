@@ -25,66 +25,178 @@ let currentType = null;
 // --- 2. THREE.JS UNIVERSE SETUP ---
 const canvas = document.getElementById('universe-canvas');
 const scene = new THREE.Scene();
-scene.fog = new THREE.FogExp2(0x030305, 0.0015);
+scene.fog = new THREE.FogExp2(0x050510, 0.001); // Thinner fog to see further
 
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
-camera.position.set(0, 0, 50); // Start slightly pulled back
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 3000);
+camera.position.set(0, 0, 100); // Start pulled further back
 
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false }); // Solid bg for space
+renderer.setClearColor(0x030305, 1);
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-const ambientLight = new THREE.AmbientLight(0x222233, 1);
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
 scene.add(ambientLight);
-const pointLight = new THREE.PointLight(0x4488ff, 2, 150);
+const pointLight = new THREE.PointLight(0x4488ff, 3, 300);
 scene.add(pointLight);
 
-const planets = [];
-
-// Create Star Field (Particles)
-const particlesCount = 10000;
+// Make starfield larger and brighter
+const particlesCount = 20000;
 const posArray = new Float32Array(particlesCount * 3);
+const colorsArray = new Float32Array(particlesCount * 3);
+
 for(let i=0; i < particlesCount * 3; i+=3) {
-    posArray[i] = (Math.random() - 0.5) * 150;     // x spread
-    posArray[i+1] = (Math.random() - 0.5) * 150;   // y spread
-    posArray[i+2] = (Math.random() - 1) * 800;     // z depth down to -800
+    posArray[i] = (Math.random() - 0.5) * 500;     // Wider x spread
+    posArray[i+1] = (Math.random() - 0.5) * 500;   // Wider y spread
+    posArray[i+2] = (Math.random() - 1) * 2000;    // Deep Z depth
+
+    // Give some stars a slight blue/orange tint
+    const colorType = Math.random();
+    if (colorType > 0.9) {
+        colorsArray[i] = 0.4; colorsArray[i+1] = 0.6; colorsArray[i+2] = 1.0; // Blue
+    } else if (colorType > 0.8) {
+        colorsArray[i] = 1.0; colorsArray[i+1] = 0.8; colorsArray[i+2] = 0.5; // Orange
+    } else {
+        colorsArray[i] = 1.0; colorsArray[i+1] = 1.0; colorsArray[i+2] = 1.0; // White
+    }
 }
 const particlesGeo = new THREE.BufferGeometry();
 particlesGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
-const particlesMat = new THREE.PointsMaterial({ size: 0.1, color: 0xffffff, transparent: true, opacity: 0.6 });
+particlesGeo.setAttribute('color', new THREE.BufferAttribute(colorsArray, 3));
+
+// Create a glowing texture for stars
+const canvasTexture = document.createElement('canvas');
+canvasTexture.width = 16; canvasTexture.height = 16;
+const ctx = canvasTexture.getContext('2d');
+const gradient = ctx.createRadialGradient(8, 8, 0, 8, 8, 8);
+gradient.addColorStop(0, 'rgba(255,255,255,1)');
+gradient.addColorStop(1, 'rgba(255,255,255,0)');
+ctx.fillStyle = gradient;
+ctx.fillRect(0,0,16,16);
+const starTexture = new THREE.CanvasTexture(canvasTexture);
+
+const particlesMat = new THREE.PointsMaterial({
+    size: 1.5,
+    vertexColors: true,
+    transparent: true,
+    opacity: 0.9,
+    map: starTexture,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false
+});
 const particlesMesh = new THREE.Points(particlesGeo, particlesMat);
 scene.add(particlesMesh);
 
-function createPlanet(size, color, zPos, xPos, yPos, hasRings) {
-    const geo = new THREE.SphereGeometry(size, 32, 32);
-    const mat = new THREE.MeshStandardMaterial({
-        color: color, wireframe: true, transparent: true, opacity: 0.3, emissive: color, emissiveIntensity: 0.5
+// Add massive glowing Nebulae/Galaxies
+const nebulae = [];
+for(let i=0; i<5; i++) {
+    const geo = new THREE.PlaneGeometry(300, 300);
+    const mat = new THREE.MeshBasicMaterial({
+        map: starTexture, // Reusing radial gradient for a soft glow
+        color: new THREE.Color().setHSL(Math.random() * 0.3 + 0.5, 1, 0.5), // Blue/Purple hues
+        transparent: true,
+        opacity: 0.15,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        side: THREE.DoubleSide
     });
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.set(xPos, yPos, zPos);
-
-    const coreGeo = new THREE.SphereGeometry(size * 0.95, 16, 16);
-    const coreMat = new THREE.MeshBasicMaterial({ color: 0x030305 });
-    mesh.add(new THREE.Mesh(coreGeo, coreMat));
-
-    if (hasRings) {
-        const ringGeo = new THREE.RingGeometry(size * 1.5, size * 2.2, 64);
-        const ringMat = new THREE.MeshBasicMaterial({ color: color, side: THREE.DoubleSide, transparent: true, opacity: 0.2, wireframe: true });
-        const ring = new THREE.Mesh(ringGeo, ringMat);
-        ring.rotation.x = Math.PI / 2.5;
-        mesh.add(ring);
-    }
-
-    scene.add(mesh);
-    planets.push(mesh);
-    return mesh;
+    const nebula = new THREE.Mesh(geo, mat);
+    nebula.position.set((Math.random() - 0.5) * 400, (Math.random() - 0.5) * 400, -200 - (Math.random() * 1000));
+    scene.add(nebula);
+    nebulae.push(nebula);
 }
 
-// Map planets to the Sections
-createPlanet(10, 0x44aaff, -100, 20, -5, true);  // Sector I
-createPlanet(15, 0xffaa44, -250, -25, 10, false); // Sector II
-createPlanet(8, 0xaa44ff, -400, 15, -10, true);  // Sector III
-createPlanet(25, 0xff4444, -600, 0, 0, false);    // Sector IV
+// Giant cinematic planets
+const planets = [];
+
+function createPlanet(size, color, zPos, xPos, yPos, hasRings, hasMoons) {
+    const geo = new THREE.SphereGeometry(size, 64, 64);
+
+    // Solid core with emissive glow
+    const coreMat = new THREE.MeshStandardMaterial({
+        color: 0x111115,
+        emissive: color,
+        emissiveIntensity: 0.2,
+        roughness: 0.8
+    });
+    const planet = new THREE.Mesh(geo, coreMat);
+    planet.position.set(xPos, yPos, zPos);
+
+    // Wireframe outer atmosphere layer
+    const atmGeo = new THREE.SphereGeometry(size * 1.05, 32, 32);
+    const atmMat = new THREE.MeshBasicMaterial({
+        color: color, wireframe: true, transparent: true, opacity: 0.2
+    });
+    planet.add(new THREE.Mesh(atmGeo, atmMat));
+
+    if (hasRings) {
+        const ringGeo = new THREE.RingGeometry(size * 1.4, size * 2.8, 128);
+        const ringMat = new THREE.MeshBasicMaterial({
+            color: color,
+            side: THREE.DoubleSide,
+            transparent: true,
+            opacity: 0.4,
+            map: starTexture, // Soften the rings
+            blending: THREE.AdditiveBlending
+        });
+        const ring = new THREE.Mesh(ringGeo, ringMat);
+        ring.rotation.x = Math.PI / 2.2;
+        ring.rotation.y = Math.PI / 8;
+        planet.add(ring);
+
+        // Add a secondary inner ring
+        const ringGeo2 = new THREE.RingGeometry(size * 1.1, size * 1.3, 64);
+        const ringMat2 = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide, transparent: true, opacity: 0.1 });
+        const ring2 = new THREE.Mesh(ringGeo2, ringMat2);
+        ring2.rotation.copy(ring.rotation);
+        planet.add(ring2);
+    }
+
+    if (hasMoons) {
+        for(let i=0; i<3; i++) {
+            const moonGeo = new THREE.SphereGeometry(size * 0.1, 16, 16);
+            const moonMat = new THREE.MeshStandardMaterial({ color: 0xdddddd, roughness: 0.9 });
+            const moon = new THREE.Mesh(moonGeo, moonMat);
+
+            // Create a pivot for the moon to orbit
+            const pivot = new THREE.Group();
+            pivot.rotation.x = Math.random() * Math.PI;
+            pivot.rotation.y = Math.random() * Math.PI;
+            pivot.add(moon);
+            moon.position.set(size * 3 + Math.random() * size, 0, 0);
+
+            planet.add(pivot);
+            // Save pivot to planets array for rotation in render loop
+            planets.push({ mesh: pivot, speed: 0.005 + Math.random() * 0.01 });
+        }
+    }
+
+    scene.add(planet);
+    planets.push({ mesh: planet, speed: 0.001 });
+    return planet;
+}
+
+// Create Massive Planets directly in the camera's path
+createPlanet(30, 0x44aaff, -150, 45, -15, true, true);   // Sector I: Geography (Blue with rings and moons)
+createPlanet(45, 0xffaa44, -450, -60, 20, false, true);   // Sector II: Words (Giant orange gas giant)
+createPlanet(25, 0xaa44ff, -750, 40, -10, true, false);  // Sector III: Scramy (Purple ringed)
+createPlanet(80, 0xff2222, -1100, 0, 0, false, false);   // Sector IV: The Void (Massive Red giant)
+
+// Add a Supermassive Black Hole accretion disk effect far away
+const bhGeo = new THREE.RingGeometry(90, 150, 128);
+const bhMat = new THREE.MeshBasicMaterial({
+    color: 0xffaa00,
+    side: THREE.DoubleSide,
+    transparent: true,
+    opacity: 0.8,
+    blending: THREE.AdditiveBlending,
+    map: starTexture
+});
+const blackHole = new THREE.Mesh(bhGeo, bhMat);
+blackHole.position.set(0, 0, -1100);
+blackHole.rotation.x = Math.PI / 2.5;
+scene.add(blackHole);
+
 
 // Window Resize
 window.addEventListener('resize', () => {
@@ -97,17 +209,31 @@ window.addEventListener('resize', () => {
 const clock = new THREE.Clock();
 function tick() {
     const elapsedTime = clock.getElapsedTime();
+
+    // Rotate Planets and Moons
     planets.forEach((p, i) => {
-        p.rotation.y += 0.002 * (i % 2 === 0 ? 1 : -1);
-        p.rotation.x += 0.001;
+        p.mesh.rotation.y += p.speed;
+        if(p.mesh.geometry && p.mesh.geometry.type === 'SphereGeometry') {
+            p.mesh.rotation.x += p.speed * 0.5;
+        }
     });
-    particlesMesh.rotation.z = elapsedTime * 0.02;
+
+    blackHole.rotation.z -= 0.005;
+
+    // Move particles slightly towards camera
+    particlesMesh.position.z = (elapsedTime * 5) % 500;
+
+    // Rotate Nebulae slowly to face camera
+    nebulae.forEach((n, i) => {
+        n.rotation.z += 0.0005 * (i % 2 === 0 ? 1 : -1);
+        n.lookAt(camera.position);
+    });
 
     // Update HUD Coordinates
     document.getElementById('coordinates').innerText = `Z: ${camera.position.z.toFixed(2)}`;
 
-    // Light follows camera
-    pointLight.position.set(camera.position.x, camera.position.y, camera.position.z - 20);
+    // Light follows camera closely to illuminate planets as we pass
+    pointLight.position.set(camera.position.x, camera.position.y + 10, camera.position.z - 50);
 
     renderer.render(scene, camera);
     window.requestAnimationFrame(tick);
@@ -118,28 +244,28 @@ tick();
 // --- 3. GSAP SCROLL ANIMATIONS ---
 gsap.registerPlugin(ScrollTrigger);
 
-// Animate Camera Z position based on scroll
+// Animate Camera Z position based on scroll deep into space
 gsap.to(camera.position, {
-    z: -650, // Travel deep into the Z axis
-    ease: "none",
+    z: -1000,
+    ease: "power1.inOut",
     scrollTrigger: {
         trigger: "#scroll-container",
         start: "top top",
         end: "bottom bottom",
-        scrub: 1
+        scrub: 1.5
     }
 });
 
-// Animate Camera X/Y slightly for cinematic drift
+// Add camera shake/drift for cinematic effect
 gsap.to(camera.position, {
-    x: 5,
-    y: 2,
-    ease: "none",
+    x: 10,
+    y: 5,
+    ease: "sine.inOut",
     scrollTrigger: {
         trigger: "#scroll-container",
         start: "top top",
         end: "bottom bottom",
-        scrub: 2
+        scrub: 3
     }
 });
 
@@ -152,7 +278,6 @@ const container = document.getElementById('data-container');
 const loading = document.getElementById('loading');
 const errorDiv = document.getElementById('error');
 
-// Open Terminal on Button Click
 document.querySelectorAll('.explore-btn').forEach(btn => {
     btn.addEventListener('click', async (e) => {
         const target = e.target.getAttribute('data-target');
@@ -224,7 +349,7 @@ function renderTextList(query) {
     const ul = document.createElement('ul');
     ul.className = 'text-list';
 
-    const maxItems = 1500; // Keep DOM light for terminal UI
+    const maxItems = 1500;
     const itemsToRender = filtered.slice(0, maxItems);
 
     itemsToRender.forEach(item => {
@@ -266,7 +391,6 @@ function renderJson(query) {
         return;
     }
 
-    // Try Table format first
     if (Array.isArray(dataToRender) && dataToRender.length > 0 && typeof dataToRender[0] === 'object' && dataToRender[0] !== null) {
         const headers = new Set();
         dataToRender.forEach(item => {
@@ -314,7 +438,6 @@ function renderJson(query) {
         }
     }
 
-    // Fallback JSON format
     const pre = document.createElement('pre');
     pre.className = 'json-view';
     pre.innerHTML = syntaxHighlight(JSON.stringify(dataToRender, null, 2));
