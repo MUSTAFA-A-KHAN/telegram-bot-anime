@@ -16,7 +16,8 @@ const DATA_SOURCES = {
     'allowed_words_txt': { path: 'controller/translator/allowed_words.txt', type: 'text' },
     'scramy_words_txt': { path: 'controller/translator/scramy_words.txt', type: 'text' },
     'scramy_allowed_words_txt': { path: 'controller/translator/scramy_allowed_words.txt', type: 'text' },
-    'translator_banned_users': { path: 'translator_banned_users.json', type: 'json' }
+    'translator_banned_users': { path: 'translator_banned_users.json', type: 'json' },
+    'leaderboards': { customUrl: `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/docs/leaderboard.json`, type: 'json' }
 };
 
 let currentData = null;
@@ -362,7 +363,8 @@ async function loadData(source) {
         currentData = null;
         currentType = source.type;
 
-        const response = await fetch(RAW_BASE_URL + source.path);
+        const fetchUrl = source.customUrl ? source.customUrl : RAW_BASE_URL + source.path;
+        const response = await fetch(fetchUrl);
         if (!response.ok) throw new Error(`Fetch Failed: ${response.status}`);
 
         if (source.type === 'json') {
