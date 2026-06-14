@@ -407,11 +407,65 @@ function renderJson(query) {
 
     if (Array.isArray(dataToRender) && dataToRender.length > 0 && typeof dataToRender[0] === 'object' && dataToRender[0] !== null) {
         const headers = new Set();
+        let hasImage = false;
         dataToRender.forEach(item => {
-            if(typeof item === 'object' && item !== null) Object.keys(item).forEach(k => headers.add(k));
+            if(typeof item === 'object' && item !== null) {
+                Object.keys(item).forEach(k => {
+                    headers.add(k);
+                    if (k === 'image_url') hasImage = true;
+                });
+            }
         });
 
-        if (headers.size > 0 && headers.size < 10) {
+        if (hasImage) {
+            const grid = document.createElement('div');
+            grid.className = 'card-grid';
+
+            const maxItems = 100; // Limit cards to avoid performance issues with many images
+            const itemsToRender = dataToRender.slice(0, maxItems);
+
+            itemsToRender.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'data-card';
+
+                if (item.image_url) {
+                    const img = document.createElement('img');
+                    img.src = item.image_url;
+                    img.className = 'card-image';
+                    img.alt = item.name || 'Data Image';
+                    img.loading = 'lazy';
+                    card.appendChild(img);
+                }
+
+                const content = document.createElement('div');
+                content.className = 'card-content';
+
+                headers.forEach(h => {
+                    if (h === 'image_url') return; // Skip rendering URL as text
+                    const val = item[h];
+                    if (val !== undefined) {
+                        const row = document.createElement('div');
+                        row.className = 'card-row';
+                        row.innerHTML = `<span class="card-label">${h.toUpperCase()}:</span> <span class="card-value">${typeof val === 'object' ? JSON.stringify(val) : val}</span>`;
+                        content.appendChild(row);
+                    }
+                });
+
+                card.appendChild(content);
+                grid.appendChild(card);
+            });
+
+            container.appendChild(grid);
+
+            if (dataToRender.length > maxItems) {
+                const p = document.createElement('p');
+                p.className = 'mission-log';
+                p.style.textAlign = 'center';
+                p.textContent = `[ DISPLAYING ${maxItems} OF ${dataToRender.length} FRAGMENTS ]`;
+                container.appendChild(p);
+            }
+            return;
+        } else if (headers.size > 0 && headers.size < 10) {
             const table = document.createElement('table');
             const thead = document.createElement('thead');
             const trHead = document.createElement('tr');
