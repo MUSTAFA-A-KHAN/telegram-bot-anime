@@ -12,6 +12,7 @@ import (
 
 	collectibleController "github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/collectible"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/geographybot"
+	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/translator"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/scramybot"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/animebot"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/wordlebot"
@@ -280,19 +281,19 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			view.SendMessage(bot, chatID, "AI mode has been disabled.")
 			return
 		case "rules":
-			rulesText := "*🎮 Game Rules 🎮*\n\n" +
-				"*Players:*\n" +
-				"1. Guess the word by typing your answer.\n" +
-				"2. Use /hint to get clues about the word, but wait at least a minute between hints.\n" +
-				"3. Use /reveal to reveal the word if you give up, but only after 10 minutes of gameplay.\n\n" +
-				"*Leaders:*\n" +
-				"1. Claim leadership by via button or using the /word command.\n" +
-				"2. Explain the word to other players without directly saying it.\n" +
-				"3. You can get a new word or drop leadership using the provided buttons.\n\n" +
-				"*General:*\n" +
-				"1. Be respectful and fair to other players.\n" +
-				"2. Have fun and enjoy the game!\n\n" +
-				"Type /word to start a new game or /rules to see these rules again."
+			rulesText := "🎮 *Game Rules*\n\n" +
+				"👥 *Players*\n" +
+				"• Guess the word by typing your answer.\n" +
+				"• Use `/hint` to get clues (wait 1 min between hints).\n" +
+				"• Use `/reveal` if you give up (available after 10 mins).\n\n" +
+				"👑 *Leaders*\n" +
+				"• Claim leadership via button or `/word` command.\n" +
+				"• Explain the word without saying it directly.\n" +
+				"• Drop leadership or get a new word via buttons.\n\n" +
+				"🌍 *General*\n" +
+				"• Be respectful and fair.\n" +
+				"• Have fun and enjoy the game!\n\n" +
+				"💡 *Tip:* Type `/word` to start or `/rules` to view this menu."
 			msg := tgbotapi.NewMessage(chatID, rulesText)
 			msg.ParseMode = "Markdown"
 			_, err := bot.Send(msg)
@@ -325,7 +326,9 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 							customWordMutex.Lock()
 							customWordState[int64(message.From.ID)] = groupChatID
 							customWordMutex.Unlock()
-							view.SendMessage(bot, chatID, "Type the word you want the group to guess (must be a valid English word):")
+							msg := tgbotapi.NewMessage(chatID, "Type the word you want the group to guess (must be a valid English word):")
+							msg.ReplyMarkup = tgbotapi.ForceReply{ForceReply: true}
+							bot.Send(msg)
 						} else {
 							view.SendMessage(bot, chatID, "You are not the current leader in that group.")
 						}
@@ -806,19 +809,19 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		view.SendMessageWithButtons(bot, chatID, "🐊🇮🇳\n📊 Choose game stats to view:", buttons)
 		// view.ReplyToMessage(bot, message.MessageID, chatID, result)
 	case "rules":
-		rulesText := "*🎮 Game Rules 🎮*\n\n" +
-			"*Players:*\n" +
-			"1. Guess the word by typing your answer.\n" +
-			"2. Use /hint to get clues about the word, but wait at least a minute between hints.\n" +
-			"3. Use /reveal to reveal the word if you give up, but only after 10 minutes of gameplay.\n\n" +
-			"*Leaders:*\n" +
-			"1. Claim leadership by clicking 'Explain' or using the appropriate command.\n" +
-			"2. Explain the word to other players without directly saying it.\n" +
-			"3. You can get a new word or drop leadership using the provided buttons.\n\n" +
-			"*General:*\n" +
-			"1. Be respectful and fair to other players.\n" +
-			"2. Have fun and enjoy the game!\n\n" +
-			"Type /word to start a new game or /rules to see these rules again."
+		rulesText := "🎮 *Game Rules*\n\n" +
+			"👥 *Players*\n" +
+			"• Guess the word by typing your answer.\n" +
+			"• Use `/hint` to get clues (wait 1 min between hints).\n" +
+			"• Use `/reveal` if you give up (available after 10 mins).\n\n" +
+			"👑 *Leaders*\n" +
+			"• Claim leadership by clicking 'Explain' or using the appropriate command.\n" +
+			"• Explain the word without saying it directly.\n" +
+			"• Drop leadership or get a new word via buttons.\n\n" +
+			"🌍 *General*\n" +
+			"• Be respectful and fair.\n" +
+			"• Have fun and enjoy the game!\n\n" +
+			"💡 *Tip:* Type `/word` to start or `/rules` to view this menu."
 		msg := tgbotapi.NewMessage(chatID, rulesText)
 		msg.ParseMode = "Markdown"
 		_, err := bot.Send(msg)
@@ -875,6 +878,9 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		case "anime":
 			animebot.HandleAnimeCommand(bot, chatID, client)
 			return
+	case "geohint":
+		geographybot.HandleGeographyHint(bot, message, client, chatID, translator.NewTextTranslator())
+		return
 	case "cancelgeo":
 		if geographybot.CancelGeography(chatID) {
 			view.SendMessage(bot, chatID, "Geography game cancelled.")
@@ -1918,13 +1924,14 @@ func MessageToJSONString(message *tgbotapi.Message) (string, error) {
 func escapeMarkdownV2(text string) string {
 	var builder strings.Builder
 	builder.Grow(len(text) + len(text)/4) // Rough estimate for escaped string
-	for _, char := range text {
+	for i := 0; i < len(text); i++ {
+		char := text[i]
 		switch char {
 		case '_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!':
 			builder.WriteByte('\\')
-			builder.WriteRune(char)
+			builder.WriteByte(char)
 		default:
-			builder.WriteRune(char)
+			builder.WriteByte(char)
 		}
 	}
 	return builder.String()
