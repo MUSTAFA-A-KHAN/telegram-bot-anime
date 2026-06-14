@@ -3,41 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Data Viewer</title>
+    <title>Cosmic Data Explorer | Telegram Bot</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syncopate:wght@400;700&display=swap" rel="stylesheet">
+
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <!-- GSAP & ScrollTrigger -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
 </head>
 <body>
-    <header>
-        <h1>Telegram Bot Data Viewer</h1>
-    </header>
-    <main>
-        <div class="controls">
-            <select id="data-selector">
-                <option value="" disabled selected>Select a dataset to view...</option>
-                <optgroup label="Geography Bot">
-                    <option value="geography_countries">Countries (JSON)</option>
-                    <option value="geography_landmarks">Landmarks (JSON)</option>
-                </optgroup>
-                <optgroup label="Word Games">
-                    <option value="words_txt">Words (TXT)</option>
-                    <option value="allowed_words_txt">Allowed Words (TXT)</option>
-                    <option value="scramy_words_txt">Scramy Words (TXT)</option>
-                    <option value="scramy_allowed_words_txt">Scramy Allowed Words (TXT)</option>
-                </optgroup>
-                <optgroup label="Other">
-                    <option value="translator_banned_users">Banned Users (JSON)</option>
-                </optgroup>
-            </select>
-            <input type="text" id="search-input" placeholder="Search data..." disabled>
-        </div>
+    <!-- Background Canvas for Three.js -->
+    <canvas id="universe-canvas"></canvas>
 
-        <div id="loading" class="hidden">Loading data...</div>
-        <div id="error" class="hidden error-message"></div>
-
-        <div id="data-container">
-            <p class="placeholder-text">Please select a dataset to view its contents.</p>
+    <!-- UI Overlay / HUD -->
+    <div id="hud">
+        <div class="hud-top">
+            <span class="hud-text">MISSION: TELEGRAM BOT ANIME</span>
+            <span class="hud-text">STATUS: EXPLORING</span>
         </div>
-    </main>
+        <div class="hud-bottom">
+            <span class="hud-text">SYSTEM: ONLINE</span>
+            <span class="hud-text" id="coordinates">Z: 0000.00</span>
+        </div>
+    </div>
+
+    <!-- Scrollable Content Layer for GSAP Tracking -->
+    <div id="scroll-container">
+        <section class="scene-section" id="intro">
+            <div class="editorial-text">
+                <h1 class="oversized-type">DEEP SPACE</h1>
+                <p class="subtitle">A cinematic exploration of the Bot's core datasets.</p>
+                <div class="scroll-indicator">SCROLL TO IGNITE</div>
+            </div>
+        </section>
+
+        <section class="scene-section" id="geography">
+            <div class="editorial-text right-align">
+                <h2 class="oversized-type">SECTOR I:<br>GEOGRAPHY</h2>
+                <p class="mission-log">ORBITING: COUNTRIES.JSON & LANDMARKS.JSON</p>
+                <button class="explore-btn" data-target="geography_countries">ACCESS COUNTRIES DATA</button>
+                <button class="explore-btn" data-target="geography_landmarks">ACCESS LANDMARKS DATA</button>
+            </div>
+        </section>
+
+        <section class="scene-section" id="words">
+            <div class="editorial-text left-align">
+                <h2 class="oversized-type">SECTOR II:<br>LEXICON</h2>
+                <p class="mission-log">ORBITING: WORDS.TXT & ALLOWED_WORDS.TXT</p>
+                <button class="explore-btn" data-target="words_txt">ACCESS RAW WORDS</button>
+                <button class="explore-btn" data-target="allowed_words_txt">ACCESS ALLOWED WORDS</button>
+            </div>
+        </section>
+
+        <section class="scene-section" id="scramy">
+            <div class="editorial-text right-align">
+                <h2 class="oversized-type">SECTOR III:<br>SCRAMY</h2>
+                <p class="mission-log">ORBITING: SCRAMY_WORDS.TXT</p>
+                <button class="explore-btn" data-target="scramy_words_txt">ACCESS SCRAMY WORDS</button>
+                <button class="explore-btn" data-target="scramy_allowed_words_txt">ACCESS ALLOWED SCRAMY</button>
+            </div>
+        </section>
+
+        <section class="scene-section" id="users">
+            <div class="editorial-text center-align">
+                <h2 class="oversized-type">SECTOR IV:<br>THE VOID</h2>
+                <p class="mission-log">ORBITING: TRANSLATOR_BANNED_USERS.JSON</p>
+                <button class="explore-btn" data-target="translator_banned_users">ACCESS EXILED ENTITIES</button>
+            </div>
+        </section>
+    </div>
+
+    <!-- Data Terminal Modal -->
+    <div id="data-terminal" class="hidden">
+        <div class="terminal-header">
+            <div class="terminal-title">DATA LOG ENTRY</div>
+            <button id="close-terminal">CLOSE [X]</button>
+        </div>
+        <div class="terminal-controls">
+            <input type="text" id="terminal-search" placeholder="Query data...">
+        </div>
+        <div id="terminal-content">
+            <div id="loading" class="hidden">ESTABLISHING CONNECTION...</div>
+            <div id="error" class="hidden error-message"></div>
+            <div id="data-container"></div>
+        </div>
+    </div>
 
     <script src="app.js"></script>
 </body>
