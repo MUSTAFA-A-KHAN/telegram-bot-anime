@@ -1,0 +1,60 @@
+name: Sync Leaderboards to Docs
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # Run daily at midnight UTC
+  workflow_dispatch:     # Allow manual triggers
+
+permissions:
+  contents: write        # Required to push to the docs branch
+
+jobs:
+  export-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch all history so we can checkout docs if needed
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.22.3' # Matching the version in go.yml
+
+      - name: Generate leaderboard JSON
+        run: |
+          go run cmd/export_leaderboard/main.go
+          ls -lh leaderboard.json
+
+      - name: Switch to docs branch and update
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Stash the generated file temporarily
+          mv leaderboard.json /tmp/leaderboard.json
+
+          # Check if docs branch exists locally or on origin
+          if git ls-remote --heads origin docs | grep -q docs; then
+            echo "Branch docs exists, checking it out..."
+            git checkout docs
+          else
+            echo "Branch docs does not exist, creating it as an orphan branch..."
+            git checkout --orphan docs
+            git rm -rf .
+          fi
+
+          # Restore the generated file
+          mv /tmp/leaderboard.json ./leaderboard.json
+
+          # Add and commit
+          git add leaderboard.json
+
+          # Only commit and push if there are changes
+          if ! git diff --staged --quiet; then
+            git commit -m "Update leaderboard JSON data [skip ci]"
+            git push origin docs
+          else
+            echo "No changes in leaderboard.json, skipping."
+          fi
