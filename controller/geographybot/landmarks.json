@@ -1,5 +1,15 @@
 [
   {
+    "name": "Burj Al Mamlakah (Kingdom Centre)",
+    "country": "Saudi Arabia",
+    "image_url": "https://upload.wikimedia.org/wikipedia/en/thumb/b/b2/Kingdom_Centre_Riyadh_2024.jpeg/960px-Kingdom_Centre_Riyadh_2024.jpeg"
+  },
+  {
+    "name": "Buraidah Water Tower",
+    "country": "Saudi Arabia",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9c/Buraidah.jpg/500px-Buraidah.jpg"
+  },
+  {
     "name": "Eiffel Tower",
     "country": "France",
     "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/85/Tour_Eiffel_Wikimedia_Commons_%28cropped%29.jpg/500px-Tour_Eiffel_Wikimedia_Commons_%28cropped%29.jpg"
