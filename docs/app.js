@@ -270,7 +270,21 @@ gsap.to(camera.position, {
 });
 
 
-// --- 4. DATA TERMINAL LOGIC ---
+// --- 4. TELEGRAM WEB APP INIT ---
+if (window.Telegram && window.Telegram.WebApp) {
+    const tg = window.Telegram.WebApp;
+    tg.ready();
+
+    if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+        const greetingElement = document.getElementById('user-greeting');
+        if (greetingElement) {
+            greetingElement.textContent = `WELCOME, ${tg.initDataUnsafe.user.first_name.toUpperCase()}!`;
+            greetingElement.style.display = 'block';
+        }
+    }
+}
+
+// --- 5. DATA TERMINAL LOGIC ---
 const terminal = document.getElementById('data-terminal');
 const closeBtn = document.getElementById('close-terminal');
 const searchInput = document.getElementById('terminal-search');
