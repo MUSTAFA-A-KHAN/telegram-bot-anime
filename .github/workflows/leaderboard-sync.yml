@@ -56,5 +56,5 @@ jobs:
             git commit -m "Update leaderboard JSON data [skip ci]"
             git push origin docs
           else
-            echo "No changes in leaderboard.json, skipping."
+            echo "No changes found in leaderboard.json, skipping."
           fi
