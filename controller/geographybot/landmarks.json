@@ -152,1581 +152,886 @@
   {
     "name": "Yosemite Valley",
     "country": "United States",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Yosemite_Valley_from_Tunnel_View.jpg?width=500"
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Yosemite_Valley_from_Tunnel_View.jpg/500px-Yosemite_Valley_from_Tunnel_View.jpg"
   },
   {
     "name": "Yellowstone National Park",
     "country": "United States",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Grand_Prismatic_Spring_2013.jpg?width=500"
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/7/73/Grand_Canyon_of_yellowstone.jpg"
   },
   {
     "name": "Central Park",
     "country": "United States",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Central_Park_looking_south_from_the_Jacqueline_Kennedy_Onassis_Reservoir.jpg?width=500"
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/f/f1/Global_Citizen_Festival_Central_Park_New_York_City_from_NYonAir_%2815351915006%29.jpg"
   },
   {
     "name": "Times Square",
     "country": "United States",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Times_Square_1-2.JPG?width=500"
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/4/47/New_york_times_square-terabass.jpg"
   },
   {
     "name": "Empire State Building",
     "country": "United States",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Empire_State_Building_%28aerial_view%29.jpg?width=500"
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/10/Empire_State_Building_%28aerial_view%29.jpg/500px-Empire_State_Building_%28aerial_view%29.jpg"
   },
   {
     "name": "Brooklyn Bridge",
     "country": "United States",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Brooklyn_Bridge_Manhattan.jpg?width=500"
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/f/f0/Brooklyn_Bridge_and_the_Lower_Manhattan_skyline_from_Pebble_Beach%2C_New_York.jpg"
   },
   {
     "name": "Alcatraz Island",
     "country": "United States",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Alcatraz_Island_photo_D_Ramey_Logan.jpg?width=500"
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/Alcatraz_Island_photo_Don_Ramey_Logan.jpg/500px-Alcatraz_Island_photo_Don_Ramey_Logan.jpg"
   },
   {
     "name": "Space Needle",
     "country": "United States",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Space_Needle_2011-07-04.jpg?width=500"
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/Space_Needle_2011-07-04.jpg/500px-Space_Needle_2011-07-04.jpg"
   },
   {
     "name": "Washington Monument",
     "country": "United States",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Washington_Monument_Dusk_Jan_2006.jpg?width=500"
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/8/80/Washington_Monument_2022.jpg"
   },
   {
     "name": "Lincoln Memorial",
     "country": "United States",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Lincoln_Memorial_%28Night_View%29.jpg?width=500"
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/7/78/Aerial_view_of_Lincoln_Memorial_-_east_side_EDIT.jpeg"
   },
   {
     "name": "Hoover Dam",
     "country": "United States",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Hoover_dam_from_air.jpg?width=500"
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/c/c8/2017_Aerial_view_Hoover_Dam_4774.jpg"
   },
   {
     "name": "Gateway Arch",
     "country": "United States",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/St_Louis_night_expblend.jpg?width=500"
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/0/00/St_Louis_night_expblend_cropped.jpg"
   },
   {
     "name": "Zion National Park",
     "country": "United States",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Zion_angels_landing_view.jpg?width=500"
-  },
-  {
-    "name": "Bryce Canyon",
-    "country": "United States",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Bryce_Canyon_Amphitheater_1.jpg?width=500"
-  },
-  {
-    "name": "Glacier National Park",
-    "country": "United States",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Hidden_Lake_Glacier_NP.jpg?width=500"
-  },
-  {
-    "name": "Mount Rainier",
-    "country": "United States",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Mount_Rainier_over_Tacoma.jpg?width=500"
-  },
-  {
-    "name": "Banff National Park",
-    "country": "Canada",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Moraine_Lake_17092005.jpg?width=500"
-  },
-  {
-    "name": "Château Frontenac",
-    "country": "Canada",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Chateau_Frontenac_02.jpg?width=500"
-  },
-  {
-    "name": "Parliament Hill",
-    "country": "Canada",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Parliament_Hill_from_Canadian_Museum_of_History.jpg?width=500"
-  },
-  {
-    "name": "Lake Louise",
-    "country": "Canada",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Lake_Louise_from_the_Big_Beehive_2.jpg?width=500"
-  },
-  {
-    "name": "Stanley Park",
-    "country": "Canada",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Stanley_Park_Aerial_View.jpg?width=500"
-  },
-  {
-    "name": "Teotihuacan",
-    "country": "Mexico",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Piramide_de_la_Luna_01.jpg?width=500"
-  },
-  {
-    "name": "Tulum",
-    "country": "Mexico",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Tulum_-_El_Castillo_-_01.jpg?width=500"
-  },
-  {
-    "name": "Palenque",
-    "country": "Mexico",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Palenque_Templo_de_las_Inscripciones.jpg?width=500"
-  },
-  {
-    "name": "Uxmal",
-    "country": "Mexico",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Piramide_del_adivino_uxmal.jpg?width=500"
-  },
-  {
-    "name": "Iguazu Falls",
-    "country": "Argentina/Brazil",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Iguazu_Falls_Aerial_View.jpg?width=500"
-  },
-  {
-    "name": "Salar de Uyuni",
-    "country": "Bolivia",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Salar_de_Uyuni_-_Bolivia_2019-12-19_01.jpg?width=500"
-  },
-  {
-    "name": "Galápagos Islands",
-    "country": "Ecuador",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Galapagos_Islands_satellite_photo.jpg?width=500"
-  },
-  {
-    "name": "Angel Falls",
-    "country": "Venezuela",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Salto_Angel_2.jpg?width=500"
-  },
-  {
-    "name": "Perito Moreno Glacier",
-    "country": "Argentina",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Perito_Moreno_Glacier_Patagonia_Argentina_Luca_Galuzzi_2005.JPG?width=500"
-  },
-  {
-    "name": "Torres del Paine",
-    "country": "Chile",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Cuernos_del_Paine_from_Lake_Peho%C3%A9.jpg?width=500"
-  },
-  {
-    "name": "Atacama Desert",
-    "country": "Chile",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Valle_de_la_Luna%2C_San_Pedro_de_Atacama%2C_Chile%2C_2016-02-01%2C_DD_97.JPG?width=500"
-  },
-  {
-    "name": "Easter Island Moai",
-    "country": "Chile",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Ahu-Akivi-1.jpg?width=500"
-  },
-  {
-    "name": "Copacabana Beach",
-    "country": "Brazil",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Copacabana_Beach_Rio_de_Janeiro_Brazil.jpg?width=500"
-  },
-  {
-    "name": "Sugarloaf Mountain",
-    "country": "Brazil",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Sugarloaf_Mountain_from_Botafogo.jpg?width=500"
-  },
-  {
-    "name": "Amazon Rainforest",
-    "country": "Brazil",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Amazon_River.jpg?width=500"
-  },
-  {
-    "name": "Lake Titicaca",
-    "country": "Peru/Bolivia",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Lake_Titicaca_on_the_Andes_from_Amantani.jpg?width=500"
-  },
-  {
-    "name": "Nazca Lines",
-    "country": "Peru",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Nazca_Lines_Spider.jpg?width=500"
-  },
-  {
-    "name": "Colca Canyon",
-    "country": "Peru",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Colca_Canyon_Peru.jpg?width=500"
-  },
-  {
-    "name": "Sacsayhuamán",
-    "country": "Peru",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Sacsayhuam%C3%A1n_-_Cusco.jpg?width=500"
-  },
-  {
-    "name": "Tower of London",
-    "country": "United Kingdom",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Tower_of_London_viewed_from_the_River_Thames.jpg?width=500"
-  },
-  {
-    "name": "Tower Bridge",
-    "country": "United Kingdom",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Tower_bridge_London_Twilight_-_November_2006.jpg?width=500"
-  },
-  {
-    "name": "Buckingham Palace",
-    "country": "United Kingdom",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Buckingham_Palace_from_gardens%2C_London%2C_UK_-_Diliff.jpg?width=500"
-  },
-  {
-    "name": "Edinburgh Castle",
-    "country": "United Kingdom",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Edinburgh_Castle_from_the_Vennel.jpg?width=500"
-  },
-  {
-    "name": "Windsor Castle",
-    "country": "United Kingdom",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Windsor_Castle_at_Sunset_-_Nov_2006.jpg?width=500"
-  },
-  {
-    "name": "Giant's Causeway",
-    "country": "United Kingdom",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Causeway-code_poet-4.jpg?width=500"
-  },
-  {
-    "name": "Loch Ness",
-    "country": "United Kingdom",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Loch_Ness_from_Urquhart_Castle.jpg?width=500"
-  },
-  {
-    "name": "Notre-Dame de Paris",
-    "country": "France",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Notre_Dame_de_Paris_2013-05-18.jpg?width=500"
-  },
-  {
-    "name": "Palace of Versailles",
-    "country": "France",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Chateau_Versailles_Galerie_des_Glaces.jpg?width=500"
-  },
-  {
-    "name": "Mont Saint-Michel",
-    "country": "France",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Mont_St_Michel_3%2C_Brittany%2C_France_-_July_2011.jpg?width=500"
-  },
-  {
-    "name": "Arc de Triomphe",
-    "country": "France",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Arc_de_Triomphe%2C_Paris_21_October_2010.jpg?width=500"
-  },
-  {
-    "name": "Sainte-Chapelle",
-    "country": "France",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Sainte_Chapelle_-_Upper_level_1.jpg?width=500"
-  },
-  {
-    "name": "Château de Chambord",
-    "country": "France",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Chateau_de_Chambord.jpg?width=500"
-  },
-  {
-    "name": "Pantheon",
-    "country": "Italy",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Pantheon%2C_Rome%2C_Italy_-_October_2008.jpg?width=500"
-  },
-  {
-    "name": "Leaning Tower of Pisa",
-    "country": "Italy",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Leaning_Tower_of_Pisa.jpg?width=500"
-  },
-  {
-    "name": "Trevi Fountain",
-    "country": "Italy",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Trevi_Fountain%2C_Rome%2C_Italy_2_-_May_2007.jpg?width=500"
-  },
-  {
-    "name": "Vatican Museums",
-    "country": "Vatican City",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Vatican_Museum_Spiral_Staircase.jpg?width=500"
-  },
-  {
-    "name": "St. Peter's Basilica",
-    "country": "Vatican City",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/St_Peter%27s_Square%2C_Vatican_City_-_April_2007.jpg?width=500"
-  },
-  {
-    "name": "Sistine Chapel",
-    "country": "Vatican City",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Sistine_Chapel_ceiling_02_%281999_restoration%29.jpg?width=500"
-  },
-  {
-    "name": "Duomo di Milano",
-    "country": "Italy",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Milan_Cathedral_from_Piazza_del_Duomo.jpg?width=500"
-  },
-  {
-    "name": "Florence Cathedral",
-    "country": "Italy",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Florence_Duomo_from_Michelangelo_hill.jpg?width=500"
-  },
-  {
-    "name": "Venice Canals",
-    "country": "Italy",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Grand_Canal_Venice_Italy.jpg?width=500"
-  },
-  {
-    "name": "Rialto Bridge",
-    "country": "Italy",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Rialto_bridge_Venice_Italy.jpg?width=500"
-  },
-  {
-    "name": "Cinque Terre",
-    "country": "Italy",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Manarola%2C_Cinque_Terre%2C_Italy.jpg?width=500"
-  },
-  {
-    "name": "Pompeii",
-    "country": "Italy",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Pompeii_Forum_and_Vesuvius.jpg?width=500"
-  },
-  {
-    "name": "Neuschwanstein Castle",
-    "country": "Germany",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Neuschwanstein_Castle_LOC_print.jpg?width=500"
-  },
-  {
-    "name": "Brandenburg Gate",
-    "country": "Germany",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Brandenburg_Gate_evening.jpg?width=500"
-  },
-  {
-    "name": "Cologne Cathedral",
-    "country": "Germany",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Cologne_cathedral_aerial.jpg?width=500"
-  },
-  {
-    "name": "Reichstag Building",
-    "country": "Germany",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Reichstag_building_Berlin_view_from_west_before_sunset.jpg?width=500"
-  },
-  {
-    "name": "Black Forest",
-    "country": "Germany",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Black_Forest_panorama.jpg?width=500"
-  },
-  {
-    "name": "Park Güell",
-    "country": "Spain",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Park_G%C3%BCell%2C_Barcelona%2C_Spain.jpg?width=500"
-  },
-  {
-    "name": "Casa Batlló",
-    "country": "Spain",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Casa_Batllo_Overview.jpg?width=500"
-  },
-  {
-    "name": "Prado Museum",
-    "country": "Spain",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Museo_del_Prado_2016.jpg?width=500"
-  },
-  {
-    "name": "Mosque-Cathedral of Córdoba",
-    "country": "Spain",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Interior_de_la_Mezquita_de_C%C3%B3rdoba_10.jpg?width=500"
-  },
-  {
-    "name": "Plaza Mayor",
-    "country": "Spain",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Plaza_Mayor_de_Madrid_01.jpg?width=500"
-  },
-  {
-    "name": "Acropolis Museum",
-    "country": "Greece",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Acropolis_Museum_Athens.jpg?width=500"
-  },
-  {
-    "name": "Parthenon",
-    "country": "Greece",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Parthenon_from_west.jpg?width=500"
-  },
-  {
-    "name": "Meteora",
-    "country": "Greece",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Meteora_agios_nikolaos_anapafsas.jpg?width=500"
-  },
-  {
-    "name": "Santorini Caldera",
-    "country": "Greece",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Oia_Santorini_Greece.jpg?width=500"
-  },
-  {
-    "name": "Delphi",
-    "country": "Greece",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Tholos_de_Marmaria_a_Delfos.jpg?width=500"
-  },
-  {
-    "name": "Matterhorn",
-    "country": "Switzerland",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Matterhorn_from_Gornergrat.jpg?width=500"
-  },
-  {
-    "name": "Lake Geneva",
-    "country": "Switzerland/France",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Lake_Geneva_from_Mont_Pelerin.jpg?width=500"
-  },
-  {
-    "name": "Chillon Castle",
-    "country": "Switzerland",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Chateau_de_Chillon_-_1.jpg?width=500"
-  },
-  {
-    "name": "Jungfraujoch",
-    "country": "Switzerland",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Jungfraujoch_Observatory.jpg?width=500"
-  },
-  {
-    "name": "Chapel Bridge",
-    "country": "Switzerland",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Luzern_Kapellbr%C3%BCcke.jpg?width=500"
-  },
-  {
-    "name": "Hofburg",
-    "country": "Austria",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Hofburg_Vienna_1.jpg?width=500"
-  },
-  {
-    "name": "Schönbrunn Palace",
-    "country": "Austria",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Schloss_Sch%C3%B6nbrunn_Wien_2014.jpg?width=500"
-  },
-  {
-    "name": "St. Stephen's Cathedral",
-    "country": "Austria",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Stephansdom_Wien.jpg?width=500"
-  },
-  {
-    "name": "Belvedere Palace",
-    "country": "Austria",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Schloss_Belvedere_Wien_2014.jpg?width=500"
-  },
-  {
-    "name": "Charles Bridge",
-    "country": "Czech Republic",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Charles_Bridge_Prague_Czech_Republic_2019.jpg?width=500"
-  },
-  {
-    "name": "Prague Castle",
-    "country": "Czech Republic",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Prague_Castle_from_Charles_Bridge.jpg?width=500"
-  },
-  {
-    "name": "Old Town Square",
-    "country": "Czech Republic",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Old_Town_Square_Prague_Czech_Republic_2019.jpg?width=500"
-  },
-  {
-    "name": "Buda Castle",
-    "country": "Hungary",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Buda_Castle_night_view.jpg?width=500"
-  },
-  {
-    "name": "Hungarian Parliament Building",
-    "country": "Hungary",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Hungarian_Parliament_Building_2019.jpg?width=500"
-  },
-  {
-    "name": "Chain Bridge",
-    "country": "Hungary",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Sz%C3%A9chenyi_Chain_Bridge_Budapest.jpg?width=500"
-  },
-  {
-    "name": "Rijksmuseum",
-    "country": "Netherlands",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Rijksmuseum_Amsterdam.jpg?width=500"
-  },
-  {
-    "name": "Anne Frank House",
-    "country": "Netherlands",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Anne_Frank_House_Amsterdam.jpg?width=500"
-  },
-  {
-    "name": "Keukenhof",
-    "country": "Netherlands",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Keukenhof_Gardens_Lisse_Netherlands.jpg?width=500"
-  },
-  {
-    "name": "Zaanse Schans",
-    "country": "Netherlands",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Zaanse_Schans_Windmills.jpg?width=500"
-  },
-  {
-    "name": "Atomium",
-    "country": "Belgium",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Atomium_Brussels_Belgium.jpg?width=500"
-  },
-  {
-    "name": "Grand Place",
-    "country": "Belgium",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Grand_Place_Brussels.jpg?width=500"
-  },
-  {
-    "name": "Manneken Pis",
-    "country": "Belgium",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Manneken_Pis_Brussels.jpg?width=500"
-  },
-  {
-    "name": "Tivoli Gardens",
-    "country": "Denmark",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Tivoli_Gardens_Copenhagen.jpg?width=500"
-  },
-  {
-    "name": "Little Mermaid Statue",
-    "country": "Denmark",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Little_Mermaid_Copenhagen.jpg?width=500"
-  },
-  {
-    "name": "Nyhavn",
-    "country": "Denmark",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Nyhavn_Copenhagen.jpg?width=500"
-  },
-  {
-    "name": "Vasa Museum",
-    "country": "Sweden",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Vasa_Museum_Stockholm.jpg?width=500"
-  },
-  {
-    "name": "Gamla stan",
-    "country": "Sweden",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Gamla_stan_Stockholm.jpg?width=500"
-  },
-  {
-    "name": "Stockholm Palace",
-    "country": "Sweden",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Stockholm_Palace.jpg?width=500"
-  },
-  {
-    "name": "Geirangerfjord",
-    "country": "Norway",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Geirangerfjord_Norway.jpg?width=500"
-  },
-  {
-    "name": "Preikestolen",
-    "country": "Norway",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Preikestolen_Norway.jpg?width=500"
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/1/10/Zion_angels_landing_view.jpg"
   },
   {
     "name": "Bryggen",
     "country": "Norway",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Bryggen_Bergen.jpg?width=500"
-  },
-  {
-    "name": "Vigeland Sculpture Park",
-    "country": "Norway",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Vigeland_Sculpture_Park.jpg?width=500"
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/Bryggen_Bergen.jpg/500px-Bryggen_Bergen.jpg"
   },
   {
     "name": "Suomenlinna",
     "country": "Finland",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Suomenlinna_Helsinki.jpg?width=500"
-  },
-  {
-    "name": "Temppeliaukio Church",
-    "country": "Finland",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Temppeliaukio_Church_Helsinki.jpg?width=500"
-  },
-  {
-    "name": "Helsinki Cathedral",
-    "country": "Finland",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Helsinki_Cathedral.jpg?width=500"
-  },
-  {
-    "name": "Hermitage Museum",
-    "country": "Russia",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Hermitage_Museum_St_Petersburg.jpg?width=500"
-  },
-  {
-    "name": "Winter Palace",
-    "country": "Russia",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Winter_Palace_St_Petersburg.jpg?width=500"
-  },
-  {
-    "name": "Peterhof Palace",
-    "country": "Russia",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Peterhof_Palace_St_Petersburg.jpg?width=500"
-  },
-  {
-    "name": "Moscow Kremlin",
-    "country": "Russia",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Moscow_Kremlin.jpg?width=500"
-  },
-  {
-    "name": "Red Square",
-    "country": "Russia",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Red_Square_Moscow.jpg?width=500"
-  },
-  {
-    "name": "Lake Baikal",
-    "country": "Russia",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Lake_Baikal_Russia.jpg?width=500"
-  },
-  {
-    "name": "Bled Castle",
-    "country": "Slovenia",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Bled_Castle_Slovenia.jpg?width=500"
-  },
-  {
-    "name": "Lake Bled",
-    "country": "Slovenia",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Lake_Bled_Slovenia.jpg?width=500"
-  },
-  {
-    "name": "Postojna Cave",
-    "country": "Slovenia",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Postojna_Cave.jpg?width=500"
-  },
-  {
-    "name": "Plitvice Lakes",
-    "country": "Croatia",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Plitvice_Lakes_National_Park.jpg?width=500"
-  },
-  {
-    "name": "Dubrovnik City Walls",
-    "country": "Croatia",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Dubrovnik_City_Walls.jpg?width=500"
-  },
-  {
-    "name": "Diocletian's Palace",
-    "country": "Croatia",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Diocletian%27s_Palace_Split.jpg?width=500"
-  },
-  {
-    "name": "Kotor Old City",
-    "country": "Montenegro",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Kotor_Old_City.jpg?width=500"
-  },
-  {
-    "name": "Mostar Bridge",
-    "country": "Bosnia and Herzegovina",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Stari_Most_Mostar.jpg?width=500"
-  },
-  {
-    "name": "Bran Castle",
-    "country": "Romania",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Bran_Castle_Romania.jpg?width=500"
-  },
-  {
-    "name": "Peles Castle",
-    "country": "Romania",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Peles_Castle_Romania.jpg?width=500"
-  },
-  {
-    "name": "Palace of the Parliament",
-    "country": "Romania",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Palace_of_the_Parliament_Bucharest.jpg?width=500"
-  },
-  {
-    "name": "Alexander Nevsky Cathedral",
-    "country": "Bulgaria",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Alexander_Nevsky_Cathedral_Sofia.jpg?width=500"
-  },
-  {
-    "name": "Rila Monastery",
-    "country": "Bulgaria",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Rila_Monastery_Bulgaria.jpg?width=500"
-  },
-  {
-    "name": "Acropolis of Lindos",
-    "country": "Greece",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Acropolis_of_Lindos.jpg?width=500"
-  },
-  {
-    "name": "Knossos",
-    "country": "Greece",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Knossos_Palace_Crete.jpg?width=500"
-  },
-  {
-    "name": "Forbidden City",
-    "country": "China",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Forbidden_City_Beijing.jpg?width=500"
-  },
-  {
-    "name": "Terracotta Army",
-    "country": "China",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Terracotta_Army_Xi%27an.jpg?width=500"
-  },
-  {
-    "name": "Summer Palace",
-    "country": "China",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Summer_Palace_Beijing.jpg?width=500"
-  },
-  {
-    "name": "Temple of Heaven",
-    "country": "China",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Temple_of_Heaven_Beijing.jpg?width=500"
-  },
-  {
-    "name": "Jiuzhaigou Valley",
-    "country": "China",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Jiuzhaigou_Valley_China.jpg?width=500"
-  },
-  {
-    "name": "Yellow Mountains",
-    "country": "China",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Yellow_Mountains_Huangshan.jpg?width=500"
-  },
-  {
-    "name": "West Lake",
-    "country": "China",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/West_Lake_Hangzhou.jpg?width=500"
-  },
-  {
-    "name": "Victoria Peak",
-    "country": "Hong Kong",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Victoria_Peak_Hong_Kong.jpg?width=500"
-  },
-  {
-    "name": "Tian Tan Buddha",
-    "country": "Hong Kong",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Tian_Tan_Buddha_Hong_Kong.jpg?width=500"
-  },
-  {
-    "name": "Fushimi Inari-taisha",
-    "country": "Japan",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Fushimi_Inari-taisha_Kyoto.jpg?width=500"
-  },
-  {
-    "name": "Kiyomizu-dera",
-    "country": "Japan",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Kiyomizu-dera_Kyoto.jpg?width=500"
-  },
-  {
-    "name": "Kinkaku-ji",
-    "country": "Japan",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Kinkaku-ji_Kyoto.jpg?width=500"
-  },
-  {
-    "name": "Tokyo Skytree",
-    "country": "Japan",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Tokyo_Skytree_Japan.jpg?width=500"
-  },
-  {
-    "name": "Tokyo Tower",
-    "country": "Japan",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Tokyo_Tower_Japan.jpg?width=500"
-  },
-  {
-    "name": "Senso-ji",
-    "country": "Japan",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Senso-ji_Tokyo.jpg?width=500"
-  },
-  {
-    "name": "Himeji Castle",
-    "country": "Japan",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Himeji_Castle_Japan.jpg?width=500"
-  },
-  {
-    "name": "Itsukushima Shrine",
-    "country": "Japan",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Itsukushima_Shrine_Miyajima.jpg?width=500"
-  },
-  {
-    "name": "Gyeongbokgung Palace",
-    "country": "South Korea",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Gyeongbokgung_Palace_Seoul.jpg?width=500"
-  },
-  {
-    "name": "N Seoul Tower",
-    "country": "South Korea",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/N_Seoul_Tower_South_Korea.jpg?width=500"
-  },
-  {
-    "name": "Bukchon Hanok Village",
-    "country": "South Korea",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Bukchon_Hanok_Village_Seoul.jpg?width=500"
-  },
-  {
-    "name": "Jeju Island",
-    "country": "South Korea",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Jeju_Island_South_Korea.jpg?width=500"
-  },
-  {
-    "name": "Taipei 101",
-    "country": "Taiwan",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Taipei_101_Taiwan.jpg?width=500"
-  },
-  {
-    "name": "Taroko Gorge",
-    "country": "Taiwan",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Taroko_Gorge_Taiwan.jpg?width=500"
-  },
-  {
-    "name": "Banaue Rice Terraces",
-    "country": "Philippines",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Banaue_Rice_Terraces_Philippines.jpg?width=500"
-  },
-  {
-    "name": "Chocolate Hills",
-    "country": "Philippines",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Chocolate_Hills_Philippines.jpg?width=500"
-  },
-  {
-    "name": "Boracay",
-    "country": "Philippines",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Boracay_Philippines.jpg?width=500"
-  },
-  {
-    "name": "Ha Long Bay",
-    "country": "Vietnam",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Ha_Long_Bay_Vietnam.jpg?width=500"
-  },
-  {
-    "name": "Hoi An Ancient Town",
-    "country": "Vietnam",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Hoi_An_Ancient_Town_Vietnam.jpg?width=500"
-  },
-  {
-    "name": "Cu Chi Tunnels",
-    "country": "Vietnam",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Cu_Chi_Tunnels_Vietnam.jpg?width=500"
-  },
-  {
-    "name": "Angkor Thom",
-    "country": "Cambodia",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Angkor_Thom_Cambodia.jpg?width=500"
-  },
-  {
-    "name": "Bayon Temple",
-    "country": "Cambodia",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Bayon_Temple_Cambodia.jpg?width=500"
-  },
-  {
-    "name": "Ta Prohm",
-    "country": "Cambodia",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Ta_Prohm_Cambodia.jpg?width=500"
-  },
-  {
-    "name": "Grand Palace",
-    "country": "Thailand",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Grand_Palace_Bangkok.jpg?width=500"
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/Suomenlinna_Helsinki.jpg/500px-Suomenlinna_Helsinki.jpg"
   },
   {
     "name": "Wat Phra Kaew",
     "country": "Thailand",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Wat_Phra_Kaew_Bangkok.jpg?width=500"
-  },
-  {
-    "name": "Wat Arun",
-    "country": "Thailand",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Wat_Arun_Bangkok.jpg?width=500"
-  },
-  {
-    "name": "Ayutthaya Historical Park",
-    "country": "Thailand",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Ayutthaya_Historical_Park.jpg?width=500"
-  },
-  {
-    "name": "Phi Phi Islands",
-    "country": "Thailand",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Phi_Phi_Islands_Thailand.jpg?width=500"
-  },
-  {
-    "name": "Batu Caves",
-    "country": "Malaysia",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Batu_Caves_Malaysia.jpg?width=500"
-  },
-  {
-    "name": "Petronas Twin Towers",
-    "country": "Malaysia",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Petronas_Twin_Towers_Malaysia.jpg?width=500"
-  },
-  {
-    "name": "Mount Kinabalu",
-    "country": "Malaysia",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Mount_Kinabalu_Malaysia.jpg?width=500"
-  },
-  {
-    "name": "Gardens by the Bay",
-    "country": "Singapore",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Gardens_by_the_Bay_Singapore.jpg?width=500"
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cf/Wat_Phra_Kaew_Bangkok.jpg/500px-Wat_Phra_Kaew_Bangkok.jpg"
   },
   {
     "name": "Marina Bay Sands",
     "country": "Singapore",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Marina_Bay_Sands_Singapore.jpg?width=500"
-  },
-  {
-    "name": "Sentosa Island",
-    "country": "Singapore",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Sentosa_Island_Singapore.jpg?width=500"
-  },
-  {
-    "name": "Merlion Park",
-    "country": "Singapore",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Merlion_Park_Singapore.jpg?width=500"
-  },
-  {
-    "name": "Borobudur",
-    "country": "Indonesia",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Borobudur_Indonesia.jpg?width=500"
-  },
-  {
-    "name": "Prambanan",
-    "country": "Indonesia",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Prambanan_Indonesia.jpg?width=500"
-  },
-  {
-    "name": "Mount Bromo",
-    "country": "Indonesia",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Mount_Bromo_Indonesia.jpg?width=500"
-  },
-  {
-    "name": "Ubud Monkey Forest",
-    "country": "Indonesia",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Ubud_Monkey_Forest_Bali.jpg?width=500"
-  },
-  {
-    "name": "Tanah Lot",
-    "country": "Indonesia",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Tanah_Lot_Bali.jpg?width=500"
-  },
-  {
-    "name": "Sigiriya",
-    "country": "Sri Lanka",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Sigiriya_Sri_Lanka.jpg?width=500"
-  },
-  {
-    "name": "Temple of the Tooth",
-    "country": "Sri Lanka",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Temple_of_the_Tooth_Sri_Lanka.jpg?width=500"
-  },
-  {
-    "name": "Yala National Park",
-    "country": "Sri Lanka",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Yala_National_Park_Sri_Lanka.jpg?width=500"
-  },
-  {
-    "name": "Maldives Atolls",
-    "country": "Maldives",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Maldives_Atolls.jpg?width=500"
-  },
-  {
-    "name": "Red Fort",
-    "country": "India",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Red_Fort_Delhi.jpg?width=500"
-  },
-  {
-    "name": "Qutub Minar",
-    "country": "India",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Qutub_Minar_Delhi.jpg?width=500"
-  },
-  {
-    "name": "Hawa Mahal",
-    "country": "India",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Hawa_Mahal_Jaipur.jpg?width=500"
-  },
-  {
-    "name": "Amber Fort",
-    "country": "India",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Amber_Fort_Jaipur.jpg?width=500"
-  },
-  {
-    "name": "Meenakshi Temple",
-    "country": "India",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Meenakshi_Temple_Madurai.jpg?width=500"
-  },
-  {
-    "name": "Gateway of India",
-    "country": "India",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Gateway_of_India_Mumbai.jpg?width=500"
-  },
-  {
-    "name": "Ellora Caves",
-    "country": "India",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Ellora_Caves_India.jpg?width=500"
-  },
-  {
-    "name": "Ajanta Caves",
-    "country": "India",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Ajanta_Caves_India.jpg?width=500"
-  },
-  {
-    "name": "Varanasi Ghats",
-    "country": "India",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Varanasi_Ghats_India.jpg?width=500"
-  },
-  {
-    "name": "Golden Temple",
-    "country": "India",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Golden_Temple_Amritsar.jpg?width=500"
-  },
-  {
-    "name": "Hagia Sophia",
-    "country": "Turkey",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Hagia_Sophia_Istanbul.jpg?width=500"
-  },
-  {
-    "name": "Blue Mosque",
-    "country": "Turkey",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Blue_Mosque_Istanbul.jpg?width=500"
-  },
-  {
-    "name": "Topkapi Palace",
-    "country": "Turkey",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Topkapi_Palace_Istanbul.jpg?width=500"
-  },
-  {
-    "name": "Cappadocia",
-    "country": "Turkey",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Cappadocia_Turkey.jpg?width=500"
-  },
-  {
-    "name": "Pamukkale",
-    "country": "Turkey",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Pamukkale_Turkey.jpg?width=500"
-  },
-  {
-    "name": "Ephesus",
-    "country": "Turkey",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Ephesus_Turkey.jpg?width=500"
-  },
-  {
-    "name": "Mount Nemrut",
-    "country": "Turkey",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Mount_Nemrut_Turkey.jpg?width=500"
-  },
-  {
-    "name": "Dead Sea",
-    "country": "Jordan/Israel",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Dead_Sea.jpg?width=500"
-  },
-  {
-    "name": "Wadi Rum",
-    "country": "Jordan",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Wadi_Rum_Jordan.jpg?width=500"
-  },
-  {
-    "name": "Jerash",
-    "country": "Jordan",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Jerash_Jordan.jpg?width=500"
-  },
-  {
-    "name": "Western Wall",
-    "country": "Israel",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Western_Wall_Jerusalem.jpg?width=500"
-  },
-  {
-    "name": "Dome of the Rock",
-    "country": "Israel",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Dome_of_the_Rock_Jerusalem.jpg?width=500"
-  },
-  {
-    "name": "Church of the Holy Sepulchre",
-    "country": "Israel",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Church_of_the_Holy_Sepulchre_Jerusalem.jpg?width=500"
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/Marina_Bay_Sands_Singapore.jpg/500px-Marina_Bay_Sands_Singapore.jpg"
   },
   {
     "name": "Masada",
     "country": "Israel",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Masada_Israel.jpg?width=500"
-  },
-  {
-    "name": "Baalbek",
-    "country": "Lebanon",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Baalbek_Lebanon.jpg?width=500"
-  },
-  {
-    "name": "Jeita Grotto",
-    "country": "Lebanon",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Jeita_Grotto_Lebanon.jpg?width=500"
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/1/14/Israel-2013-Aerial_21-Masada.jpg"
   },
   {
     "name": "Byblos",
     "country": "Lebanon",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Byblos_Lebanon.jpg?width=500"
-  },
-  {
-    "name": "Palmyra",
-    "country": "Syria",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Palmyra_Syria.jpg?width=500"
-  },
-  {
-    "name": "Krak des Chevaliers",
-    "country": "Syria",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Krak_des_Chevaliers_Syria.jpg?width=500"
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/3/3c/Byblos_Libanon_2003.JPG"
   },
   {
     "name": "Umayyad Mosque",
     "country": "Syria",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Umayyad_Mosque_Damascus.jpg?width=500"
-  },
-  {
-    "name": "Sheikh Zayed Grand Mosque",
-    "country": "United Arab Emirates",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Sheikh_Zayed_Grand_Mosque_Abu_Dhabi.jpg?width=500"
-  },
-  {
-    "name": "Burj Al Arab",
-    "country": "United Arab Emirates",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Burj_Al_Arab_Dubai.jpg?width=500"
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/d/d5/Umayyad_Mosque%2C_Damascus.jpg"
   },
   {
     "name": "Palm Jumeirah",
     "country": "United Arab Emirates",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Palm_Jumeirah_Dubai.jpg?width=500"
-  },
-  {
-    "name": "Louvre Abu Dhabi",
-    "country": "United Arab Emirates",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Louvre_Abu_Dhabi.jpg?width=500"
-  },
-  {
-    "name": "Sultan Qaboos Grand Mosque",
-    "country": "Oman",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Sultan_Qaboos_Grand_Mosque_Oman.jpg?width=500"
-  },
-  {
-    "name": "Mutrah Souq",
-    "country": "Oman",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Mutrah_Souq_Oman.jpg?width=500"
-  },
-  {
-    "name": "Wahiba Sands",
-    "country": "Oman",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Wahiba_Sands_Oman.jpg?width=500"
-  },
-  {
-    "name": "Museum of Islamic Art",
-    "country": "Qatar",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Museum_of_Islamic_Art_Doha.jpg?width=500"
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/3/30/Artificial_Archipelagos%2C_Dubai%2C_United_Arab_Emirates_ISS022-E-024940_lrg_%28cropped%29.jpg"
   },
   {
     "name": "Souq Waqif",
     "country": "Qatar",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Souq_Waqif_Doha.jpg?width=500"
-  },
-  {
-    "name": "Kuwait Towers",
-    "country": "Kuwait",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Kuwait_Towers.jpg?width=500"
-  },
-  {
-    "name": "Naqsh-e Jahan Square",
-    "country": "Iran",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Naqsh-e_Jahan_Square_Isfahan.jpg?width=500"
-  },
-  {
-    "name": "Persepolis",
-    "country": "Iran",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Persepolis_Iran.jpg?width=500"
-  },
-  {
-    "name": "Golestan Palace",
-    "country": "Iran",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Golestan_Palace_Tehran.jpg?width=500"
-  },
-  {
-    "name": "Imam Reza Shrine",
-    "country": "Iran",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Imam_Reza_Shrine_Mashhad.jpg?width=500"
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/5/57/Souq_Waqif%2C_Doha%2C_Catar%2C_2013-08-05%2C_DD_84.JPG"
   },
   {
     "name": "Registan",
     "country": "Uzbekistan",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Registan_Samarkand.jpg?width=500"
-  },
-  {
-    "name": "Gur-e-Amir",
-    "country": "Uzbekistan",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Gur-e-Amir_Samarkand.jpg?width=500"
-  },
-  {
-    "name": "Ichan Kala",
-    "country": "Uzbekistan",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Ichan_Kala_Khiva.jpg?width=500"
-  },
-  {
-    "name": "Darvaza Gas Crater",
-    "country": "Turkmenistan",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Darvaza_Gas_Crater_Turkmenistan.jpg?width=500"
-  },
-  {
-    "name": "Lake Issyk-Kul",
-    "country": "Kyrgyzstan",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Lake_Issyk-Kul_Kyrgyzstan.jpg?width=500"
-  },
-  {
-    "name": "Ala Archa National Park",
-    "country": "Kyrgyzstan",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Ala_Archa_National_Park.jpg?width=500"
-  },
-  {
-    "name": "Pamir Highway",
-    "country": "Tajikistan",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Pamir_Highway.jpg?width=500"
-  },
-  {
-    "name": "Charyn Canyon",
-    "country": "Kazakhstan",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Charyn_Canyon_Kazakhstan.jpg?width=500"
-  },
-  {
-    "name": "Medeu",
-    "country": "Kazakhstan",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Medeu_Almaty.jpg?width=500"
-  },
-  {
-    "name": "Sphinx of Giza",
-    "country": "Egypt",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Great_Sphinx_of_Giza.jpg?width=500"
-  },
-  {
-    "name": "Karnak Temple",
-    "country": "Egypt",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Karnak_Temple_Egypt.jpg?width=500"
-  },
-  {
-    "name": "Valley of the Kings",
-    "country": "Egypt",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Valley_of_the_Kings_Egypt.jpg?width=500"
-  },
-  {
-    "name": "Abu Simbel",
-    "country": "Egypt",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Abu_Simbel_Egypt.jpg?width=500"
-  },
-  {
-    "name": "Luxor Temple",
-    "country": "Egypt",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Luxor_Temple_Egypt.jpg?width=500"
-  },
-  {
-    "name": "Aswan Dam",
-    "country": "Egypt",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Aswan_Dam_Egypt.jpg?width=500"
-  },
-  {
-    "name": "Table Mountain",
-    "country": "South Africa",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Table_Mountain_Cape_Town.jpg?width=500"
-  },
-  {
-    "name": "Kruger National Park",
-    "country": "South Africa",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Kruger_National_Park.jpg?width=500"
-  },
-  {
-    "name": "Cape of Good Hope",
-    "country": "South Africa",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Cape_of_Good_Hope.jpg?width=500"
-  },
-  {
-    "name": "Robben Island",
-    "country": "South Africa",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Robben_Island.jpg?width=500"
-  },
-  {
-    "name": "Blyde River Canyon",
-    "country": "South Africa",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Blyde_River_Canyon.jpg?width=500"
-  },
-  {
-    "name": "Serengeti National Park",
-    "country": "Tanzania",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Serengeti_National_Park.jpg?width=500"
-  },
-  {
-    "name": "Ngorongoro Crater",
-    "country": "Tanzania",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Ngorongoro_Crater.jpg?width=500"
-  },
-  {
-    "name": "Zanzibar Stone Town",
-    "country": "Tanzania",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Stone_Town_Zanzibar.jpg?width=500"
-  },
-  {
-    "name": "Masai Mara",
-    "country": "Kenya",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Masai_Mara_Kenya.jpg?width=500"
-  },
-  {
-    "name": "Amboseli National Park",
-    "country": "Kenya",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Amboseli_National_Park.jpg?width=500"
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/0/00/Registan_square_Samarkand.jpg"
   },
   {
     "name": "Lake Nakuru",
     "country": "Kenya",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Lake_Nakuru_Kenya.jpg?width=500"
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/9/9b/Lake-Nakuru-Baboon-Hill-View.JPG"
   },
   {
     "name": "Okavango Delta",
     "country": "Botswana",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Okavango_Delta_Botswana.jpg?width=500"
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/e/e8/Okavango_Delta%2C_Botswana1.jpg"
   },
   {
     "name": "Chobe National Park",
     "country": "Botswana",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Chobe_National_Park.jpg?width=500"
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/4/45/Gnus_zebras_chobe_national_park.jpg"
   },
   {
     "name": "Etosha National Park",
     "country": "Namibia",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Etosha_National_Park.jpg?width=500"
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/5/5a/Dust_Cloud_in_Etosha_National_Park.jpg"
   },
   {
     "name": "Sossusvlei",
     "country": "Namibia",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Sossusvlei_Namibia.jpg?width=500"
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/2/22/Sossusvlei.jpg"
   },
   {
     "name": "Fish River Canyon",
     "country": "Namibia",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Fish_River_Canyon.jpg?width=500"
-  },
-  {
-    "name": "Virunga National Park",
-    "country": "Democratic Republic of the Congo",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Virunga_National_Park.jpg?width=500"
-  },
-  {
-    "name": "Bwindi Impenetrable Forest",
-    "country": "Uganda",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Bwindi_Impenetrable_Forest.jpg?width=500"
-  },
-  {
-    "name": "Murchison Falls",
-    "country": "Uganda",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Murchison_Falls_Uganda.jpg?width=500"
-  },
-  {
-    "name": "Avenue of the Baobabs",
-    "country": "Madagascar",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Avenue_of_the_Baobabs.jpg?width=500"
-  },
-  {
-    "name": "Tsingy de Bemaraha",
-    "country": "Madagascar",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Tsingy_de_Bemaraha.jpg?width=500"
-  },
-  {
-    "name": "Djenné",
-    "country": "Mali",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Great_Mosque_of_Djenne.jpg?width=500"
-  },
-  {
-    "name": "Timbuktu",
-    "country": "Mali",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Timbuktu_Mali.jpg?width=500"
-  },
-  {
-    "name": "Goree Island",
-    "country": "Senegal",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Goree_Island_Senegal.jpg?width=500"
-  },
-  {
-    "name": "Lake Retba",
-    "country": "Senegal",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Lake_Retba_Senegal.jpg?width=500"
-  },
-  {
-    "name": "Chefchaouen",
-    "country": "Morocco",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Chefchaouen_Morocco.jpg?width=500"
-  },
-  {
-    "name": "Hassan II Mosque",
-    "country": "Morocco",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Hassan_II_Mosque_Casablanca.jpg?width=500"
-  },
-  {
-    "name": "Jemaa el-Fnaa",
-    "country": "Morocco",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Jemaa_el-Fnaa_Marrakech.jpg?width=500"
-  },
-  {
-    "name": "Ait Benhaddou",
-    "country": "Morocco",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Ait_Benhaddou_Morocco.jpg?width=500"
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/8/89/Fish_River_Canyon_from_Main_View_Point.jpg"
   },
   {
     "name": "Majorelle Garden",
     "country": "Morocco",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Majorelle_Garden_Marrakech.jpg?width=500"
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/c/c2/Le_jardin_des_majorelle_40.JPG"
   },
   {
     "name": "Carthage",
     "country": "Tunisia",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Carthage_Tunisia.jpg?width=500"
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/3/34/Montage_ville_de_Carthage.png"
   },
   {
     "name": "Amphitheatre of El Jem",
     "country": "Tunisia",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Amphitheatre_of_El_Jem.jpg?width=500"
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/5/5d/The_Amphitheatre_of_El_Jem%2C_built_around_AD_238_in_Thysdrus_in_Africa_Proconsularis%2C_the_estimated_capacity_is_35%2C000%2C_Tunisia_-_52717762494.jpg"
   },
   {
     "name": "Sidi Bou Said",
     "country": "Tunisia",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Sidi_Bou_Said.jpg?width=500"
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/0/05/Sidi_Chebaan.jpg"
   },
   {
     "name": "Tassili n'Ajjer",
     "country": "Algeria",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Tassili_n%27Ajjer.jpg?width=500"
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/7/7f/Map_of_Tassili_n%27Ajjer_and_surroundings-en.jpg"
   },
   {
     "name": "Lalibela",
     "country": "Ethiopia",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Church_of_St._George_Lalibela.jpg?width=500"
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/a/aa/Lalibela%2C_san_giorgio%2C_esterno_24.jpg"
   },
   {
     "name": "Simien Mountains",
     "country": "Ethiopia",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Simien_Mountains.jpg?width=500"
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/f/f0/Bwahit%2C_view_onto_Kidis_Yared_4453m.JPG"
   },
   {
     "name": "Danakil Depression",
     "country": "Ethiopia",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Danakil_Depression.jpg?width=500"
-  },
-  {
-    "name": "Aksum",
-    "country": "Ethiopia",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Obelisk_of_Axum.jpg?width=500"
-  },
-  {
-    "name": "Lake Malawi",
-    "country": "Malawi",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Lake_Malawi.jpg?width=500"
-  },
-  {
-    "name": "Kafue National Park",
-    "country": "Zambia",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Kafue_National_Park.jpg?width=500"
-  },
-  {
-    "name": "South Luangwa National Park",
-    "country": "Zambia",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/South_Luangwa_National_Park.jpg?width=500"
-  },
-  {
-    "name": "Hwange National Park",
-    "country": "Zimbabwe",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Hwange_National_Park.jpg?width=500"
-  },
-  {
-    "name": "Great Zimbabwe",
-    "country": "Zimbabwe",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Great_Zimbabwe.jpg?width=500"
-  },
-  {
-    "name": "Matobo National Park",
-    "country": "Zimbabwe",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Matobo_National_Park.jpg?width=500"
-  },
-  {
-    "name": "Great Barrier Reef",
-    "country": "Australia",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Great_Barrier_Reef.jpg?width=500"
-  },
-  {
-    "name": "Uluru",
-    "country": "Australia",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Uluru.jpg?width=500"
-  },
-  {
-    "name": "Kakadu National Park",
-    "country": "Australia",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Kakadu_National_Park.jpg?width=500"
-  },
-  {
-    "name": "Great Ocean Road",
-    "country": "Australia",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Great_Ocean_Road.jpg?width=500"
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/1/17/Map_Danakil.jpg"
   },
   {
     "name": "Bondi Beach",
     "country": "Australia",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Bondi_Beach.jpg?width=500"
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/25/Bondi_Beach.jpg/500px-Bondi_Beach.jpg"
   },
   {
-    "name": "Blue Mountains",
-    "country": "Australia",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Blue_Mountains_Australia.jpg?width=500"
+    "name": "Mount Rainier",
+    "country": "United States",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f9/Rainier20200906.jpg/500px-Rainier20200906.jpg"
   },
   {
-    "name": "Fraser Island",
+    "name": "Banff National Park",
+    "country": "Canada",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Moraine_Lake_17092005.jpg/500px-Moraine_Lake_17092005.jpg"
+  },
+  {
+    "name": "Château Frontenac",
+    "country": "Canada",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/Ch%C3%A2teau_Frontenac_02.jpg/500px-Ch%C3%A2teau_Frontenac_02.jpg"
+  },
+  {
+    "name": "Parliament Hill",
+    "country": "Canada",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/Ottawa_-_ON_-_Stadtansicht.jpg/500px-Ottawa_-_ON_-_Stadtansicht.jpg"
+  },
+  {
+    "name": "Stanley Park",
+    "country": "Canada",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/76/Stanley_Park_Labeled_Aerial_Map.png/500px-Stanley_Park_Labeled_Aerial_Map.png"
+  },
+  {
+    "name": "Teotihuacan",
+    "country": "Mexico",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/58/Teotihuac%C3%A1n-5973.JPG/500px-Teotihuac%C3%A1n-5973.JPG"
+  },
+  {
+    "name": "Tulum",
+    "country": "Mexico",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/85/Tulum_2.jpg/500px-Tulum_2.jpg"
+  },
+  {
+    "name": "Prague Castle",
+    "country": "Czech Republic",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Karl%C5%AFv_most_Praha%2C_Star%C3%A9_M%C4%9Bsto_20170810_007.jpg/500px-Karl%C5%AFv_most_Praha%2C_Star%C3%A9_M%C4%9Bsto_20170810_007.jpg"
+  },
+  {
+    "name": "Old Town Square",
+    "country": "Czech Republic",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/Prague_07-2016_View_from_Old_Town_Hall_Tower_img3.jpg/500px-Prague_07-2016_View_from_Old_Town_Hall_Tower_img3.jpg"
+  },
+  {
+    "name": "Vasa Museum",
+    "country": "Sweden",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/43/Stockholm_Vasa_Museum_and_Nordic_Museum_09.jpg/500px-Stockholm_Vasa_Museum_and_Nordic_Museum_09.jpg"
+  },
+  {
+    "name": "Stockholm Palace",
+    "country": "Sweden",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/The_Royal_Palace_%2815891592359%29.jpg/500px-The_Royal_Palace_%2815891592359%29.jpg"
+  },
+  {
+    "name": "Geirangerfjord",
+    "country": "Norway",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/46/Geirangerfjord_.jpg/500px-Geirangerfjord_.jpg"
+  },
+  {
+    "name": "Preikestolen",
+    "country": "Norway",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/85/Lyse_Fjord_et_Preikestolen.jpg/500px-Lyse_Fjord_et_Preikestolen.jpg"
+  },
+  {
+    "name": "Temppeliaukio Church",
+    "country": "Finland",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9b/Temppeliaukio_Church_Helsinki.jpg/500px-Temppeliaukio_Church_Helsinki.jpg"
+  },
+  {
+    "name": "Helsinki Cathedral",
+    "country": "Finland",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/Kirkko3.png/500px-Kirkko3.png"
+  },
+  {
+    "name": "Hermitage Museum",
+    "country": "Russia",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/16/5174-3._St._Petersburg._Greater_Hermitage.jpg/500px-5174-3._St._Petersburg._Greater_Hermitage.jpg"
+  },
+  {
+    "name": "Winter Palace",
+    "country": "Russia",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/74/RUS-2016-Aerial-SPB-Winter_Palace_%28crop%29.jpg/500px-RUS-2016-Aerial-SPB-Winter_Palace_%28crop%29.jpg"
+  },
+  {
+    "name": "Peterhof Palace",
+    "country": "Russia",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Peterhof_Palace%2C_Saint_Petersburg%2C_Russia_%2844408938295%29.jpg/500px-Peterhof_Palace%2C_Saint_Petersburg%2C_Russia_%2844408938295%29.jpg"
+  },
+  {
+    "name": "Red Square",
+    "country": "Russia",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ee/Kremlin_and_Red_Square.1.jpg/500px-Kremlin_and_Red_Square.1.jpg"
+  },
+  {
+    "name": "Lake Baikal",
+    "country": "Russia",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6a/Baikal.A2001296.0420.250m-NASA.jpg/500px-Baikal.A2001296.0420.250m-NASA.jpg"
+  },
+  {
+    "name": "Bled Castle",
+    "country": "Slovenia",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/The_Great_Bled_Castle.jpg/500px-The_Great_Bled_Castle.jpg"
+  },
+  {
+    "name": "Lake Bled",
+    "country": "Slovenia",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/Lake_Bled_from_the_Mountain.jpg/500px-Lake_Bled_from_the_Mountain.jpg"
+  },
+  {
+    "name": "Postojna Cave",
+    "country": "Slovenia",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/74/Postojna_%2822206343750%29.jpg/500px-Postojna_%2822206343750%29.jpg"
+  },
+  {
+    "name": "Bran Castle",
+    "country": "Romania",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/17/Castelul_Bran2.jpg/500px-Castelul_Bran2.jpg"
+  },
+  {
+    "name": "Angkor Thom",
+    "country": "Cambodia",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/22/Angkor_Thom_%28II%29.jpg/500px-Angkor_Thom_%28II%29.jpg"
+  },
+  {
+    "name": "Ta Prohm",
+    "country": "Cambodia",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Ta_Prohm_%28III%29.jpg/500px-Ta_Prohm_%28III%29.jpg"
+  },
+  {
+    "name": "Grand Palace",
+    "country": "Thailand",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/0005574_-_Wat_Phra_Kaew_006.jpg/500px-0005574_-_Wat_Phra_Kaew_006.jpg"
+  },
+  {
+    "name": "Wat Arun",
+    "country": "Thailand",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/%E0%B9%80%E0%B8%88%E0%B8%94%E0%B8%B5%E0%B8%A2%E0%B9%8C%E0%B8%9B%E0%B8%A3%E0%B8%B0%E0%B8%98%E0%B8%B2%E0%B8%99%E0%B8%97%E0%B8%A3%E0%B8%87%E0%B8%9B%E0%B8%A3%E0%B8%B2%E0%B8%87%E0%B8%84%E0%B9%8C%E0%B8%A7%E0%B8%B1%E0%B8%94%E0%B8%AD%E0%B8%A3%E0%B8%B8%E0%B8%932.jpg/500px-%E0%B9%80%E0%B8%88%E0%B8%94%E0%B8%B5%E0%B8%A2%E0%B9%8C%E0%B8%9B%E0%B8%A3%E0%B8%B0%E0%B8%98%E0%B8%B2%E0%B8%99%E0%B8%97%E0%B8%A3%E0%B8%87%E0%B8%9B%E0%B8%A3%E0%B8%B2%E0%B8%87%E0%B8%84%E0%B9%8C%E0%B8%A7%E0%B8%B1%E0%B8%94%E0%B8%AD%E0%B8%A3%E0%B8%B8%E0%B8%932.jpg"
+  },
+  {
+    "name": "Ayutthaya Historical Park",
+    "country": "Thailand",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e2/Ayutthaya_World_Heritage_sign.jpg/500px-Ayutthaya_World_Heritage_sign.jpg"
+  },
+  {
+    "name": "Phi Phi Islands",
+    "country": "Thailand",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e7/KohPhiPhi.JPG/500px-KohPhiPhi.JPG"
+  },
+  {
+    "name": "Bryce Canyon",
+    "country": "United States",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/85/Bryce_Canyon_Amphitheater_1.jpg/500px-Bryce_Canyon_Amphitheater_1.jpg"
+  },
+  {
+    "name": "Perito Moreno Glacier",
+    "country": "Argentina",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Perito_Moreno_Glacier_Patagonia_Argentina_Luca_Galuzzi_2005.JPG/500px-Perito_Moreno_Glacier_Patagonia_Argentina_Luca_Galuzzi_2005.JPG"
+  },
+  {
+    "name": "Colca Canyon",
+    "country": "Peru",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/Colca_Canyon_Peru.jpg/500px-Colca_Canyon_Peru.jpg"
+  },
+  {
+    "name": "Tower of London",
+    "country": "United Kingdom",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Tower_of_London_viewed_from_the_River_Thames.jpg/500px-Tower_of_London_viewed_from_the_River_Thames.jpg"
+  },
+  {
+    "name": "Tower Bridge",
+    "country": "United Kingdom",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8b/Tower_bridge_London_Twilight_-_November_2006.jpg/500px-Tower_bridge_London_Twilight_-_November_2006.jpg"
+  },
+  {
+    "name": "Buckingham Palace",
+    "country": "United Kingdom",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/Buckingham_Palace_from_gardens%2C_London%2C_UK_-_Diliff.jpg/500px-Buckingham_Palace_from_gardens%2C_London%2C_UK_-_Diliff.jpg"
+  },
+  {
+    "name": "Windsor Castle",
+    "country": "United Kingdom",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Windsor_Castle_at_Sunset_-_Nov_2006.jpg/500px-Windsor_Castle_at_Sunset_-_Nov_2006.jpg"
+  },
+  {
+    "name": "Giant's Causeway",
+    "country": "United Kingdom",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c0/Causeway-code_poet-4.jpg/500px-Causeway-code_poet-4.jpg"
+  },
+  {
+    "name": "Château de Chambord",
+    "country": "France",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/38/Chateau_de_Chambord.jpg/500px-Chateau_de_Chambord.jpg"
+  },
+  {
+    "name": "Leaning Tower of Pisa",
+    "country": "Italy",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f2/Leaning_Tower_of_Pisa.jpg/500px-Leaning_Tower_of_Pisa.jpg"
+  },
+  {
+    "name": "Trevi Fountain",
+    "country": "Italy",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Trevi_Fountain%2C_Rome%2C_Italy_2_-_May_2007.jpg/500px-Trevi_Fountain%2C_Rome%2C_Italy_2_-_May_2007.jpg"
+  },
+  {
+    "name": "St. Peter's Basilica",
+    "country": "Vatican City",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/St_Peter%27s_Square%2C_Vatican_City_-_April_2007.jpg/500px-St_Peter%27s_Square%2C_Vatican_City_-_April_2007.jpg"
+  },
+  {
+    "name": "Duomo di Milano",
+    "country": "Italy",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/70/Milan_Cathedral_from_Piazza_del_Duomo.jpg/500px-Milan_Cathedral_from_Piazza_del_Duomo.jpg"
+  },
+  {
+    "name": "Florence Cathedral",
+    "country": "Italy",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Florence_Duomo_from_Michelangelo_hill.jpg/500px-Florence_Duomo_from_Michelangelo_hill.jpg"
+  },
+  {
+    "name": "Venice Canals",
+    "country": "Italy",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ee/Grand_Canal_Venice_Italy.jpg/500px-Grand_Canal_Venice_Italy.jpg"
+  },
+  {
+    "name": "Reichstag Building",
+    "country": "Germany",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Reichstag_building_Berlin_view_from_west_before_sunset.jpg/500px-Reichstag_building_Berlin_view_from_west_before_sunset.jpg"
+  },
+  {
+    "name": "Plaza Mayor",
+    "country": "Spain",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/Plaza_Mayor_de_Madrid_01.jpg/500px-Plaza_Mayor_de_Madrid_01.jpg"
+  },
+  {
+    "name": "Parthenon",
+    "country": "Greece",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ad/Parthenon_from_west.jpg/500px-Parthenon_from_west.jpg"
+  },
+  {
+    "name": "Chapel Bridge",
+    "country": "Switzerland",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b2/Luzern_Kapellbr%C3%BCcke.jpg/500px-Luzern_Kapellbr%C3%BCcke.jpg"
+  },
+  {
+    "name": "Schönbrunn Palace",
+    "country": "Austria",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c0/Schloss_Sch%C3%B6nbrunn_Wien_2014.jpg/500px-Schloss_Sch%C3%B6nbrunn_Wien_2014.jpg"
+  },
+  {
+    "name": "St. Stephen's Cathedral",
+    "country": "Austria",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/98/Stephansdom_Wien.jpg/500px-Stephansdom_Wien.jpg"
+  },
+  {
+    "name": "Hungarian Parliament Building",
+    "country": "Hungary",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/db/Hungarian_Parliament_Building_2019.jpg/500px-Hungarian_Parliament_Building_2019.jpg"
+  },
+  {
+    "name": "Rijksmuseum",
+    "country": "Netherlands",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/Rijksmuseum_Amsterdam.jpg/500px-Rijksmuseum_Amsterdam.jpg"
+  },
+  {
+    "name": "Moscow Kremlin",
+    "country": "Russia",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Moscow_Kremlin.jpg/500px-Moscow_Kremlin.jpg"
+  },
+  {
+    "name": "Plitvice Lakes",
+    "country": "Croatia",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/Plitvice_Lakes_National_Park.jpg/500px-Plitvice_Lakes_National_Park.jpg"
+  },
+  {
+    "name": "Dubrovnik City Walls",
+    "country": "Croatia",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c9/Dubrovnik_City_Walls.jpg/500px-Dubrovnik_City_Walls.jpg"
+  },
+  {
+    "name": "Diocletian's Palace",
+    "country": "Croatia",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fc/Diocletian%27s_Palace_Split.jpg/500px-Diocletian%27s_Palace_Split.jpg"
+  },
+  {
+    "name": "Mostar Bridge",
+    "country": "Bosnia and Herzegovina",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/85/Stari_Most_Mostar.jpg/500px-Stari_Most_Mostar.jpg"
+  },
+  {
+    "name": "Merlion Park",
+    "country": "Singapore",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/Merlion_Park_Singapore.jpg/500px-Merlion_Park_Singapore.jpg"
+  },
+  {
+    "name": "Tanah Lot",
+    "country": "Indonesia",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1f/Tanah_Lot_Bali.jpg/500px-Tanah_Lot_Bali.jpg"
+  },
+  {
+    "name": "Sigiriya",
+    "country": "Sri Lanka",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/60/Sigiriya_Sri_Lanka.jpg/500px-Sigiriya_Sri_Lanka.jpg"
+  },
+  {
+    "name": "Table Mountain",
+    "country": "South Africa",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/Table_Mountain_Cape_Town.jpg/500px-Table_Mountain_Cape_Town.jpg"
+  },
+  {
+    "name": "Kruger National Park",
+    "country": "South Africa",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Kruger_National_Park.jpg/500px-Kruger_National_Park.jpg"
+  },
+  {
+    "name": "Cape of Good Hope",
+    "country": "South Africa",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2b/Cape_of_Good_Hope.jpg/500px-Cape_of_Good_Hope.jpg"
+  },
+  {
+    "name": "Robben Island",
+    "country": "South Africa",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dc/Robben_Island.jpg/500px-Robben_Island.jpg"
+  },
+  {
+    "name": "Blyde River Canyon",
+    "country": "South Africa",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/ff/Blyde_River_Canyon.jpg/500px-Blyde_River_Canyon.jpg"
+  },
+  {
+    "name": "Ngorongoro Crater",
+    "country": "Tanzania",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Ngorongoro_Crater.jpg/500px-Ngorongoro_Crater.jpg"
+  },
+  {
+    "name": "Zanzibar Stone Town",
+    "country": "Tanzania",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/Stone_Town_Zanzibar.jpg/500px-Stone_Town_Zanzibar.jpg"
+  },
+  {
+    "name": "Tsingy de Bemaraha",
+    "country": "Madagascar",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Tsingy_de_Bemaraha.jpg/500px-Tsingy_de_Bemaraha.jpg"
+  },
+  {
+    "name": "Djenné",
+    "country": "Mali",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Great_Mosque_of_Djenne.jpg/500px-Great_Mosque_of_Djenne.jpg"
+  },
+  {
+    "name": "Chefchaouen",
+    "country": "Morocco",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Chefchaouen_Morocco.jpg/500px-Chefchaouen_Morocco.jpg"
+  },
+  {
+    "name": "Aksum",
+    "country": "Ethiopia",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/7/78/Obelisk_of_Axum.jpg"
+  },
+  {
+    "name": "Great Ocean Road",
     "country": "Australia",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Fraser_Island.jpg?width=500"
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/63/Great_Ocean_Road.jpg/500px-Great_Ocean_Road.jpg"
   },
   {
     "name": "Whitsunday Islands",
     "country": "Australia",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Whitsunday_Islands.jpg?width=500"
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/81/Whitsunday_Islands.jpg/500px-Whitsunday_Islands.jpg"
   },
   {
     "name": "Milford Sound",
     "country": "New Zealand",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Milford_Sound.jpg?width=500"
-  },
-  {
-    "name": "Aoraki / Mount Cook",
-    "country": "New Zealand",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Aoraki_Mount_Cook.jpg?width=500"
-  },
-  {
-    "name": "Rotorua",
-    "country": "New Zealand",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Rotorua_New_Zealand.jpg?width=500"
-  },
-  {
-    "name": "Hobbiton",
-    "country": "New Zealand",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Hobbiton_Movie_Set.jpg?width=500"
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d0/Milford_Sound.jpg/500px-Milford_Sound.jpg"
   },
   {
     "name": "Tongariro National Park",
     "country": "New Zealand",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Tongariro_National_Park.jpg?width=500"
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Tongariro_National_Park.jpg/500px-Tongariro_National_Park.jpg"
   },
   {
     "name": "Franz Josef Glacier",
     "country": "New Zealand",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Franz_Josef_Glacier.jpg?width=500"
-  },
-  {
-    "name": "Bay of Islands",
-    "country": "New Zealand",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Bay_of_Islands_New_Zealand.jpg?width=500"
-  },
-  {
-    "name": "Waitomo Glowworm Caves",
-    "country": "New Zealand",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Waitomo_Glowworm_Caves.jpg?width=500"
-  },
-  {
-    "name": "Bora Bora",
-    "country": "French Polynesia",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Bora_Bora.jpg?width=500"
-  },
-  {
-    "name": "Tahiti",
-    "country": "French Polynesia",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Tahiti.jpg?width=500"
-  },
-  {
-    "name": "Moorea",
-    "country": "French Polynesia",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Moorea.jpg?width=500"
-  },
-  {
-    "name": "Fiji Islands",
-    "country": "Fiji",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Fiji_Islands.jpg?width=500"
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9b/Franz_Josef_Glacier.jpg/500px-Franz_Josef_Glacier.jpg"
   },
   {
     "name": "Samoa",
     "country": "Samoa",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Samoa.jpg?width=500"
-  },
-  {
-    "name": "Cook Islands",
-    "country": "Cook Islands",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Cook_Islands.jpg?width=500"
-  },
-  {
-    "name": "Vanuatu",
-    "country": "Vanuatu",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Vanuatu.jpg?width=500"
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Samoa.jpg/500px-Samoa.jpg"
   },
   {
     "name": "New Caledonia",
     "country": "New Caledonia",
-    "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/New_Caledonia.jpg?width=500"
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/8/85/New_Caledonia.jpg"
+  },
+  {
+    "name": "Palenque",
+    "country": "Mexico",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/Palenque_Collage.jpg/500px-Palenque_Collage.jpg"
+  },
+  {
+    "name": "Uxmal",
+    "country": "Mexico",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/Uxmal_Pyramid_of_the_Magician.jpg/500px-Uxmal_Pyramid_of_the_Magician.jpg"
+  },
+  {
+    "name": "Iguazu Falls",
+    "country": "Argentina/Brazil",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Iguazu_Cataratas2.jpg/500px-Iguazu_Cataratas2.jpg"
+  },
+  {
+    "name": "Salar de Uyuni",
+    "country": "Bolivia",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/Salar_Uyuni_au01.jpg/500px-Salar_Uyuni_au01.jpg"
+  },
+  {
+    "name": "Galápagos Islands",
+    "country": "Ecuador",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/64/Lobo_marino_%28Zalophus_californianus_wollebaeki%29%2C_Punta_Pitt%2C_isla_de_San_Crist%C3%B3bal%2C_islas_Gal%C3%A1pagos%2C_Ecuador%2C_2015-07-24%2C_DD_11.JPG/500px-Lobo_marino_%28Zalophus_californianus_wollebaeki%29%2C_Punta_Pitt%2C_isla_de_San_Crist%C3%B3bal%2C_islas_Gal%C3%A1pagos%2C_Ecuador%2C_2015-07-24%2C_DD_11.JPG"
+  },
+  {
+    "name": "Angel Falls",
+    "country": "Venezuela",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/e/e9/SaltoAngel1.jpg"
+  },
+  {
+    "name": "Atacama Desert",
+    "country": "Chile",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/7/7f/Atacama.png"
+  },
+  {
+    "name": "Sacsayhuamán",
+    "country": "Peru",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/60/Sacsayhuam%C3%A1n%2C_Cusco%2C_Per%C3%BA%2C_2015-07-31%2C_DD_27.JPG/500px-Sacsayhuam%C3%A1n%2C_Cusco%2C_Per%C3%BA%2C_2015-07-31%2C_DD_27.JPG"
+  },
+  {
+    "name": "Edinburgh Castle",
+    "country": "United Kingdom",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/59/City_of_Edinburgh_-_Edinburgh_Castle_-_20140421004403.jpg/500px-City_of_Edinburgh_-_Edinburgh_Castle_-_20140421004403.jpg"
+  },
+  {
+    "name": "Loch Ness",
+    "country": "United Kingdom",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/LochNessUrquhart.jpg/500px-LochNessUrquhart.jpg"
+  },
+  {
+    "name": "Notre-Dame de Paris",
+    "country": "France",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f7/Notre-Dame_de_Paris%2C_4_October_2017.jpg/500px-Notre-Dame_de_Paris%2C_4_October_2017.jpg"
+  },
+  {
+    "name": "Palace of Versailles",
+    "country": "France",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d2/Versailles-Chateau-Jardins02.jpg/500px-Versailles-Chateau-Jardins02.jpg"
+  },
+  {
+    "name": "Arc de Triomphe",
+    "country": "France",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/79/Arc_de_Triomphe%2C_Paris_21_October_2010.jpg/500px-Arc_de_Triomphe%2C_Paris_21_October_2010.jpg"
+  },
+  {
+    "name": "Sainte-Chapelle",
+    "country": "France",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/70/Sainte_Chapelle_-_Upper_level_1.jpg/500px-Sainte_Chapelle_-_Upper_level_1.jpg"
+  },
+  {
+    "name": "Vatican Museums",
+    "country": "Vatican City",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/54/Musei_vaticani_Coat_of_Arms.svg/500px-Musei_vaticani_Coat_of_Arms.svg.png"
+  },
+  {
+    "name": "Charles Bridge",
+    "country": "Czech Republic",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/22/Prague_07-2016_view_from_Lesser_Town_Tower_of_Charles_Bridge_img3.jpg/500px-Prague_07-2016_view_from_Lesser_Town_Tower_of_Charles_Bridge_img3.jpg"
+  },
+  {
+    "name": "Buda Castle",
+    "country": "Hungary",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Budav%C3%A1ri_Palota%2C_ABCDEF_%C3%A9p%C3%BClet.jpg/500px-Budav%C3%A1ri_Palota%2C_ABCDEF_%C3%A9p%C3%BClet.jpg"
+  },
+  {
+    "name": "Anne Frank House",
+    "country": "Netherlands",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cb/Amsterdam_%28NL%29%2C_Anne-Frank-Huis_--_2015_--_7185.jpg/500px-Amsterdam_%28NL%29%2C_Anne-Frank-Huis_--_2015_--_7185.jpg"
+  },
+  {
+    "name": "Keukenhof",
+    "country": "Netherlands",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/de/26Y_1599_2.jpg/500px-26Y_1599_2.jpg"
+  },
+  {
+    "name": "Zaanse Schans",
+    "country": "Netherlands",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Zaanstad_Zaanse_Schans_22.jpg/500px-Zaanstad_Zaanse_Schans_22.jpg"
+  },
+  {
+    "name": "Atomium",
+    "country": "Belgium",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cf/Brussels_-_Atomium_2022.jpg/500px-Brussels_-_Atomium_2022.jpg"
+  },
+  {
+    "name": "Manneken Pis",
+    "country": "Belgium",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Bruxelles_Manneken_Pis_cropped.jpg/500px-Bruxelles_Manneken_Pis_cropped.jpg"
+  },
+  {
+    "name": "Tivoli Gardens",
+    "country": "Denmark",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/Tivoli_Gardens_4.jpg/500px-Tivoli_Gardens_4.jpg"
+  },
+  {
+    "name": "Nyhavn",
+    "country": "Denmark",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ad/The_Nyhavn_Canal_3.jpg/500px-The_Nyhavn_Canal_3.jpg"
+  },
+  {
+    "name": "Palace of the Parliament",
+    "country": "Romania",
+    "image_url": "https://upload.wikimedia.org/wikipedia/en/thumb/1/18/Bucharest_-_Palace_of_the_Parliament_%282024%29_%282%29.jpg/500px-Bucharest_-_Palace_of_the_Parliament_%282024%29_%282%29.jpg"
+  },
+  {
+    "name": "Rila Monastery",
+    "country": "Bulgaria",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/46/Rila_Monastery%2C_August_2013.jpg/500px-Rila_Monastery%2C_August_2013.jpg"
+  },
+  {
+    "name": "West Lake",
+    "country": "China",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/17/West_Lake%2C_Hangzhou_2025.jpg/500px-West_Lake%2C_Hangzhou_2025.jpg"
+  },
+  {
+    "name": "Victoria Peak",
+    "country": "Hong Kong",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/High_West_and_Victoria_Peak_from_Victoria_Gap_%28crop1%29.jpg/500px-High_West_and_Victoria_Peak_from_Victoria_Gap_%28crop1%29.jpg"
+  },
+  {
+    "name": "Fushimi Inari-taisha",
+    "country": "Japan",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Torii_path_with_lantern_at_Fushimi_Inari_Taisha_Shrine%2C_Kyoto%2C_Japan.jpg/500px-Torii_path_with_lantern_at_Fushimi_Inari_Taisha_Shrine%2C_Kyoto%2C_Japan.jpg"
+  },
+  {
+    "name": "Kiyomizu-dera",
+    "country": "Japan",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Kiyomizu.jpg/500px-Kiyomizu.jpg"
+  },
+  {
+    "name": "Kinkaku-ji",
+    "country": "Japan",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/Golden_Pavilion_Kinkaku-ji_water_mirror_2024.jpg/500px-Golden_Pavilion_Kinkaku-ji_water_mirror_2024.jpg"
+  },
+  {
+    "name": "Tokyo Skytree",
+    "country": "Japan",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/Tokyo_Skytree_2014_%E2%85%A2.jpg/500px-Tokyo_Skytree_2014_%E2%85%A2.jpg"
+  },
+  {
+    "name": "Tokyo Tower",
+    "country": "Japan",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/58/Tokyo_Tower_2023.jpg/500px-Tokyo_Tower_2023.jpg"
+  },
+  {
+    "name": "Bukchon Hanok Village",
+    "country": "South Korea",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/Bukchon_Hanok_Village_01.jpg/500px-Bukchon_Hanok_Village_01.jpg"
+  },
+  {
+    "name": "Jeju Island",
+    "country": "South Korea",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c6/Jeju_Island.jpg/500px-Jeju_Island.jpg"
+  },
+  {
+    "name": "Taipei 101",
+    "country": "Taiwan",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Taipei_101_from_Xiangshan_20250905.jpg/500px-Taipei_101_from_Xiangshan_20250905.jpg"
+  },
+  {
+    "name": "Banaue Rice Terraces",
+    "country": "Philippines",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cc/Banaue-terrace.JPG/500px-Banaue-terrace.JPG"
+  },
+  {
+    "name": "Chocolate Hills",
+    "country": "Philippines",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/af/Chocolate_Hills_Bohol.JPG/500px-Chocolate_Hills_Bohol.JPG"
+  },
+  {
+    "name": "Boracay",
+    "country": "Philippines",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/Boracay_White_Beach.png/500px-Boracay_White_Beach.png"
+  },
+  {
+    "name": "Gardens by the Bay",
+    "country": "Singapore",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5d/Supertree_Grove%2C_Gardens_by_the_Bay%2C_Singapore_-_20120712-02.jpg/500px-Supertree_Grove%2C_Gardens_by_the_Bay%2C_Singapore_-_20120712-02.jpg"
+  },
+  {
+    "name": "Borobudur",
+    "country": "Indonesia",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/25/Pradaksina.jpg/500px-Pradaksina.jpg"
+  },
+  {
+    "name": "Prambanan",
+    "country": "Indonesia",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/Prambanan_Temple_Yogyakarta_Indonesia.jpg/500px-Prambanan_Temple_Yogyakarta_Indonesia.jpg"
+  },
+  {
+    "name": "Mount Bromo",
+    "country": "Indonesia",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Bromo-Semeru-Batok-Widodaren.jpg/500px-Bromo-Semeru-Batok-Widodaren.jpg"
+  },
+  {
+    "name": "Ubud Monkey Forest",
+    "country": "Indonesia",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/46/Monkey_Forest.jpg/500px-Monkey_Forest.jpg"
+  },
+  {
+    "name": "Temple of the Tooth",
+    "country": "Sri Lanka",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/SL_Kandy_asv2020-01_img33_Sacred_Tooth_Temple.jpg/500px-SL_Kandy_asv2020-01_img33_Sacred_Tooth_Temple.jpg"
+  },
+  {
+    "name": "Yala National Park",
+    "country": "Sri Lanka",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Yala_Beach.jpg/500px-Yala_Beach.jpg"
+  },
+  {
+    "name": "Red Fort",
+    "country": "India",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Delhi_fort.jpg/500px-Delhi_fort.jpg"
+  },
+  {
+    "name": "Baalbek",
+    "country": "Lebanon",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c9/Temple_of_Bacchus%2C_Baalbek%2C_Lebanon_%2849890013476%29.jpg/500px-Temple_of_Bacchus%2C_Baalbek%2C_Lebanon_%2849890013476%29.jpg"
+  },
+  {
+    "name": "Jeita Grotto",
+    "country": "Lebanon",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/Upper_Jeita_Grotto.jpg/500px-Upper_Jeita_Grotto.jpg"
+  },
+  {
+    "name": "Palmyra",
+    "country": "Syria",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Palmyra_03.jpg/500px-Palmyra_03.jpg"
+  },
+  {
+    "name": "Krak des Chevaliers",
+    "country": "Syria",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/40/KRAK_DES_CHEVALIERS_-_GAR_-_6-00.jpg/500px-KRAK_DES_CHEVALIERS_-_GAR_-_6-00.jpg"
+  },
+  {
+    "name": "Sheikh Zayed Grand Mosque",
+    "country": "United Arab Emirates",
+    "image_url": "https://upload.wikimedia.org/wikipedia/en/thumb/7/7d/Sheikh_Zayed_Mosque_view.jpg/500px-Sheikh_Zayed_Mosque_view.jpg"
+  },
+  {
+    "name": "Burj Al Arab",
+    "country": "United Arab Emirates",
+    "image_url": "https://upload.wikimedia.org/wikipedia/en/thumb/2/2a/Burj_Al_Arab%2C_Dubai%2C_by_Joi_Ito_Dec2007.jpg/500px-Burj_Al_Arab%2C_Dubai%2C_by_Joi_Ito_Dec2007.jpg"
+  },
+  {
+    "name": "Louvre Abu Dhabi",
+    "country": "United Arab Emirates",
+    "image_url": "https://upload.wikimedia.org/wikipedia/en/thumb/5/55/LouvreAD_exterior.jpg/500px-LouvreAD_exterior.jpg"
+  },
+  {
+    "name": "Sultan Qaboos Grand Mosque",
+    "country": "Oman",
+    "image_url": "https://upload.wikimedia.org/wikipedia/en/thumb/5/5b/Sultan_Qaboos_Grand_Mosque_RB.jpg/500px-Sultan_Qaboos_Grand_Mosque_RB.jpg"
+  },
+  {
+    "name": "Bay of Islands",
+    "country": "New Zealand",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/31/00_4801_Dolphins_-_Bay_of_Islands.jpg/500px-00_4801_Dolphins_-_Bay_of_Islands.jpg"
+  },
+  {
+    "name": "Bora Bora",
+    "country": "French Polynesia",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Bora_Bora_ISS006.jpg/500px-Bora_Bora_ISS006.jpg"
+  },
+  {
+    "name": "Tahiti",
+    "country": "French Polynesia",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/48/Flag_of_Tahiti.svg/500px-Flag_of_Tahiti.svg.png"
+  },
+  {
+    "name": "Cook Islands",
+    "country": "Cook Islands",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Flag_of_the_Cook_Islands.svg/500px-Flag_of_the_Cook_Islands.svg.png"
+  },
+  {
+    "name": "Vanuatu",
+    "country": "Vanuatu",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6e/Flag_of_Vanuatu_%28official%29.svg/500px-Flag_of_Vanuatu_%28official%29.svg.png"
   }
 ]
