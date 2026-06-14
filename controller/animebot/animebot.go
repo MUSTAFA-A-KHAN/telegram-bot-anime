@@ -77,12 +77,10 @@ func IsAnimeActive(chatID int64) bool {
 	return exists && state.Active
 }
 
-func HandleGuess(bot *tgbotapi.BotAPI, update tgbotapi.Update, client *mongo.Client) {
-	if update.Message == nil {
+func HandleGuess(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.Client, chatID int64, text string) {
+	if message == nil {
 		return
 	}
-	chatID := update.Message.Chat.ID
-	text := update.Message.Text
 
 	activeGamesMu.Lock()
 	state, exists := activeGames[chatID]
@@ -109,7 +107,7 @@ func HandleGuess(bot *tgbotapi.BotAPI, update tgbotapi.Update, client *mongo.Cli
 		activeGamesMu.Unlock()
 
 		points := 10
-		go repository.InsertWordleBonusDoc(update.Message.From.ID, update.Message.From.FirstName, chatID, client, "AnimePoints", points)
+		go repository.InsertWordleBonusDoc(message.From.ID, message.From.FirstName, chatID, client, "AnimePoints", points)
 
 		view.SendMessage(bot, chatID, "🎉 Correct! It was <b>"+bestAnswer+"</b>!\nYou earned "+strconv.Itoa(points)+" points!")
 	} else {
