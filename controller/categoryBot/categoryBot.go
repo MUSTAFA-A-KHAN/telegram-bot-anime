@@ -14,6 +14,7 @@ import (
 	collectibleController "github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/collectible"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/geographybot"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/translator"
+	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/animebot"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/scramybot"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/wordlebot"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/model"
@@ -755,6 +756,10 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			geographybot.HandleGuess(bot, message, client, chatID, message.Text)
 		}
 
+		if animebot.IsAnimeActive(chatID) {
+			animebot.HandleGuess(bot, message, client, chatID, message.Text)
+		}
+
 		// Check user's guess in DM
 		chatState.RLock()
 		word := chatState.Word
@@ -1188,6 +1193,10 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 
 		if geographybot.IsGeographyActive(chatID) {
 			geographybot.HandleGuess(bot, message, client, chatID, message.Text)
+		}
+
+		if animebot.IsAnimeActive(chatID) {
+			animebot.HandleGuess(bot, message, client, chatID, message.Text)
 		}
 
 		chatState.RLock()

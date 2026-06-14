@@ -654,6 +654,10 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			geographybot.HandleGuess(bot, message, client, chatID, message.Text)
 		}
 
+		if animebot.IsAnimeActive(chatID) {
+			animebot.HandleGuess(bot, message, client, chatID, message.Text)
+		}
+
 		// Check user's guess in DM
 		chatState.RLock()
 		word := chatState.Word
@@ -1015,6 +1019,10 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 
 		if geographybot.IsGeographyActive(chatID) {
 			geographybot.HandleGuess(bot, message, client, chatID, message.Text)
+		}
+
+		if animebot.IsAnimeActive(chatID) {
+			animebot.HandleGuess(bot, message, client, chatID, message.Text)
 		}
 
 		chatState.RLock()
