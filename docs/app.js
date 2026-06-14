@@ -20,6 +20,7 @@ const DATA_SOURCES = {
 };
 
 let currentData = null;
+let modifiedRecords = []; // Tracks only edited or newly added records
 let currentType = null;
 
 // --- 2. THREE.JS UNIVERSE SETUP ---
@@ -311,34 +312,38 @@ closeBtn.addEventListener('click', () => {
 });
 
 saveBtn.addEventListener('click', () => {
-    if (!currentData) return;
+    if (!currentData || modifiedRecords.length === 0) {
+        alert("No modifications made yet.");
+        return;
+    }
 
-    const dataStr = JSON.stringify(currentData, null, 2);
+    const modifiedStr = JSON.stringify(modifiedRecords, null, 2);
 
-    // 1. Download file to user device
-    const blob = new Blob([dataStr], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = "updated_data.json";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    // 1. Download full file to user device (optional backup)
+    try {
+        const fullDataStr = JSON.stringify(currentData, null, 2);
+        const blob = new Blob([fullDataStr], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = "updated_data.json";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    } catch(e) {}
 
-    // 2. Send data to Telegram Bot
+    // 2. Open chat with @MustafaAkhan with the modified data as text
     if (window.Telegram && window.Telegram.WebApp) {
-        // WebApp.sendData limits payload to 4096 bytes.
-        // For larger data, sending raw might fail, but we'll try sending a compressed structure or trigger flag
-        // Here we just send the payload. If it exceeds, we can truncate or send a flag.
+        const encodedText = encodeURIComponent(`Here are my data updates:\n\n${modifiedStr}`);
+        const tgUrl = `https://t.me/MustafaAkhan?text=${encodedText}`;
+
         try {
-            window.Telegram.WebApp.sendData(dataStr);
+            window.Telegram.WebApp.openTelegramLink(tgUrl);
         } catch (e) {
-            console.error("Failed to send data to Telegram Bot. Payload might be too large.", e);
-            // Fallback: send a smaller trigger indicating the user saved it
-            try {
-                window.Telegram.WebApp.sendData(JSON.stringify({ action: "save_success", file: "updated_data.json" }));
-            } catch(e2){}
+            console.error("Failed to open telegram link", e);
+            // Fallback if openTelegramLink is restricted
+            window.open(tgUrl, '_blank');
         }
     }
 });
@@ -362,6 +367,7 @@ async function loadData(source) {
 
         if (source.type === 'json') {
             currentData = await response.json();
+            modifiedRecords = []; // Reset modifications on load
             saveBtn.classList.remove('hidden'); // Show save button for JSON edits
         } else {
             const text = await response.text();
@@ -463,6 +469,7 @@ function renderJson(query) {
                 const newRecord = {};
                 headers.forEach(h => newRecord[h] = '');
                 currentData.unshift(newRecord); // Add to beginning
+                modifiedRecords.push(newRecord); // Track addition
                 renderData(''); // Re-render grid
             });
             container.appendChild(addBtn);
@@ -570,6 +577,12 @@ function renderJson(query) {
                             r.valueSpan.classList.remove('hidden');
                             r.inputField.classList.add('hidden');
                         });
+
+                        // Track the modified record
+                        if (!modifiedRecords.includes(item)) {
+                            modifiedRecords.push(item);
+                        }
+
                         // Briefly Re-render data so updated image URLs refresh immediately
                         setTimeout(() => renderData(''), 50);
                     }
