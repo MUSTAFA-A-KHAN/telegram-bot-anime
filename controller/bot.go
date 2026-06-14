@@ -14,6 +14,7 @@ import (
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/geographybot"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/translator"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/scramybot"
+	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/animebot"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/wordlebot"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/model"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/model/validator"
@@ -874,6 +875,9 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 	case "geography":
 		geographybot.HandleGeographyCommand(bot, chatID, message.From.FirstName, client)
 		return
+		case "anime":
+			animebot.HandleAnimeCommand(bot, chatID, client)
+			return
 	case "geohint":
 		geographybot.HandleGeographyHint(bot, message, client, chatID, translator.NewTextTranslator())
 		return
@@ -1095,6 +1099,15 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 			log.Printf("Failed to send styled buttons message: %v", err)
 			view.SendMessagehtml(bot, chatID, "Failed to load leaderboard.")
 		}
+			bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
+			return
+		case "statsglobal_anime":
+			markup := service.LeaderBoardListButtons(client, "AnimePoints", 0, callback.Data)
+			err := view.EditMessageTextWithStyledButtons(bot.Token, chatID, callback.Message.MessageID, "🏆 <b>Top 10 Players Leaderboard</b> 🏆\n\n✨ <b>Keep it up and aim for the top!</b> ✨", markup)
+			if err != nil {
+				log.Printf("Failed to send styled buttons message: %v", err)
+				view.SendMessagehtml(bot, chatID, "Failed to load leaderboard.")
+			}
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
 		return
 	case "statsgroup_wordguess":
@@ -1269,6 +1282,23 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 			view.SendMessage(bot, chatID, "Failed to generate image.")
 		}
 		return
+		case "statsimg_global_anime":
+			markup := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Word Guess Image Global", "statsimg_global_wordguess"), tgbotapi.NewInlineKeyboardButtonData("Wordle Image Global", "statsimg_global_wordle")), tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Scramy Image Global", "statsimg_global_scramy"), tgbotapi.NewInlineKeyboardButtonData("Geography Image Global 🌍", "statsimg_global_geography")), tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Anime Image Global 🎌", "statsimg_global_anime")))
+			bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Generating image..."))
+			imgBytes, err := service.GenerateLeaderboardImage(client, "AnimePoints", 0, "Anime Global Leaderboard")
+			if err == nil {
+				err = view.EditMessageMediaWithStyledButtons(bot.Token, chatID, callback.Message.MessageID, imgBytes, "leaderboard.png", &markup)
+				if err != nil {
+					// Fallback if message wasn't a photo previously
+					photo := tgbotapi.NewPhotoUpload(chatID, tgbotapi.FileBytes{Name: "leaderboard.png", Bytes: imgBytes})
+					photo.ReplyMarkup = markup
+					bot.Send(photo)
+					bot.Send(tgbotapi.NewDeleteMessage(chatID, callback.Message.MessageID))
+				}
+			} else {
+				view.SendMessage(bot, chatID, "Failed to generate image.")
+			}
+			return
 	case "mystats_main":
 		buttons := tgbotapi.NewInlineKeyboardMarkup(
 			tgbotapi.NewInlineKeyboardRow(
@@ -1277,6 +1307,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 			),
 			tgbotapi.NewInlineKeyboardRow(
 				tgbotapi.NewInlineKeyboardButtonData("Scramy", "stats_scramy"),
+					tgbotapi.NewInlineKeyboardButtonData("Anime", "statsglobal_anime"),
 			),
 		)
 		editMsg := tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, "🐊🇮🇳\n📊 Choose game stats to view:")
