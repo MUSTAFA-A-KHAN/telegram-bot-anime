@@ -443,6 +443,9 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 				view.SendMessage(bot, chatID, "Build fail Error:"+err.Error())
 			}
 			view.SendMessage(bot, chatID, "\nLogs:\n"+output)
+		case "anime":
+			animebot.HandleAnimeCommand(bot, chatID, client)
+			return
 		case "addwordlepoints":
 			if message.From.ID != int(adminID) {
 				return

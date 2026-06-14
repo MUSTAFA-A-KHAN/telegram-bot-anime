@@ -414,6 +414,9 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		case "geography":
 			geographybot.HandleGeographyCommand(bot, chatID, message.From.FirstName, client)
 			return
+		case "anime":
+			animebot.HandleAnimeCommand(bot, chatID, client)
+			return
 		case "geohint":
 			geographybot.HandleGeographyHint(bot, message, client, chatID, translator.NewTextTranslator())
 			return
@@ -894,6 +897,9 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		return
 	case "geography":
 		geographybot.HandleGeographyCommand(bot, chatID, message.From.FirstName, client)
+		return
+	case "anime":
+		animebot.HandleAnimeCommand(bot, chatID, client)
 		return
 	case "geohint":
 		geographybot.HandleGeographyHint(bot, message, client, chatID, translator.NewTextTranslator())
