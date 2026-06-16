@@ -1,0 +1,14 @@
+--- controller/wordlebot/wordlebot.go
++++ controller/wordlebot/wordlebot.go
+@@ -250,7 +250,11 @@
+		"⁵", "⁶", "⁷", "⁸", "⁹",
+	}
+
+-	if num < 10 {
++	if num < 0 {
++		return "-" + getSuperscript(-num)
++	}
++
++	if num >= 0 && num < 10 {
+		return superscripts[num]
+	}
