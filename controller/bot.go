@@ -446,6 +446,13 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		case "anime":
 			animebot.HandleAnimeCommand(bot, chatID, client)
 			return
+		case "cancelanime":
+			if animebot.CancelAnime(chatID) {
+				view.SendMessage(bot, chatID, "Anime game cancelled.")
+			} else {
+				view.SendMessage(bot, chatID, "No active Anime game.")
+			}
+			return
 		case "addwordlepoints":
 			if message.From.ID != int(adminID) {
 				return
@@ -893,6 +900,12 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			view.SendMessage(bot, chatID, "Geography game cancelled.")
 		} else {
 			view.SendMessage(bot, chatID, "No active Geography game.")
+		}
+	case "cancelanime":
+		if animebot.CancelAnime(chatID) {
+			view.SendMessage(bot, chatID, "Anime game cancelled.")
+		} else {
+			view.SendMessage(bot, chatID, "No active Anime game.")
 		}
 	case "word":
 		chatState.RLock()

@@ -77,6 +77,17 @@ func IsAnimeActive(chatID int64) bool {
 	return exists && state.Active
 }
 
+func CancelAnime(chatID int64) bool {
+	activeGamesMu.Lock()
+	defer activeGamesMu.Unlock()
+
+	if state, exists := activeGames[chatID]; exists && state.Active {
+		delete(activeGames, chatID)
+		return true
+	}
+	return false
+}
+
 func HandleGuess(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.Client, chatID int64, text string) {
 	if message == nil {
 		return
