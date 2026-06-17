@@ -52,6 +52,8 @@ var markdownReplacements = []struct {
 	{regexp.MustCompile("`([^`\n]+)`"), `<code>$1</code>`},
 }
 
+// ⚡ Bolt Optimization: Removed `strings.Split`, `strings.Replace`, and `strings.Join` for markdown headers
+// to avoid unnecessary O(N) heap allocations and slice operations, using an inline scanner instead.
 func markdownToTelegramHTML(text string) string {
 	escaped := html.EscapeString(strings.ReplaceAll(text, "\r\n", "\n"))
 
@@ -59,19 +61,52 @@ func markdownToTelegramHTML(text string) string {
 		escaped = replacement.re.ReplaceAllString(escaped, replacement.replace)
 	}
 
-	lines := strings.Split(escaped, "\n")
-	for i, line := range lines {
-		trimmed := strings.TrimSpace(line)
-		if strings.HasPrefix(trimmed, "### ") {
-			lines[i] = strings.Replace(line, "### "+strings.TrimPrefix(trimmed, "### "), "<b>"+strings.TrimPrefix(trimmed, "### ")+"</b>", 1)
-		} else if strings.HasPrefix(trimmed, "## ") {
-			lines[i] = strings.Replace(line, "## "+strings.TrimPrefix(trimmed, "## "), "<b>"+strings.TrimPrefix(trimmed, "## ")+"</b>", 1)
-		} else if strings.HasPrefix(trimmed, "# ") {
-			lines[i] = strings.Replace(line, "# "+strings.TrimPrefix(trimmed, "# "), "<b>"+strings.TrimPrefix(trimmed, "# ")+"</b>", 1)
+	var sb strings.Builder
+	sb.Grow(len(escaped) + 16)
+
+	start := 0
+	for i := 0; i <= len(escaped); i++ {
+		if i == len(escaped) || escaped[i] == '\n' {
+			line := escaped[start:i]
+
+			trimmedStart := 0
+			for trimmedStart < len(line) && line[trimmedStart] == ' ' {
+				trimmedStart++
+			}
+
+			isHeading := false
+			if trimmedStart < len(line) && line[trimmedStart] == '#' {
+				hashCount := 1
+				for trimmedStart+hashCount < len(line) && line[trimmedStart+hashCount] == '#' {
+					hashCount++
+				}
+				if hashCount <= 3 && trimmedStart+hashCount < len(line) && line[trimmedStart+hashCount] == ' ' {
+					sb.WriteString(line[:trimmedStart])
+					sb.WriteString("<b>")
+
+					contentStart := trimmedStart + hashCount + 1
+					for contentStart < len(line) && line[contentStart] == ' ' {
+						contentStart++
+					}
+
+					sb.WriteString(line[contentStart:])
+					sb.WriteString("</b>")
+					isHeading = true
+				}
+			}
+
+			if !isHeading {
+				sb.WriteString(line)
+			}
+
+			if i < len(escaped) {
+				sb.WriteByte('\n')
+			}
+			start = i + 1
 		}
 	}
 
-	return strings.Join(lines, "\n")
+	return sb.String()
 }
 
 func textHandler(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
