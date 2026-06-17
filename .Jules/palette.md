@@ -9,3 +9,6 @@
 **Learning:** When users update a setting from a main sub-menu (e.g., selecting Wordle color "Classic"), the resulting confirmation message ("✅ Wordle color updated to Classic") often strips away the inline keyboard, stranding the user. They must manually dismiss the message and re-invoke the settings menu to continue customizing.
 
 **Action:** Ensure all multi-level inline keyboard menus, especially terminal confirmation messages indicating a successful state change, always include a "🔙 Back" button (or "🔙 Back to Settings") to smoothly return the user to the previous level without abandoning the menu structure entirely.
+## $(date +%Y-%m-%d) - Add ForceReply to user input messages
+**Learning:** For interactive text-guessing interactions that requires user context, a simple message might be missed or require manual 'replying'. Adding ForceReply to the message ensures the user prompt keyboard forces the user to reply to the bot message, linking the contexts seamlessly.
+**Action:** When creating text prompts in Telegram Bots that wait for user inputs to update a specific state (like a custom word), attach `ForceReply` to the sent message using `tgbotapi.ForceReply{ForceReply: true}`.

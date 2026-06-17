@@ -13,6 +13,8 @@ import (
 
 	collectibleController "github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/collectible"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/geographybot"
+	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/translator"
+	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/animebot"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/scramybot"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/wordlebot"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/model"
@@ -38,13 +40,14 @@ func MessageToJSONString(message *tgbotapi.Message) (string, error) {
 func escapeMarkdownV2(text string) string {
 	var builder strings.Builder
 	builder.Grow(len(text) + len(text)/4) // Rough estimate for escaped string
-	for _, char := range text {
+	for i := 0; i < len(text); i++ {
+		char := text[i]
 		switch char {
 		case '_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!':
 			builder.WriteByte('\\')
-			builder.WriteRune(char)
+			builder.WriteByte(char)
 		default:
-			builder.WriteRune(char)
+			builder.WriteByte(char)
 		}
 	}
 	return builder.String()
@@ -342,19 +345,19 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			view.SendMessage(bot, chatID, "AI mode has been disabled.")
 			return
 		case "rules":
-			rulesText := "*🎮 Game Rules 🎮*\n\n" +
-				"*Players:*\n" +
-				"1. Guess the word by typing your answer.\n" +
-				"2. Use /hint to get clues about the word, but wait at least a minute between hints.\n" +
-				"3. Use /reveal to reveal the word if you give up, but only after 10 minutes of gameplay.\n\n" +
-				"*Leaders:*\n" +
-				"1. Claim leadership by via button or using the /word command.\n" +
-				"2. Explain the word to other players without directly saying it.\n" +
-				"3. You can get a new word or drop leadership using the provided buttons.\n\n" +
-				"*General:*\n" +
-				"1. Be respectful and fair to other players.\n" +
-				"2. Have fun and enjoy the game!\n\n" +
-				"Type /word to start a new game or /rules to see these rules again."
+			rulesText := "🎮 *Game Rules*\n\n" +
+				"👥 *Players*\n" +
+				"• Guess the word by typing your answer.\n" +
+				"• Use `/hint` to get clues (wait 1 min between hints).\n" +
+				"• Use `/reveal` if you give up (available after 10 mins).\n\n" +
+				"👑 *Leaders*\n" +
+				"• Claim leadership via button or `/word` command.\n" +
+				"• Explain the word without saying it directly.\n" +
+				"• Drop leadership or get a new word via buttons.\n\n" +
+				"🌍 *General*\n" +
+				"• Be respectful and fair.\n" +
+				"• Have fun and enjoy the game!\n\n" +
+				"💡 *Tip:* Type `/word` to start or `/rules` to view this menu."
 			msg := tgbotapi.NewMessage(chatID, rulesText)
 			msg.ParseMode = "Markdown"
 			_, err := bot.Send(msg)
@@ -387,7 +390,9 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 							customWordMutex.Lock()
 							customWordState[int64(message.From.ID)] = groupChatID
 							customWordMutex.Unlock()
-							view.SendMessage(bot, chatID, "Type the word you want the group to guess (must be a valid English word):")
+							msg := tgbotapi.NewMessage(chatID, "Type the word you want the group to guess (must be a valid English word):")
+							msg.ReplyMarkup = tgbotapi.ForceReply{ForceReply: true}
+							bot.Send(msg)
 						} else {
 							view.SendMessage(bot, chatID, "You are not the current leader in that group.")
 						}
@@ -408,6 +413,12 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			return
 		case "geography":
 			geographybot.HandleGeographyCommand(bot, chatID, message.From.FirstName, client)
+			return
+		case "anime":
+			animebot.HandleAnimeCommand(bot, chatID, client)
+			return
+		case "geohint":
+			geographybot.HandleGeographyHint(bot, message, client, chatID, translator.NewTextTranslator())
 			return
 
 		case "cancelgeo":
@@ -452,10 +463,10 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		case "leaderstats":
 			view.SendMessage(bot, chatID, "Group stats are not available in a DM. You can view global stats using /statsglobal or /leaderstatsglobal.")
 		case "statsglobal":
-			buttons := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Word Guess Global", "statsglobal_wordguess"), tgbotapi.NewInlineKeyboardButtonData("Wordle Global", "statsglobal_wordle")), tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Scramy Global", "statsglobal_scramy")))
+			buttons := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Word Guess Global", "statsglobal_wordguess"), tgbotapi.NewInlineKeyboardButtonData("Wordle Global", "statsglobal_wordle")), tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Scramy Global", "statsglobal_scramy"), tgbotapi.NewInlineKeyboardButtonData("Geography Global 🌍", "statsglobal_geography")), tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Anime Global 🎌", "statsglobal_anime")))
 			view.SendMessageWithButtons(bot, chatID, "🐊🇮🇳\n📊 Choose global stats to view:", buttons)
 		case "statsimageglobal":
-			markup := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Word Guess Image Global", "statsimg_global_wordguess"), tgbotapi.NewInlineKeyboardButtonData("Wordle Image Global", "statsimg_global_wordle")), tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Scramy Image Global", "statsimg_global_scramy")))
+			markup := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Word Guess Image Global", "statsimg_global_wordguess"), tgbotapi.NewInlineKeyboardButtonData("Wordle Image Global", "statsimg_global_wordle")), tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Scramy Image Global", "statsimg_global_scramy"), tgbotapi.NewInlineKeyboardButtonData("Geography Image Global 🌍", "statsimg_global_geography")), tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Anime Image Global 🎌", "statsimg_global_anime")))
 			imgBytes, err := service.GenerateLeaderboardImage(client, "CrocEn", 0, "Word Guess Global Leaderboard")
 			if err == nil {
 				photo := tgbotapi.NewPhotoUpload(chatID, tgbotapi.FileBytes{Name: "leaderboard.png", Bytes: imgBytes})
@@ -501,6 +512,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 				),
 				tgbotapi.NewInlineKeyboardRow(
 					tgbotapi.NewInlineKeyboardButtonData("Scramy", "stats_scramy"),
+					tgbotapi.NewInlineKeyboardButtonData("Anime", "statsglobal_anime"),
 				),
 			)
 			view.SendMessageWithButtons(bot, chatID, "🐊🇮🇳\n📊 Choose game stats to view:", buttons)
@@ -747,6 +759,10 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			geographybot.HandleGuess(bot, message, client, chatID, message.Text)
 		}
 
+		if animebot.IsAnimeActive(chatID) {
+			animebot.HandleGuess(bot, message, client, chatID, message.Text)
+		}
+
 		// Check user's guess in DM
 		chatState.RLock()
 		word := chatState.Word
@@ -857,7 +873,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			),
 			tgbotapi.NewInlineKeyboardRow(
 				tgbotapi.NewInlineKeyboardButtonData("Scramy Letters 🔠", "setting_scramy_letters"),
-				tgbotapi.NewInlineKeyboardButtonData("Geography Mode 🌍", "setting_geography_mode"),
+				tgbotapi.NewInlineKeyboardButtonData("Geography Settings 🌍", "setting_geography_main"),
 			),
 		)
 		view.SendMessageWithButtons(bot, message.Chat.ID, "⚙️ **Settings**\nChoose a setting to configure:", buttons)
@@ -882,6 +898,12 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 	case "geography":
 		geographybot.HandleGeographyCommand(bot, chatID, message.From.FirstName, client)
 		return
+	case "anime":
+		animebot.HandleAnimeCommand(bot, chatID, client)
+		return
+	case "geohint":
+		geographybot.HandleGeographyHint(bot, message, client, chatID, translator.NewTextTranslator())
+		return
 	case "cancelgeo":
 		if geographybot.CancelGeography(chatID) {
 			view.SendMessage(bot, chatID, "Geography game cancelled.")
@@ -889,10 +911,10 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			view.SendMessage(bot, chatID, "No active Geography game.")
 		}
 	case "stats":
-		buttons := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Word Guess Group", "statsgroup_wordguess"), tgbotapi.NewInlineKeyboardButtonData("Wordle Group", "statsgroup_wordle")), tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Scramy Group", "statsgroup_scramy")))
+		buttons := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Word Guess Group", "statsgroup_wordguess"), tgbotapi.NewInlineKeyboardButtonData("Wordle Group", "statsgroup_wordle")), tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Scramy Group", "statsgroup_scramy"), tgbotapi.NewInlineKeyboardButtonData("Geography Group 🌍", "statsgroup_geography")))
 		view.SendMessageWithButtons(bot, chatID, "🐊🇮🇳\n📊 Choose group stats to view:", buttons)
 	case "statsimage":
-		markup := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Word Guess Image Group", "statsimg_group_wordguess"), tgbotapi.NewInlineKeyboardButtonData("Wordle Image Group", "statsimg_group_wordle")), tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Scramy Image Group", "statsimg_group_scramy")))
+		markup := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Word Guess Image Group", "statsimg_group_wordguess"), tgbotapi.NewInlineKeyboardButtonData("Wordle Image Group", "statsimg_group_wordle")), tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Scramy Image Group", "statsimg_group_scramy"), tgbotapi.NewInlineKeyboardButtonData("Geography Image Group 🌍", "statsimg_group_geography")))
 		imgBytes, err := service.GenerateLeaderboardImage(client, "CrocEn", chatID, "Word Guess Group Leaderboard")
 		if err == nil {
 			photo := tgbotapi.NewPhotoUpload(chatID, tgbotapi.FileBytes{Name: "leaderboard.png", Bytes: imgBytes})
@@ -931,10 +953,10 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			view.SendMessageWithButtons(bot, message.Chat.ID, "Click the button below to visit the Emoji Shop!", markup)
 		}
 	case "statsglobal":
-		buttons := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Word Guess Global", "statsglobal_wordguess"), tgbotapi.NewInlineKeyboardButtonData("Wordle Global", "statsglobal_wordle")), tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Scramy Global", "statsglobal_scramy")))
+			buttons := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Word Guess Global", "statsglobal_wordguess"), tgbotapi.NewInlineKeyboardButtonData("Wordle Global", "statsglobal_wordle")), tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Scramy Global", "statsglobal_scramy"), tgbotapi.NewInlineKeyboardButtonData("Geography Global 🌍", "statsglobal_geography")), tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Anime Global 🎌", "statsglobal_anime")))
 		view.SendMessageWithButtons(bot, chatID, "🐊🇮🇳\n📊 Choose global stats to view:", buttons)
 	case "statsimageglobal":
-		markup := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Word Guess Image Global", "statsimg_global_wordguess"), tgbotapi.NewInlineKeyboardButtonData("Wordle Image Global", "statsimg_global_wordle")), tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Scramy Image Global", "statsimg_global_scramy")))
+			markup := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Word Guess Image Global", "statsimg_global_wordguess"), tgbotapi.NewInlineKeyboardButtonData("Wordle Image Global", "statsimg_global_wordle")), tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Scramy Image Global", "statsimg_global_scramy"), tgbotapi.NewInlineKeyboardButtonData("Geography Image Global 🌍", "statsimg_global_geography")), tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Anime Image Global 🎌", "statsimg_global_anime")))
 		imgBytes, err := service.GenerateLeaderboardImage(client, "CrocEn", 0, "Word Guess Global Leaderboard")
 		if err == nil {
 			photo := tgbotapi.NewPhotoUpload(chatID, tgbotapi.FileBytes{Name: "leaderboard.png", Bytes: imgBytes})
@@ -957,19 +979,19 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		view.SendMessageWithButtons(bot, chatID, "🐊🇮🇳\n📊 Choose game stats to view:", buttons)
 		// view.ReplyToMessage(bot, message.MessageID, chatID, result)
 	case "rules":
-		rulesText := "*🎮 Game Rules 🎮*\n\n" +
-			"*Players:*\n" +
-			"1. Guess the word by typing your answer.\n" +
-			"2. Use /hint to get clues about the word, but wait at least a minute between hints.\n" +
-			"3. Use /reveal to reveal the word if you give up, but only after 10 minutes of gameplay.\n\n" +
-			"*Leaders:*\n" +
-			"1. Claim leadership by clicking 'Explain' or using the appropriate command.\n" +
-			"2. Explain the word to other players without directly saying it.\n" +
-			"3. You can get a new word or drop leadership using the provided buttons.\n\n" +
-			"*General:*\n" +
-			"1. Be respectful and fair to other players.\n" +
-			"2. Have fun and enjoy the game!\n\n" +
-			"Type /word to start a new game or /rules to see these rules again."
+		rulesText := "🎮 *Game Rules*\n\n" +
+			"👥 *Players*\n" +
+			"• Guess the word by typing your answer.\n" +
+			"• Use `/hint` to get clues (wait 1 min between hints).\n" +
+			"• Use `/reveal` if you give up (available after 10 mins).\n\n" +
+			"👑 *Leaders*\n" +
+			"• Claim leadership by clicking 'Explain' or using the appropriate command.\n" +
+			"• Explain the word without saying it directly.\n" +
+			"• Drop leadership or get a new word via buttons.\n\n" +
+			"🌍 *General*\n" +
+			"• Be respectful and fair.\n" +
+			"• Have fun and enjoy the game!\n\n" +
+			"💡 *Tip:* Type `/word` to start or `/rules` to view this menu."
 		msg := tgbotapi.NewMessage(chatID, rulesText)
 		msg.ParseMode = "Markdown"
 		_, err := bot.Send(msg)
@@ -1179,6 +1201,10 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			geographybot.HandleGuess(bot, message, client, chatID, message.Text)
 		}
 
+		if animebot.IsAnimeActive(chatID) {
+			animebot.HandleGuess(bot, message, client, chatID, message.Text)
+		}
+
 		chatState.RLock()
 		word := chatState.Word
 		user := chatState.User
@@ -1287,6 +1313,24 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		}
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
 		return
+	case "statsglobal_geography":
+		markup := service.LeaderBoardListButtons(client, "GeographyPoints", 0, callback.Data)
+		err := view.EditMessageTextWithStyledButtons(bot.Token, chatID, callback.Message.MessageID, "🏆 <b>Top 10 Players Leaderboard</b> 🏆\n\n✨ <b>Keep it up and aim for the top!</b> ✨", markup)
+		if err != nil {
+			log.Printf("Failed to send styled buttons message: %v", err)
+			view.SendMessagehtml(bot, chatID, "Failed to load leaderboard.")
+		}
+			bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
+			return
+		case "statsglobal_anime":
+			markup := service.LeaderBoardListButtons(client, "AnimePoints", 0, callback.Data)
+			err := view.EditMessageTextWithStyledButtons(bot.Token, chatID, callback.Message.MessageID, "🏆 <b>Top 10 Players Leaderboard</b> 🏆\n\n✨ <b>Keep it up and aim for the top!</b> ✨", markup)
+			if err != nil {
+				log.Printf("Failed to send styled buttons message: %v", err)
+				view.SendMessagehtml(bot, chatID, "Failed to load leaderboard.")
+			}
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
+		return
 	case "statsgroup_wordguess":
 		markup := service.LeaderBoardListButtons(client, "CrocEn", chatID, callback.Data)
 		err := view.EditMessageTextWithStyledButtons(bot.Token, chatID, callback.Message.MessageID, "🏆 <b>Top 10 Players Leaderboard</b> 🏆\n\n✨ <b>Keep it up and aim for the top!</b> ✨", markup)
@@ -1314,8 +1358,17 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		}
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
 		return
+	case "statsgroup_geography":
+		markup := service.LeaderBoardListButtons(client, "GeographyPoints", chatID, callback.Data)
+		err := view.EditMessageTextWithStyledButtons(bot.Token, chatID, callback.Message.MessageID, "🏆 <b>Top 10 Players Leaderboard</b> 🏆\n\n✨ <b>Keep it up and aim for the top!</b> ✨", markup)
+		if err != nil {
+			log.Printf("Failed to send styled buttons message: %v", err)
+			view.SendMessagehtml(bot, chatID, "Failed to load leaderboard.")
+		}
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
+		return
 	case "statsimg_global_wordguess":
-		markup := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Word Guess Image Global", "statsimg_global_wordguess"), tgbotapi.NewInlineKeyboardButtonData("Wordle Image Global", "statsimg_global_wordle")), tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Scramy Image Global", "statsimg_global_scramy")))
+		markup := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Word Guess Image Global", "statsimg_global_wordguess"), tgbotapi.NewInlineKeyboardButtonData("Wordle Image Global", "statsimg_global_wordle")), tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Scramy Image Global", "statsimg_global_scramy"), tgbotapi.NewInlineKeyboardButtonData("Geography Image Global 🌍", "statsimg_global_geography")))
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Generating image..."))
 		bot.Send(tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, "Generating image... Please wait ⏳"))
 		imgBytes, err := service.GenerateLeaderboardImage(client, "CrocEn", 0, "Word Guess Global Leaderboard")
@@ -1329,7 +1382,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		bot.Send(tgbotapi.NewDeleteMessage(chatID, callback.Message.MessageID))
 		return
 	case "statsimg_global_wordle":
-		markup := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Word Guess Image Global", "statsimg_global_wordguess"), tgbotapi.NewInlineKeyboardButtonData("Wordle Image Global", "statsimg_global_wordle")), tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Scramy Image Global", "statsimg_global_scramy")))
+		markup := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Word Guess Image Global", "statsimg_global_wordguess"), tgbotapi.NewInlineKeyboardButtonData("Wordle Image Global", "statsimg_global_wordle")), tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Scramy Image Global", "statsimg_global_scramy"), tgbotapi.NewInlineKeyboardButtonData("Geography Image Global 🌍", "statsimg_global_geography")))
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Generating image..."))
 		bot.Send(tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, "Generating image... Please wait ⏳"))
 		imgBytes, err := service.GenerateLeaderboardImage(client, "WordleEn", 0, "Wordle Global Leaderboard")
@@ -1343,7 +1396,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		bot.Send(tgbotapi.NewDeleteMessage(chatID, callback.Message.MessageID))
 		return
 	case "statsimg_global_scramy":
-		markup := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Word Guess Image Global", "statsimg_global_wordguess"), tgbotapi.NewInlineKeyboardButtonData("Wordle Image Global", "statsimg_global_wordle")), tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Scramy Image Global", "statsimg_global_scramy")))
+		markup := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Word Guess Image Global", "statsimg_global_wordguess"), tgbotapi.NewInlineKeyboardButtonData("Wordle Image Global", "statsimg_global_wordle")), tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Scramy Image Global", "statsimg_global_scramy"), tgbotapi.NewInlineKeyboardButtonData("Geography Image Global 🌍", "statsimg_global_geography")))
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Generating image..."))
 		bot.Send(tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, "Generating image... Please wait ⏳"))
 		imgBytes, err := service.GenerateLeaderboardImage(client, "ScramyEn", 0, "Scramy Global Leaderboard")
@@ -1356,8 +1409,36 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		}
 		bot.Send(tgbotapi.NewDeleteMessage(chatID, callback.Message.MessageID))
 		return
+	case "statsimg_global_geography":
+			markup := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Word Guess Image Global", "statsimg_global_wordguess"), tgbotapi.NewInlineKeyboardButtonData("Wordle Image Global", "statsimg_global_wordle")), tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Scramy Image Global", "statsimg_global_scramy"), tgbotapi.NewInlineKeyboardButtonData("Geography Image Global 🌍", "statsimg_global_geography")), tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Anime Image Global 🎌", "statsimg_global_anime")))
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Generating image..."))
+		bot.Send(tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, "Generating image... Please wait ⏳"))
+		imgBytes, err := service.GenerateLeaderboardImage(client, "GeographyPoints", 0, "Geography Global Leaderboard")
+		if err == nil {
+			photo := tgbotapi.NewPhotoUpload(chatID, tgbotapi.FileBytes{Name: "leaderboard.png", Bytes: imgBytes})
+			photo.ReplyMarkup = markup
+			bot.Send(photo)
+		} else {
+			view.SendMessage(bot, chatID, "Failed to generate image.")
+		}
+			bot.Send(tgbotapi.NewDeleteMessage(chatID, callback.Message.MessageID))
+			return
+		case "statsimg_global_anime":
+			markup := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Word Guess Image Global", "statsimg_global_wordguess"), tgbotapi.NewInlineKeyboardButtonData("Wordle Image Global", "statsimg_global_wordle")), tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Scramy Image Global", "statsimg_global_scramy"), tgbotapi.NewInlineKeyboardButtonData("Geography Image Global 🌍", "statsimg_global_geography")), tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Anime Image Global 🎌", "statsimg_global_anime")))
+			bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Generating image..."))
+			bot.Send(tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, "Generating image... Please wait ⏳"))
+			imgBytes, err := service.GenerateLeaderboardImage(client, "AnimePoints", 0, "Anime Global Leaderboard")
+			if err == nil {
+				photo := tgbotapi.NewPhotoUpload(chatID, tgbotapi.FileBytes{Name: "leaderboard.png", Bytes: imgBytes})
+				photo.ReplyMarkup = markup
+				bot.Send(photo)
+			} else {
+				view.SendMessage(bot, chatID, "Failed to generate image.")
+			}
+		bot.Send(tgbotapi.NewDeleteMessage(chatID, callback.Message.MessageID))
+		return
 	case "statsimg_group_wordguess":
-		markup := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Word Guess Image Group", "statsimg_group_wordguess"), tgbotapi.NewInlineKeyboardButtonData("Wordle Image Group", "statsimg_group_wordle")), tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Scramy Image Group", "statsimg_group_scramy")))
+		markup := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Word Guess Image Group", "statsimg_group_wordguess"), tgbotapi.NewInlineKeyboardButtonData("Wordle Image Group", "statsimg_group_wordle")), tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Scramy Image Group", "statsimg_group_scramy"), tgbotapi.NewInlineKeyboardButtonData("Geography Image Group 🌍", "statsimg_group_geography")))
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Generating image..."))
 		bot.Send(tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, "Generating image... Please wait ⏳"))
 		imgBytes, err := service.GenerateLeaderboardImage(client, "CrocEn", chatID, "Word Guess Group Leaderboard")
@@ -1371,7 +1452,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		bot.Send(tgbotapi.NewDeleteMessage(chatID, callback.Message.MessageID))
 		return
 	case "statsimg_group_wordle":
-		markup := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Word Guess Image Group", "statsimg_group_wordguess"), tgbotapi.NewInlineKeyboardButtonData("Wordle Image Group", "statsimg_group_wordle")), tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Scramy Image Group", "statsimg_group_scramy")))
+		markup := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Word Guess Image Group", "statsimg_group_wordguess"), tgbotapi.NewInlineKeyboardButtonData("Wordle Image Group", "statsimg_group_wordle")), tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Scramy Image Group", "statsimg_group_scramy"), tgbotapi.NewInlineKeyboardButtonData("Geography Image Group 🌍", "statsimg_group_geography")))
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Generating image..."))
 		bot.Send(tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, "Generating image... Please wait ⏳"))
 		imgBytes, err := service.GenerateLeaderboardImage(client, "WordleEn", chatID, "Wordle Group Leaderboard")
@@ -1385,10 +1466,24 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		bot.Send(tgbotapi.NewDeleteMessage(chatID, callback.Message.MessageID))
 		return
 	case "statsimg_group_scramy":
-		markup := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Word Guess Image Group", "statsimg_group_wordguess"), tgbotapi.NewInlineKeyboardButtonData("Wordle Image Group", "statsimg_group_wordle")), tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Scramy Image Group", "statsimg_group_scramy")))
+		markup := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Word Guess Image Group", "statsimg_group_wordguess"), tgbotapi.NewInlineKeyboardButtonData("Wordle Image Group", "statsimg_group_wordle")), tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Scramy Image Group", "statsimg_group_scramy"), tgbotapi.NewInlineKeyboardButtonData("Geography Image Group 🌍", "statsimg_group_geography")))
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Generating image..."))
 		bot.Send(tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, "Generating image... Please wait ⏳"))
 		imgBytes, err := service.GenerateLeaderboardImage(client, "ScramyEn", chatID, "Scramy Group Leaderboard")
+		if err == nil {
+			photo := tgbotapi.NewPhotoUpload(chatID, tgbotapi.FileBytes{Name: "leaderboard.png", Bytes: imgBytes})
+			photo.ReplyMarkup = markup
+			bot.Send(photo)
+		} else {
+			view.SendMessage(bot, chatID, "Failed to generate image.")
+		}
+		bot.Send(tgbotapi.NewDeleteMessage(chatID, callback.Message.MessageID))
+		return
+	case "statsimg_group_geography":
+		markup := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Word Guess Image Group", "statsimg_group_wordguess"), tgbotapi.NewInlineKeyboardButtonData("Wordle Image Group", "statsimg_group_wordle")), tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Scramy Image Group", "statsimg_group_scramy"), tgbotapi.NewInlineKeyboardButtonData("Geography Image Group 🌍", "statsimg_group_geography")))
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Generating image..."))
+		bot.Send(tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, "Generating image... Please wait ⏳"))
+		imgBytes, err := service.GenerateLeaderboardImage(client, "GeographyPoints", chatID, "Geography Group Leaderboard")
 		if err == nil {
 			photo := tgbotapi.NewPhotoUpload(chatID, tgbotapi.FileBytes{Name: "leaderboard.png", Bytes: imgBytes})
 			photo.ReplyMarkup = markup
@@ -1406,10 +1501,29 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 			),
 			tgbotapi.NewInlineKeyboardRow(
 				tgbotapi.NewInlineKeyboardButtonData("Scramy", "stats_scramy"),
+					tgbotapi.NewInlineKeyboardButtonData("Anime", "statsglobal_anime"),
 			),
 		)
 		editMsg := tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, "🐊🇮🇳\n📊 Choose game stats to view:")
 		editMsg.ReplyMarkup = &buttons
+		bot.Send(editMsg)
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
+		return
+	case "setting_geography_main":
+		buttons := tgbotapi.NewInlineKeyboardMarkup(
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("Mode (MCQ/Text) 🎮", "setting_geography_mode"),
+			),
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("Question Types ❓", "setting_geo_questions"),
+			),
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("🔙 Back", "settings_main"),
+			),
+		)
+		editMsg := tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, "⚙️ *Geography Settings*\nChoose a setting to configure:")
+		editMsg.ReplyMarkup = &buttons
+		editMsg.ParseMode = tgbotapi.ModeMarkdown
 		bot.Send(editMsg)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
 		return
@@ -1422,10 +1536,44 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 				tgbotapi.NewInlineKeyboardButtonData("Text Guess Mode", "setting_geo_mode_text"),
 			),
 			tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonData("🔙 Back", "settings_main"),
+				tgbotapi.NewInlineKeyboardButtonData("🔙 Back", "setting_geography_main"),
 			),
 		)
 		editMsg := tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, "⚙️ *Geography Mode*\nChoose how you want to play Geography:\n- *MCQ Mode*: Buttons to select the answer.\n- *Text Guess Mode*: Type out your guess (5 attempts).")
+		editMsg.ReplyMarkup = &buttons
+		editMsg.ParseMode = tgbotapi.ModeMarkdown
+		bot.Send(editMsg)
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
+		return
+	case "setting_geo_questions":
+		settings := geographybot.GetChatSettings(chatID, client)
+		getBtn := func(key, label string) string {
+			if settings.QuestionTypes[key] {
+				return "✅ " + label
+			}
+			return "❌ " + label
+		}
+
+		buttons := tgbotapi.NewInlineKeyboardMarkup(
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData(getBtn("capital", "Capital"), "toggle_geo_capital"),
+				tgbotapi.NewInlineKeyboardButtonData(getBtn("flag", "Flag"), "toggle_geo_flag"),
+			),
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData(getBtn("region", "Region"), "toggle_geo_region"),
+				tgbotapi.NewInlineKeyboardButtonData(getBtn("landmark", "Landmark (Image)"), "toggle_geo_landmark"),
+			),
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData(getBtn("country_from_capital", "Country from Capital"), "toggle_geo_country_from_capital"),
+			),
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData(getBtn("landmark_name", "Landmark Name (Image)"), "toggle_geo_landmark_name"),
+			),
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("🔙 Back", "setting_geography_main"),
+			),
+		)
+		editMsg := tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, "⚙️ *Geography Question Types*\nToggle which types of questions can appear:")
 		editMsg.ReplyMarkup = &buttons
 		editMsg.ParseMode = tgbotapi.ModeMarkdown
 		bot.Send(editMsg)
@@ -1449,7 +1597,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 
 		buttons := tgbotapi.NewInlineKeyboardMarkup(
 			tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonData("🔙 Back to Settings", "settings_main"),
+				tgbotapi.NewInlineKeyboardButtonData("🔙 Back to Geography Settings", "setting_geography_main"),
 			),
 		)
 		editMsg := tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, fmt.Sprintf("✅ *Geography mode updated to %s!*", modeStr))
@@ -1457,6 +1605,50 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		editMsg.ParseMode = tgbotapi.ModeMarkdown
 		bot.Send(editMsg)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Settings saved!"))
+		return
+	case "toggle_geo_capital", "toggle_geo_flag", "toggle_geo_region", "toggle_geo_landmark", "toggle_geo_country_from_capital", "toggle_geo_landmark_name":
+		qType := strings.TrimPrefix(callback.Data, "toggle_geo_")
+		err := geographybot.ToggleGeographyQuestionType(chatID, qType, client)
+		if err != nil {
+			log.Printf("Failed to toggle geography question type: %v", err)
+			bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Failed to update setting"))
+			return
+		}
+
+		// Re-render the menu
+		settings := geographybot.GetChatSettings(chatID, client)
+		getBtn := func(key, label string) string {
+			if settings.QuestionTypes[key] {
+				return "✅ " + label
+			}
+			return "❌ " + label
+		}
+
+		buttons := tgbotapi.NewInlineKeyboardMarkup(
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData(getBtn("capital", "Capital"), "toggle_geo_capital"),
+				tgbotapi.NewInlineKeyboardButtonData(getBtn("flag", "Flag"), "toggle_geo_flag"),
+			),
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData(getBtn("region", "Region"), "toggle_geo_region"),
+				tgbotapi.NewInlineKeyboardButtonData(getBtn("landmark", "Landmark (Image)"), "toggle_geo_landmark"),
+			),
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData(getBtn("country_from_capital", "Country from Capital"), "toggle_geo_country_from_capital"),
+			),
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData(getBtn("landmark_name", "Landmark Name (Image)"), "toggle_geo_landmark_name"),
+			),
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("🔙 Back", "setting_geography_main"),
+			),
+		)
+
+		// Use edit message reply markup to update the buttons in place
+		editMarkup := tgbotapi.NewEditMessageReplyMarkup(chatID, callback.Message.MessageID, buttons)
+		bot.Send(editMarkup)
+
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
 		return
 	case "setting_scramy_letters":
 		buttons := tgbotapi.NewInlineKeyboardMarkup(
@@ -1579,7 +1771,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 			),
 			tgbotapi.NewInlineKeyboardRow(
 				tgbotapi.NewInlineKeyboardButtonData("Scramy Letters 🔠", "setting_scramy_letters"),
-				tgbotapi.NewInlineKeyboardButtonData("Geography Mode 🌍", "setting_geography_mode"),
+				tgbotapi.NewInlineKeyboardButtonData("Geography Settings 🌍", "setting_geography_main"),
 			),
 		)
 		editMsg := tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, "⚙️ *Settings*\nChoose a setting to configure:")
