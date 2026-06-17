@@ -136,3 +136,15 @@ func checkAnswerFuzzy(guess, answer string) bool {
 	}
 	return dist <= maxDist
 }
+
+func CancelAnime(chatID int64) bool {
+	activeGamesMu.Lock()
+	defer activeGamesMu.Unlock()
+
+	state, exists := activeGames[chatID]
+	if exists && state.Active {
+		delete(activeGames, chatID)
+		return true
+	}
+	return false
+}

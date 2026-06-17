@@ -21,3 +21,7 @@ Action: Updated the `showShop` and `editShopMain` functions to fetch and present
 YYYY-MM-DD - Better Wordle Parsing
 Learning: Standard Wordle copies often use ⬛ (Black Square) and ⬜ (White Square) instead of 🟥 for missed/absent letters.
 Action: When parsing or evaluating Wordle/Eordle game board feedback emojis, always account for standard 'miss' characters like the black square (⬛, U+2B1B) and the white square (⬜, U+2B1C) in addition to the standard colored sequence emojis.
+
+YYYY-MM-DD - Add Cancellation to Anime Game
+Learning: Consistent user experience across different game modes (like having a "Cancel" feature) is a valuable, low-risk improvement that prevents users from getting stuck in an unwanted state.
+Action: Always check if newly added game modes or features lack standard navigational or state-reset commands that exist in similar older features, and implement them to maintain a uniform UX.
