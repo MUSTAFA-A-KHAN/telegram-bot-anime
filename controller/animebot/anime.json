@@ -65,5 +65,33 @@
   {
     "emotes": "🎻💔🌸",
     "answers": ["Your Lie in April", "Shigatsu wa Kimi no Uso"]
-  }
+  },
+  { "emotes": "📱🔬⏳", "answers": ["Steins Gate", "Okabe Rintarou"] },
+  { "emotes": "🚀🤠🌌", "answers": ["Cowboy Bebop", "Spike Spiegel"] },
+  { "emotes": "🍙👹⚔️", "answers": ["Inuyasha", "Inuyasha"] },
+  { "emotes": "👹👶🦊", "answers": ["Yu Yu Hakusho", "Yusuke Urameshi"] },
+  { "emotes": "🦾🌃👻", "answers": ["Ghost in the Shell", "Motoko Kusanagi"] },
+  { "emotes": "🚲👦🧠", "answers": ["Akira", "Kaneda"] },
+  { "emotes": "♟️👑🤖", "answers": ["Code Geass", "Lelouch"] },
+  { "emotes": "🎮🌎⚔️", "answers": ["Log Horizon", "Shiroe"] },
+  { "emotes": "🕷️👦⚡", "answers": ["Hunter x Hunter", "Killua", "Gon"] },
+  { "emotes": "🎣🐳⚡", "answers": ["Hunter x Hunter", "Gon Freecss"] },
+  { "emotes": "👊💀☠️", "answers": ["Bleach", "Ichigo Kurosaki"] },
+  { "emotes": "⚔️🌸👘", "answers": ["Bleach", "Rukia Kuchiki"] },
+  { "emotes": "🐱🐉🔥", "answers": ["Fairy Tail", "Natsu Dragneel"] },
+  { "emotes": "❄️🛡️🧙", "answers": ["Fairy Tail", "Gray Fullbuster"] },
+  { "emotes": "🧙‍♂️🍀⚔️", "answers": ["Black Clover", "Asta"] },
+  { "emotes": "👑🦁☀️", "answers": ["The Seven Deadly Sins", "Escanor"] },
+  { "emotes": "🐷👑⚔️", "answers": ["The Seven Deadly Sins", "Meliodas"] },
+  {
+    "emotes": "🛡️🦝🌊",
+    "answers": ["The Rising of the Shield Hero", "Naofumi"]
+  },
+  { "emotes": "👨‍⚕️🧪💀", "answers": ["Dr. Stone", "Senku"] },
+  { "emotes": "💎🧪🌍", "answers": ["Dr. Stone", "Senku Ishigami"] },
+  { "emotes": "🎰🦇🌃", "answers": ["Tokyo Ghoul", "Kaneki"] },
+  { "emotes": "👁️🩸🦷", "answers": ["Tokyo Ghoul", "Ken Kaneki"] },
+  { "emotes": "🪚🩸🐕", "answers": ["Chainsaw Man", "Denji"] },
+  { "emotes": "⚡🩸👿", "answers": ["Chainsaw Man", "Power"] },
+  { "emotes": "👹👦👄", "answers": ["Jujutsu Kaisen", "Yuji Itadori"] }
 ]
