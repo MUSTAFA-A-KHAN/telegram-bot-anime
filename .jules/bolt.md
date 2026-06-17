@@ -41,3 +41,6 @@
 ## 2025-02-23 - Avoid Strings Split and Join for Line-by-Line Processing
 **Learning:** Using `strings.Split` to break down strings by newline, processing each string, and then putting it back together with `strings.Join` generates a significant number of heap allocations and intermediate slice structures. In hot paths (like markdown text translation handlers), this creates severe GC overhead.
 **Action:** Replace `strings.Split` and `strings.Join` with an inline `for` loop over string bytes, identifying `\n` characters manually and processing lines directly via `strings.Builder`.
+## 2025-02-23 - Optimize Map Lookups and Allocations in Wordle Loops
+**Learning:** Using `map[rune]int` for frequency counting in hot paths, combined with `fmt.Sprintf` and `strings.ToUpper` for formatting string outputs (like game boards), results in substantial heap allocations and limits execution speed.
+**Action:** Replace `map[rune]int` with a fixed-size `[256]int` array for counting ASCII letter frequencies. Replace `fmt.Sprintf` and runtime string manipulators with pre-allocated `strings.Builder` (`sb.Grow()`) and inline byte-level uppercase conversions to minimize heap allocations and avoid reflection-based formatting.
