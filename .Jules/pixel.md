@@ -16,3 +16,7 @@
 **Learning:** Dense text blocks with standard numbered lists are hard to scan on mobile devices and increase cognitive load. Breaking text into distinct groups with bold, emoji-prefixed headers and bullet points significantly improves readability.
 
 **Action:** When creating or modifying long textual outputs (like `/rules` or `/help` commands), structure the text into clear sections using emojis for hierarchy and bullet points (`•`) for lists.
+
+## 2024-06-14 - Improve Welcome Messages
+**Learning:** Plain text welcome messages like "Welcome! Type /word to start a new game." are easily missed and don't provide a good first impression.
+**Action:** Structure welcome messages using emojis, clear greetings, and bulleted lists of quick actions to improve visual hierarchy and make onboarding more engaging.
