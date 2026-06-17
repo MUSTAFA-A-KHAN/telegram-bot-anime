@@ -1,18 +1,69 @@
-
 [
-  { "emotes": "🍎📓💀", "answers": ["Death Note", "DeathNote", "Light Yagami", "Light"] },
-{ "emotes": "🗡️🧣👹", "answers": ["Attack on Titan", "AttackOnTitan", "Shingeki no Kyojin", "Eren Yeager", "Eren"] },
-{ "emotes": "👊💀☠️", "answers": ["Bleach", "Ichigo Kurosaki", "Ichigo"] },
-{
-  "emotes": "⚗️🔥🤖",
-  "answers": ["Fullmetal Alchemist Brotherhood", "Fullmetal Alchemist", "FMAB", "FMA", "Edward Elric", "Edward"]
-},
-{ "emotes": "🕷️👦⚡", "answers": ["Hunter x Hunter", "HunterXHunter", "HxH", "Killua", "Gon"] },
-{ "emotes": "😎👁️⚪", "answers": ["Jujutsu Kaisen", "JJK", "Gojo Satoru", "Gojo"] },
-{ "emotes": "🪚🩸🐕", "answers": ["Chainsaw Man", "ChainsawMan", "Denji"] },
-{ "emotes": "🚂👹🔥", "answers": ["Demon Slayer", "Kimetsu no Yaiba", "Tanjiro Kamado", "Tanjiro"] },
-{ "emotes": "🦸‍♂️💚🏫", "answers": ["My Hero Academia", "Boku no Hero Academia", "MHA", "Izuku Midoriya", "Deku"] },
-{ "emotes": "🏐🦉🧡", "answers": ["Haikyuu", "Haikyuu!!", "Hinata Shoyo", "Hinata"] },
-{ "emotes": "🎰🦇🌃", "answers": ["Tokyo Ghoul", "TokyoGhoul", "Ken Kaneki", "Kaneki"] },
-{ "emotes": "🎻💔🌸", "answers": ["Your Lie in April", "Shigatsu wa Kimi no Uso"] }
+  {
+    "emotes": "🍎📓💀",
+    "answers": ["Death Note", "DeathNote", "Light Yagami", "Light"]
+  },
+  {
+    "emotes": "🗡️🧣👹",
+    "answers": [
+      "Attack on Titan",
+      "AttackOnTitan",
+      "Shingeki no Kyojin",
+      "Eren Yeager",
+      "Eren"
+    ]
+  },
+  { "emotes": "👊💀☠️", "answers": ["Bleach", "Ichigo Kurosaki", "Ichigo"] },
+  {
+    "emotes": "⚗️🔥🤖",
+    "answers": [
+      "Fullmetal Alchemist Brotherhood",
+      "Fullmetal Alchemist",
+      "FMAB",
+      "FMA",
+      "Edward Elric",
+      "Edward"
+    ]
+  },
+  { "emotes": "🃏♦️⭐️", "answers": ["Hisoka"] },
+  { "emotes": "⚔️🐎🧣", "answers": ["Attack on Titan", "Mikasa Ackerman"] },
+  { "emotes": "👧🗺️🟧", "answers": ["One Piece", "Nami"] },
+  { "emotes": "🗡️🏴‍☠️🟢", "answers": ["One Piece", "Roronoa Zoro", "Zoro"] },
+  { "emotes": "🍖👒🏴‍☠️", "answers": ["One Piece", "Monkey D. Luffy", "Luffy"] },
+  { "emotes": "👓🕵🏻💊", "answers": ["Detective Conan", "Conan Edogawa"] },
+  {
+    "emotes": "🕷️👦⚡",
+    "answers": ["Hunter x Hunter", "HunterXHunter", "HxH", "Killua", "Gon"]
+  },
+  {
+    "emotes": "😎👁️⚪",
+    "answers": ["Jujutsu Kaisen", "JJK", "Gojo Satoru", "Gojo"]
+  },
+  { "emotes": "🪚🩸🐕", "answers": ["Chainsaw Man", "ChainsawMan", "Denji"] },
+  {
+    "emotes": "🚂👹🔥",
+    "answers": ["Demon Slayer", "Kimetsu no Yaiba", "Tanjiro Kamado", "Tanjiro"]
+  },
+  {
+    "emotes": "🦸‍♂️💚🏫",
+    "answers": [
+      "My Hero Academia",
+      "Boku no Hero Academia",
+      "MHA",
+      "Izuku Midoriya",
+      "Deku"
+    ]
+  },
+  {
+    "emotes": "🏐🦉🧡",
+    "answers": ["Haikyuu", "Haikyuu!!", "Hinata Shoyo", "Hinata"]
+  },
+  {
+    "emotes": "🎰🦇🌃",
+    "answers": ["Tokyo Ghoul", "TokyoGhoul", "Ken Kaneki", "Kaneki"]
+  },
+  {
+    "emotes": "🎻💔🌸",
+    "answers": ["Your Lie in April", "Shigatsu wa Kimi no Uso"]
+  }
 ]
