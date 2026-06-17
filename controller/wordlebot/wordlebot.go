@@ -206,10 +206,52 @@ func getRandomWordleWord() string {
 
 // validateWordleGuess compares a guess against the target word and returns colored emojis
 func validateWordleGuess(guess, target string, colorConfig string) string {
+	// ⚡ Bolt Optimization: Replacing map[rune]int with a fixed [256]int array
+	// eliminates heap allocations for target letter counts.
+	// Using a fixed string array for results avoids slice allocation.
+
 	guess = strings.ToLower(guess)
 	target = strings.ToLower(target)
 
-	result := make([]string, 5)
+	// Fast path for 5 letter ascii words
+	if len(guess) == 5 && len(target) == 5 {
+		var result [5]string
+		var targetCounts [256]int
+
+		missColor := "🟥"
+		if colorConfig == "dark" {
+			missColor = "⬛"
+		} else if colorConfig == "light" {
+			missColor = "⬜"
+		}
+
+		// First pass: count characters in target and default to miss
+		for i := 0; i < 5; i++ {
+			targetCounts[target[i]]++
+			result[i] = missColor
+		}
+
+		// Mark Green
+		for i := 0; i < 5; i++ {
+			if guess[i] == target[i] {
+				result[i] = "🟩"
+				targetCounts[guess[i]]--
+			}
+		}
+
+		// Second pass: check for correct letter in wrong place (Yellow)
+		for i := 0; i < 5; i++ {
+			if guess[i] != target[i] && targetCounts[guess[i]] > 0 {
+				result[i] = "🟨"
+				targetCounts[guess[i]]--
+			}
+		}
+
+		return strings.Join(result[:], " ")
+	}
+
+	// Fallback for non 5-letter inputs
+	result := make([]string, len(target))
 	targetCounts := make(map[rune]int)
 
 	missColor := "🟥"
@@ -222,11 +264,17 @@ func validateWordleGuess(guess, target string, colorConfig string) string {
 	// First pass: count characters in target and check for exact matches (Green)
 	for i, ch := range target {
 		targetCounts[ch]++
-		result[i] = missColor // Default to selected miss color
+		if i < len(result) {
+			result[i] = missColor // Default to selected miss color
+		}
 	}
 
 	// Mark Green
-	for i := 0; i < 5; i++ {
+	limit := len(guess)
+	if len(target) < limit {
+		limit = len(target)
+	}
+	for i := 0; i < limit; i++ {
 		if guess[i] == target[i] {
 			result[i] = "🟩"
 			targetCounts[rune(guess[i])]--
@@ -234,7 +282,7 @@ func validateWordleGuess(guess, target string, colorConfig string) string {
 	}
 
 	// Second pass: check for correct letter in wrong place (Yellow)
-	for i := 0; i < 5; i++ {
+	for i := 0; i < limit; i++ {
 		if guess[i] != target[i] && targetCounts[rune(guess[i])] > 0 {
 			result[i] = "🟨"
 			targetCounts[rune(guess[i])]--
@@ -265,13 +313,34 @@ func getSuperscript(num int) string {
 // buildWordleBoard generates the string representation of the current Wordle board
 func buildWordleBoard(ws *WordleState, colorConfig string) string {
 	var sb strings.Builder
+	// Rough pre-allocation: guesses * (~30 bytes emojis + 7 bytes space/word + 2 bytes newline)
+	sb.Grow(len(ws.Guesses) * 45)
 	for i, guess := range ws.Guesses {
 		feedback := validateWordleGuess(guess, ws.Word, colorConfig)
+
+		// ⚡ Bolt Optimization: Inline ASCII uppercase conversion avoids strings.ToUpper allocation
+		guessUpper := make([]byte, len(guess))
+		for j := 0; j < len(guess); j++ {
+			if guess[j] >= 'a' && guess[j] <= 'z' {
+				guessUpper[j] = guess[j] - 32
+			} else {
+				guessUpper[j] = guess[j]
+			}
+		}
+
 		if i > 10 {
 			attemptNum := getSuperscript(i + 1)
-			sb.WriteString(fmt.Sprintf("%s  %s %s\n", feedback, strings.ToUpper(guess), attemptNum))
+			sb.WriteString(feedback)
+			sb.WriteString("  ")
+			sb.Write(guessUpper)
+			sb.WriteString(" ")
+			sb.WriteString(attemptNum)
+			sb.WriteString("\n")
 		} else {
-			sb.WriteString(fmt.Sprintf("%s  %s\n", feedback, strings.ToUpper(guess)))
+			sb.WriteString(feedback)
+			sb.WriteString("  ")
+			sb.Write(guessUpper)
+			sb.WriteString("\n")
 		}
 	}
 	return sb.String()

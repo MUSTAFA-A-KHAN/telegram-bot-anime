@@ -37,3 +37,10 @@
 ## 2025-02-23 - Optimize String Iteration in escape functions
 **Learning:** Iterating over a string using `for _, char := range text` implicitly decodes UTF-8 runes for every character. In functions that primarily check and modify ASCII characters (like escaping Markdown formatting symbols), this rune decoding adds unnecessary CPU and memory overhead compared to direct byte access.
 **Action:** Replace `for _, char := range text` with a byte-indexed loop (`for i := 0; i < len(text); i++`) when searching for and appending ASCII-only characters using `strings.Builder`. Write directly via `builder.WriteByte()` instead of `builder.WriteRune()` to bypass decoding overhead.
+
+## 2025-02-23 - Avoid Strings Split and Join for Line-by-Line Processing
+**Learning:** Using `strings.Split` to break down strings by newline, processing each string, and then putting it back together with `strings.Join` generates a significant number of heap allocations and intermediate slice structures. In hot paths (like markdown text translation handlers), this creates severe GC overhead.
+**Action:** Replace `strings.Split` and `strings.Join` with an inline `for` loop over string bytes, identifying `\n` characters manually and processing lines directly via `strings.Builder`.
+## 2025-02-23 - Optimize Map Lookups and Allocations in Wordle Loops
+**Learning:** Using `map[rune]int` for frequency counting in hot paths, combined with `fmt.Sprintf` and `strings.ToUpper` for formatting string outputs (like game boards), results in substantial heap allocations and limits execution speed.
+**Action:** Replace `map[rune]int` with a fixed-size `[256]int` array for counting ASCII letter frequencies. Replace `fmt.Sprintf` and runtime string manipulators with pre-allocated `strings.Builder` (`sb.Grow()`) and inline byte-level uppercase conversions to minimize heap allocations and avoid reflection-based formatting.
