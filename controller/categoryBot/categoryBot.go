@@ -868,9 +868,9 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			welcomeMsg := "👋 *Welcome to Category Bot!*\n\n" +
 				"📚 I'm your friendly group category game host.\n\n" +
 				"🎮 *Quick Start:*\n" +
-				"• Type `/word` to start a new game\n" +
-				"• Type `/rules` to learn how to play\n" +
-				"• Type `/stats` to view your scores\n\n" +
+				"📝 `/word` — Start a new game\n" +
+				"📖 `/rules` — Learn how to play\n" +
+				"📊 `/stats` — View your scores\n\n" +
 				"Have fun!"
 			view.SendMessage(bot, message.Chat.ID, welcomeMsg)
 		}
