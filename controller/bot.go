@@ -903,6 +903,9 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		} else {
 			view.SendMessage(bot, chatID, "No active Geography game.")
 		}
+	case "animehint":
+		animebot.HandleAnimeHint(bot, chatID)
+		return
 	case "cancelanime":
 		if animebot.CancelAnime(chatID) {
 			view.SendMessage(bot, chatID, "Anime game cancelled.")
