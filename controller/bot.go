@@ -1750,6 +1750,10 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		geographybot.HandleGeographyCommand(bot, chatID, callback.From.FirstName, client)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Geography Started!"))
 		return
+	case "anime_start":
+		animebot.HandleAnimeCommand(bot, chatID, client)
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Anime Started!"))
+		return
 	case "cancel_new_scramy":
 		if scramybot.CancelPendingGame(bot, chatID, callback.From.FirstName) {
 			bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Cancelled new Scramy game request."))
