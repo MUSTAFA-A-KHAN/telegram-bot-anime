@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strings"
 	"unicode"
+	"unicode/utf8"
 )
 var tokenPattern = regexp.MustCompile(`^[a-zA-Z0-9]+$`)
 
@@ -21,9 +22,22 @@ func isLikelyRawToken(s string) bool {
 
 func normalizeLookupKey(s string) string {
 	var b strings.Builder
-	for _, r := range s {
-		if unicode.IsLetter(r) || unicode.IsDigit(r) {
-			b.WriteRune(unicode.ToLower(r))
+	b.Grow(len(s))
+	for i := 0; i < len(s); {
+		c := s[i]
+		if c < utf8.RuneSelf {
+			if (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') {
+				b.WriteByte(c)
+			} else if c >= 'A' && c <= 'Z' {
+				b.WriteByte(c + 32)
+			}
+			i++
+		} else {
+			r, size := utf8.DecodeRuneInString(s[i:])
+			if unicode.IsLetter(r) || unicode.IsDigit(r) {
+				b.WriteRune(unicode.ToLower(r))
+			}
+			i += size
 		}
 	}
 	return b.String()
