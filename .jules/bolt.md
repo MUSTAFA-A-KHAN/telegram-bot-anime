@@ -44,3 +44,7 @@
 ## 2025-02-23 - Optimize Map Lookups and Allocations in Wordle Loops
 **Learning:** Using `map[rune]int` for frequency counting in hot paths, combined with `fmt.Sprintf` and `strings.ToUpper` for formatting string outputs (like game boards), results in substantial heap allocations and limits execution speed.
 **Action:** Replace `map[rune]int` with a fixed-size `[256]int` array for counting ASCII letter frequencies. Replace `fmt.Sprintf` and runtime string manipulators with pre-allocated `strings.Builder` (`sb.Grow()`) and inline byte-level uppercase conversions to minimize heap allocations and avoid reflection-based formatting.
+
+## 2025-02-23 - Optimize Map Key Normalization in Configurator
+**Learning:** In functions mapping configuration keys, `for _, r := range s` mixed with `unicode.ToLower` decodes runes implicitly and involves Unicode lookups for simple ASCII operations, increasing execution time and generating unnecessary buffer memory allocations.
+**Action:** Always prefer `strings.Builder` with `b.Grow(len(s))` to avoid buffer scaling logic. Iterate string via `for i := 0; i < len(s);` and use byte values `< utf8.RuneSelf` alongside manual ASCII casing (`c + 32`) as a fast path.
