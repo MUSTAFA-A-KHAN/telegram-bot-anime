@@ -28,8 +28,9 @@ var (
 )
 
 type GameState struct {
-	Active   bool
-	Question AnimeData
+	Active     bool
+	Question   AnimeData
+	Start_time time.Time
 }
 
 var activeGames = make(map[int64]*GameState)
@@ -61,7 +62,7 @@ func HandleAnimeCommand(bot *tgbotapi.BotAPI, chatID int64, client *mongo.Client
 	defer activeGamesMu.Unlock()
 
 	state, exists := activeGames[chatID]
-	if exists && state.Active {
+	if exists && state.Active && time.Since(state.Start_time).Seconds() < 30 {
 		msg, _ := view.SendMessage(bot, chatID, "An Anime game is already active! Answer the current question or wait for it to finish.")
 		view.DeleteMessageAfterDelay(bot, chatID, msg.MessageID, 2*time.Second)
 		return
@@ -70,8 +71,9 @@ func HandleAnimeCommand(bot *tgbotapi.BotAPI, chatID int64, client *mongo.Client
 	question := animeList[rng.Intn(len(animeList))]
 
 	activeGames[chatID] = &GameState{
-		Active:   true,
-		Question: question,
+		Active:     true,
+		Question:   question,
+		Start_time: time.Now(),
 	}
 
 	text := "<b>Anime Emote Guess!</b>\n\nGuess the anime or character from these emotes:\n" + question.Emotes + "\n\nType your guess!"
