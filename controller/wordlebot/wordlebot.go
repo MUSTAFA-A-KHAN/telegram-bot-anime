@@ -512,7 +512,9 @@ func HandleGuess(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.
 	wordsMutex.RUnlock()
 
 	if !isValid {
-		view.SendMessage(bot, chatID, fmt.Sprintf("❌ %s is not a valid word.", strings.ToUpper(guess)))
+		msg := tgbotapi.NewMessage(chatID, fmt.Sprintf("❌ %s is not a valid word. Try again!", strings.ToUpper(guess)))
+		msg.ReplyMarkup = tgbotapi.ForceReply{ForceReply: true}
+		bot.Send(msg)
 		return
 	}
 
@@ -525,7 +527,9 @@ func HandleGuess(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.
 	}
 
 	if alreadyGuessed {
-		view.SendMessage(bot, chatID, "⚠️ This word was already guessed!")
+		msg := tgbotapi.NewMessage(chatID, "⚠️ This word was already guessed! Try again!")
+		msg.ReplyMarkup = tgbotapi.ForceReply{ForceReply: true}
+		bot.Send(msg)
 		return
 	}
 
