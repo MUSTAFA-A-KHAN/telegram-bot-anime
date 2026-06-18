@@ -70,7 +70,6 @@
   { "emotes": "🚀🤠🌌", "answers": ["Cowboy Bebop", "Spike Spiegel"] },
   { "emotes": "🍙👹⚔️", "answers": ["Inuyasha", "Inuyasha"] },
   { "emotes": "👹👶🦊", "answers": ["Yu Yu Hakusho", "Yusuke Urameshi"] },
-  { "emotes": "🦾🌃👻", "answers": ["Ghost in the Shell", "Motoko Kusanagi"] },
   { "emotes": "🚲👦🧠", "answers": ["Akira", "Kaneda"] },
   { "emotes": "♟️👑🤖", "answers": ["Code Geass", "Lelouch"] },
   { "emotes": "🎮🌎⚔️", "answers": ["Log Horizon", "Shiroe"] },
@@ -93,5 +92,159 @@
   { "emotes": "👁️🩸🦷", "answers": ["Tokyo Ghoul", "Ken Kaneki"] },
   { "emotes": "🪚🩸🐕", "answers": ["Chainsaw Man", "Denji"] },
   { "emotes": "⚡🩸👿", "answers": ["Chainsaw Man", "Power"] },
-  { "emotes": "👹👦👄", "answers": ["Jujutsu Kaisen", "Yuji Itadori"] }
+  { "emotes": "👹👦👄", "answers": ["Jujutsu Kaisen", "Yuji Itadori"] },
+  [
+    {
+      "emotes": "🏫♟️👑",
+      "answers": [
+        "Classroom of the Elite",
+        "COTE",
+        "Youkoso Jitsuryoku Shijou Shugi no Kyoushitsu e",
+        "Kiyotaka Ayanokoji",
+        "Ayanokoji"
+      ]
+    },
+    {
+      "emotes": "🃏💸⚡",
+      "answers": [
+        "Kaiji",
+        "Gyakkyou Burai Kaiji",
+        "Kaiji Itou",
+        "Kaiji"
+      ]
+    },
+    {
+      "emotes": "🪓🌊⚔️",
+      "answers": [
+        "Vinland Saga",
+        "Thorfinn"
+      ]
+    },
+    {
+      "emotes": "👨‍⚕️🧠🔪",
+      "answers": [
+        "Monster",
+        "Kenzo Tenma",
+        "Tenma"
+      ]
+    },
+    {
+      "emotes": "🎹👂❤️",
+      "answers": [
+        "Your Lie in April",
+        "Kousei Arima"
+      ]
+    },
+    {
+      "emotes": "👻🚽🧻",
+      "answers": [
+        "Toilet-Bound Hanako-kun",
+        "Hanako"
+      ]
+    },
+    {
+      "emotes": "🌌📚🐺",
+      "answers": [
+        "Spice and Wolf",
+        "Holo"
+      ]
+    },
+    {
+      "emotes": "🎤⭐👶",
+      "answers": [
+        "Oshi no Ko",
+        "Ai Hoshino",
+        "Aqua Hoshino"
+      ]
+    },
+    {
+      "emotes": "💙⚽🥇",
+      "answers": [
+        "Blue Lock",
+        "Yoichi Isagi",
+        "Isagi"
+      ]
+    },
+    {
+      "emotes": "💍🧝⏳",
+      "answers": [
+        "Frieren",
+        "Frieren Beyond Journey's End",
+        "Frieren"
+      ]
+    },
+    {
+      "emotes": "⚔️🛌🌑",
+      "answers": [
+        "The Eminence in Shadow",
+        "Cid Kagenou",
+        "Shadow"
+      ]
+    },
+    {
+      "emotes": "🔫🤠🌌",
+      "answers": [
+        "Cowboy Bebop",
+        "Spike Spiegel"
+      ]
+    },
+    {
+      "emotes": "🏀🔥👊",
+      "answers": [
+        "Slam Dunk",
+        "Hanamichi Sakuragi"
+      ]
+    },
+    {
+      "emotes": "🎾👑🇯🇵",
+      "answers": [
+        "The Prince of Tennis",
+        "Ryoma Echizen"
+      ]
+    },
+    {
+      "emotes": "🤖🌎💥",
+      "answers": [
+        "Neon Genesis Evangelion",
+        "Shinji Ikari"
+      ]
+    },
+    {
+      "emotes": "☂️📖💀",
+      "answers": [
+        "Bungo Stray Dogs",
+        "Osamu Dazai"
+      ]
+    },
+    {
+      "emotes": "🎨🏫🩷",
+      "answers": [
+        "Blue Period",
+        "Yatora Yaguchi"
+      ]
+    },
+    {
+      "emotes": "🧵👗🩷",
+      "answers": [
+        "My Dress-Up Darling",
+        "Marin Kitagawa",
+        "Marin"
+      ]
+    },
+    {
+      "emotes": "🍌🔫🕶️",
+      "answers": [
+        "Banana Fish",
+        "Ash Lynx"
+      ]
+    },
+    {
+      "emotes": "🧠📓🎰",
+      "answers": [
+        "Tomodachi Game",
+        "Yuuichi Katagiri",
+        "Yuuichi"
+      ]
+    }
+  ]
 ]
