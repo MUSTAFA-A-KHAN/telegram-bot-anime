@@ -223,3 +223,14 @@ func DeleteMessageAfterDelay(bot *tgbotapi.BotAPI, chatID int64, messageID int, 
 	}
 
 }
+
+// SendMessagehtmlWithButtons sends an HTML message with inline keyboard buttons to the user
+func SendMessagehtmlWithButtons(bot *tgbotapi.BotAPI, chatID int64, text string, buttons tgbotapi.InlineKeyboardMarkup) error {
+	msg := tgbotapi.NewMessage(chatID, text)
+	msg.ParseMode = tgbotapi.ModeHTML
+	if len(buttons.InlineKeyboard) > 0 {
+		msg.ReplyMarkup = buttons
+	}
+	_, err := bot.Send(msg)
+	return err
+}

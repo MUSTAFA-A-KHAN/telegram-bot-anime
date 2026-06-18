@@ -117,7 +117,9 @@ func HandleGuess(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.
 		points := 10
 		go repository.InsertWordleBonusDoc(message.From.ID, message.From.FirstName, chatID, client, "AnimePoints", points)
 
-		view.SendMessagehtml(bot, chatID, "🎉 Correct! It was <b>"+bestAnswer+"</b>!\nYou earned "+strconv.Itoa(points)+" points!")
+		successMsg := "🎉 Correct! It was <b>" + bestAnswer + "</b>!\nYou earned " + strconv.Itoa(points) + " points!"
+		markup := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Play Again 🎌", "anime_start")))
+		view.SendMessagehtmlWithButtons(bot, chatID, successMsg, markup)
 	} else {
 		// Not correct, maybe close but give a generic message
 		// view.SendMessagehtml(bot, chatID, "❌ Nope, try again!")
