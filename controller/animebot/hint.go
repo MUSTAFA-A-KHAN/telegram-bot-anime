@@ -40,7 +40,7 @@ func HandleAnimeHint(bot *tgbotapi.BotAPI, chatID int64) {
 		searchQuery = "Fullmetal Alchemist"
 	}
 
-	apiURL := fmt.Sprintf("https://api.jikan.moe/v4/anime?q=%s", url.QueryEscape(searchQuery))
+	apiURL := fmt.Sprintf("https://api.jikan.moe/v4/anime?q=%s&sfw=true", url.QueryEscape(searchQuery))
 	resp, err := http.Get(apiURL)
 	if err != nil {
 		view.SendMessage(bot, chatID, "Failed to get hint right now 😔")

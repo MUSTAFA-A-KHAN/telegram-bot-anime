@@ -60,7 +60,15 @@ func HandleAnimeCommand(bot *tgbotapi.BotAPI, chatID int64, client *mongo.Client
 	activeGamesMu.Lock()
 	defer activeGamesMu.Unlock()
 
+	state, exists := activeGames[chatID]
+	if exists && state.Active {
+		msg, _ := view.SendMessage(bot, chatID, "An Anime game is already active! Answer the current question or wait for it to finish.")
+		view.DeleteMessageAfterDelay(bot, chatID, msg.MessageID, 2*time.Second)
+		return
+	}
+
 	question := animeList[rng.Intn(len(animeList))]
+
 	activeGames[chatID] = &GameState{
 		Active:   true,
 		Question: question,
