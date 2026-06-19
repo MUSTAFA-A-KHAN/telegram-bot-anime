@@ -44,3 +44,7 @@
 ## 2025-02-23 - Optimize Map Lookups and Allocations in Wordle Loops
 **Learning:** Using `map[rune]int` for frequency counting in hot paths, combined with `fmt.Sprintf` and `strings.ToUpper` for formatting string outputs (like game boards), results in substantial heap allocations and limits execution speed.
 **Action:** Replace `map[rune]int` with a fixed-size `[256]int` array for counting ASCII letter frequencies. Replace `fmt.Sprintf` and runtime string manipulators with pre-allocated `strings.Builder` (`sb.Grow()`) and inline byte-level uppercase conversions to minimize heap allocations and avoid reflection-based formatting.
+
+## 2025-02-23 - Optimize Integer to Superscript Conversion
+**Learning:** Using `fmt.Sprintf` for integer-to-string conversion combined with `map[rune]rune` for character mapping in hot loops (like formatting digits in game board loops) introduces significant overhead due to reflection, implicit rune decoding, and hash map allocations.
+**Action:** Replace `fmt.Sprintf("%d", num)` with `strconv.Itoa(num)`. Replace `map[rune]rune` with a fixed `[...]string` array mapping the 10 digits to their pre-computed superscript equivalents. Loop through the resulting string by byte, handling valid digits using the array and writing output efficiently with `strings.Builder`.

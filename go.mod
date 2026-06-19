@@ -4,6 +4,7 @@ go 1.25.0
 
 require (
 	github.com/STRockefeller/dictionaries v0.0.0-20230418055520-d602c50bb54f
+	github.com/agnivade/levenshtein v1.2.1
 	github.com/fogleman/gg v1.3.0
 	github.com/go-telegram-bot-api/telegram-bot-api v4.6.4+incompatible
 	github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.5.1
@@ -15,7 +16,6 @@ require (
 )
 
 require (
-	github.com/agnivade/levenshtein v1.2.1 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/klauspost/compress v1.13.6 // indirect
 	github.com/montanaflynn/stats v0.7.1 // indirect
