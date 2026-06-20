@@ -48,3 +48,11 @@
 ## 2025-02-23 - Optimize Integer to Superscript Conversion
 **Learning:** Using `fmt.Sprintf` for integer-to-string conversion combined with `map[rune]rune` for character mapping in hot loops (like formatting digits in game board loops) introduces significant overhead due to reflection, implicit rune decoding, and hash map allocations.
 **Action:** Replace `fmt.Sprintf("%d", num)` with `strconv.Itoa(num)`. Replace `map[rune]rune` with a fixed `[...]string` array mapping the 10 digits to their pre-computed superscript equivalents. Loop through the resulting string by byte, handling valid digits using the array and writing output efficiently with `strings.Builder`.
+
+## 2025-02-23 - Optimize capitalisation string allocations
+**Learning:** Using `strings.ToUpper` and `strings.ToLower` for basic string capitalization generates unnecessary string allocations, especially in a tight loop. Furthermore, omitting the lowercasing part when optimizing breaks the function contract.
+**Action:** When capitalizing or changing the case of strings guaranteed to be ASCII (e.g., validated game guesses), use direct byte slice mutation (e.g., `b := []byte(word); b[0] -= 32`) instead of `strings.ToUpper` or `strings.ToLower` to eliminate unnecessary string allocations, while ensuring that the full function behavior is reproduced (e.g. iterating and applying casing).
+
+## 2025-02-23 - Avoid unsafe type casts on IDs
+**Learning:** Casting Telegram User IDs (`int64`) to `int` before using `strconv.Itoa` poses a truncation risk on 32-bit systems where `int` maxes out at 2.1 billion.
+**Action:** When converting 64-bit identifiers to strings, always use `strconv.FormatInt(userID, 10)` rather than downcasting to `int` for `strconv.Itoa`.

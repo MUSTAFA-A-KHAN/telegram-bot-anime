@@ -1,6 +1,7 @@
 package geographybot
 
 import (
+	"strconv"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -64,7 +65,7 @@ func saveGeographyStateAsync(chatID int64, state *GeographyState) {
 	state.RLock()
 	userAttemptsDoc := make(map[string]int)
 	for userID, attempts := range state.UserAttempts {
-		userAttemptsDoc[fmt.Sprintf("%d", userID)] = attempts
+		userAttemptsDoc[strconv.FormatInt(userID, 10)] = attempts
 	}
 
 	doc := GeographyStateDoc{
