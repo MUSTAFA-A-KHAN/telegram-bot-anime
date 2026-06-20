@@ -888,7 +888,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 				tgbotapi.NewInlineKeyboardButtonData("Geography Settings 🌍", "setting_geography_main"),
 			),
 		)
-		view.SendMessageWithButtons(bot, message.Chat.ID, "⚙️ **Settings**\nChoose a setting to configure:", buttons)
+		view.SendMessageWithButtons(bot, message.Chat.ID, "⚙️ *Settings*\nChoose a setting to configure:", buttons)
 		return
 	case "geosettings":
 		buttons := tgbotapi.NewInlineKeyboardMarkup(
@@ -1675,7 +1675,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 				tgbotapi.NewInlineKeyboardButtonData("🔙 Back", "settings_main"),
 			),
 		)
-		editMsg := tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, "⚙️ **Scramy Letters Setting**\nChoose the letter style for Scramy:")
+		editMsg := tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, "⚙️ *Scramy Letters Setting*\nChoose the letter style for Scramy:")
 		editMsg.ReplyMarkup = &buttons
 		editMsg.ParseMode = tgbotapi.ModeMarkdown
 		bot.Send(editMsg)
@@ -1808,7 +1808,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 				tgbotapi.NewInlineKeyboardButtonData("🔙 Back", "settings_main"),
 			),
 		)
-		editMsg := tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, "⚙️ **Wordle Color Setting**\nChoose the color used for missing letters:")
+		editMsg := tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, "⚙️ *Wordle Color Setting*\nChoose the color used for missing letters:")
 		editMsg.ReplyMarkup = &buttons
 		editMsg.ParseMode = tgbotapi.ModeMarkdown
 		bot.Send(editMsg)
@@ -1841,7 +1841,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 				tgbotapi.NewInlineKeyboardButtonData("🔙 Back", "settings_main"),
 			),
 		)
-		editMsg := tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, "⚙️ **Wordle View Setting**\nChoose how you want Wordle results to be displayed:")
+		editMsg := tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, "⚙️ *Wordle View Setting*\nChoose how you want Wordle results to be displayed:")
 		editMsg.ReplyMarkup = &buttons
 		editMsg.ParseMode = tgbotapi.ModeMarkdown
 		bot.Send(editMsg)
