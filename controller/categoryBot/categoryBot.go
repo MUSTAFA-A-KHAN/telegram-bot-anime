@@ -430,6 +430,12 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			} else {
 				view.SendMessage(bot, chatID, "No active Geography game.")
 			}
+		case "cancelanime":
+			if animebot.CancelAnime(chatID) {
+				view.SendMessage(bot, chatID, "Anime game cancelled.")
+			} else {
+				view.SendMessage(bot, chatID, "No active Anime game.")
+			}
 		case "exportdata":
 			if message.From.ID != int(adminID) {
 				log.Printf("not an admin")
@@ -924,6 +930,12 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			view.SendMessage(bot, chatID, "Geography game cancelled.")
 		} else {
 			view.SendMessage(bot, chatID, "No active Geography game.")
+		}
+	case "cancelanime":
+		if animebot.CancelAnime(chatID) {
+			view.SendMessage(bot, chatID, "Anime game cancelled.")
+		} else {
+			view.SendMessage(bot, chatID, "No active Anime game.")
 		}
 	case "stats":
 		buttons := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Word Guess Group", "statsgroup_wordguess"), tgbotapi.NewInlineKeyboardButtonData("Wordle Group", "statsgroup_wordle")), tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Scramy Group", "statsgroup_scramy"), tgbotapi.NewInlineKeyboardButtonData("Geography Group 🌍", "statsgroup_geography")))
