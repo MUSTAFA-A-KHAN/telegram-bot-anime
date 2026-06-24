@@ -8,6 +8,7 @@ import (
 	"math/rand"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -20,15 +21,15 @@ import (
 
 // ScramyStateDoc is the MongoDB-serializable version of ScramyState
 type ScramyStateDoc struct {
-	ChatID         int64            `bson:"_id"`
-	Active         bool             `bson:"active"`
-	Letters        string           `bson:"letters"`
-	FoundWords     []string         `bson:"found_words"`
+	ChatID         int64               `bson:"_id"`
+	Active         bool                `bson:"active"`
+	Letters        string              `bson:"letters"`
+	FoundWords     []string            `bson:"found_words"`
 	UserWords      map[string][]string `bson:"user_words"`
-	UserScores     map[string]int   `bson:"user_scores"`
-	UserNames      map[string]string `bson:"user_names"`
-	MaxWords       int              `bson:"max_words"`
-	PendingNewGame bool             `bson:"pending_new_game"`
+	UserScores     map[string]int      `bson:"user_scores"`
+	UserNames      map[string]string   `bson:"user_names"`
+	MaxWords       int                 `bson:"max_words"`
+	PendingNewGame bool                `bson:"pending_new_game"`
 }
 
 // saveScramyStateAsync asynchronously saves the Scramy state to MongoDB
@@ -38,17 +39,17 @@ func saveScramyStateAsync(chatID int64, state *ScramyState) {
 	// Convert int keys to string keys for MongoDB BSON compatibility
 	userWordsStr := make(map[string][]string)
 	for k, v := range state.UserWords {
-		userWordsStr[fmt.Sprintf("%d", k)] = v
+		userWordsStr[strconv.FormatInt(int64(k), 10)] = v
 	}
 
 	userScoresStr := make(map[string]int)
 	for k, v := range state.UserScores {
-		userScoresStr[fmt.Sprintf("%d", k)] = v
+		userScoresStr[strconv.FormatInt(int64(k), 10)] = v
 	}
 
 	userNamesStr := make(map[string]string)
 	for k, v := range state.UserNames {
-		userNamesStr[fmt.Sprintf("%d", k)] = v
+		userNamesStr[strconv.FormatInt(int64(k), 10)] = v
 	}
 
 	doc := ScramyStateDoc{
@@ -404,7 +405,7 @@ func HandleScramyCommand(bot *tgbotapi.BotAPI, chatID int64, username string) {
 		ss.PendingNewGame = true
 		ss.CancelChan = make(chan bool, 1)
 		ss.Unlock()
-			saveScramyStateAsync(chatID, ss)
+		saveScramyStateAsync(chatID, ss)
 
 		markup := tgbotapi.NewInlineKeyboardMarkup(
 			tgbotapi.NewInlineKeyboardRow(
@@ -424,7 +425,7 @@ func HandleScramyCommand(bot *tgbotapi.BotAPI, chatID int64, username string) {
 				ss.Lock()
 				if !ss.PendingNewGame {
 					ss.Unlock()
-			saveScramyStateAsync(chatID, ss)
+					saveScramyStateAsync(chatID, ss)
 					return
 				}
 				ss.PendingNewGame = false
@@ -435,7 +436,7 @@ func HandleScramyCommand(bot *tgbotapi.BotAPI, chatID int64, username string) {
 				ss.UserScores = make(map[int]int)
 				ss.UserNames = make(map[int]string)
 				ss.Unlock()
-			saveScramyStateAsync(chatID, ss)
+				saveScramyStateAsync(chatID, ss)
 
 				if err == nil {
 					deleteMsg := tgbotapi.NewDeleteMessage(chatID, sentMsg.MessageID)
@@ -469,7 +470,7 @@ func HandleScramyCommand(bot *tgbotapi.BotAPI, chatID int64, username string) {
 	ss.UserScores = make(map[int]int)
 	ss.UserNames = make(map[int]string)
 	ss.Unlock()
-			saveScramyStateAsync(chatID, ss)
+	saveScramyStateAsync(chatID, ss)
 
 	settings := GetChatSettings(chatID, nil)
 	isSquared := settings.ScramyLetterView == "squared"
@@ -525,11 +526,23 @@ func isValidWordFromLetters(word string, letters string) bool {
 	return true
 }
 
+// capitalizeWord capitalizes the first letter. Input must be lowercase.
+// capitalizeWord capitalizes the first letter and lowers the rest.
 func capitalizeWord(word string) string {
 	if len(word) == 0 {
 		return word
 	}
-	return strings.ToUpper(string(word[0])) + strings.ToLower(word[1:])
+	b := []byte(word)
+	if b[0] >= 'a' && b[0] <= 'z' {
+		b[0] -= 32
+	}
+	for i := 1; i < len(b); i++ {
+		if b[i] >= 'A' && b[i] <= 'Z' {
+			b[i] += 32
+		}
+	}
+	// Bolt Optimization: replaced strings.ToUpper and concatenations with inline slice manipulation to avoid allocations.
+	return string(b)
 }
 
 // HandleGuess processes a guess for a Scramy game
