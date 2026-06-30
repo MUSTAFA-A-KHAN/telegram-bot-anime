@@ -352,9 +352,9 @@ func (t *TextTranslator) callLLM(prompt string) string {
 		return llmErrorMessage
 	}
 
-	url := "https://api.llm7.io/v1/chat/completions"
+	url := NvidiaBaseURL + "/chat/completions"
 	payload := map[string]interface{}{
-		"model":       "openai/gpt-4o",
+		"model":       "meta/llama-3.1-70b-instruct",
 		"temperature": 0.2,
 		"messages":    []map[string]string{{"role": "user", "content": prompt}},
 	}
