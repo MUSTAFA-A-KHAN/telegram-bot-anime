@@ -12,7 +12,7 @@ import (
 	"golang.org/x/image/font/gofont/gobold"
 )
 
-func GenerateGrid(words []string, size int) ([][]string, map[string]WordPosition) {
+func GenerateGrid(words []string, size int) ([][]string, []string, map[string]WordPosition) {
 	grid := make([][]string, size)
 	for i := range grid {
 		grid[i] = make([]string, size)
@@ -22,6 +22,7 @@ func GenerateGrid(words []string, size int) ([][]string, map[string]WordPosition
 	}
 
 	positions := make(map[string]WordPosition)
+	var placedWords []string
 	dirs := [][2]int{{0, 1}, {1, 0}, {1, 1}, {-1, 1}, {1, -1}, {-1, -1}, {0, -1}, {-1, 0}}
 
 	for _, word := range words {
@@ -54,6 +55,7 @@ func GenerateGrid(words []string, size int) ([][]string, map[string]WordPosition
 					EndRow:   row + (len(word)-1)*dir[0],
 					EndCol:   col + (len(word)-1)*dir[1],
 				}
+				placedWords = append(placedWords, word)
 				placed = true
 			}
 		}
@@ -67,18 +69,18 @@ func GenerateGrid(words []string, size int) ([][]string, map[string]WordPosition
 		}
 	}
 
-	return grid, positions
+	return grid, placedWords, positions
 }
 
 var wordColors = []color.RGBA{
-	{255, 105, 97, 180},  // Red
-	{255, 180, 128, 180}, // Orange
-	{248, 243, 141, 180}, // Yellow
-	{66, 214, 164, 180},  // Green
-	{8, 202, 209, 180},   // Cyan
-	{89, 173, 246, 180},  // Blue
-	{157, 148, 255, 180}, // Purple
-	{199, 128, 232, 180}, // Pink
+	{200, 110, 120, 170}, // Muted Rose
+	{155, 120, 190, 170}, // Muted Lavender
+	{110, 175, 145, 170}, // Muted Mint
+	{200, 160, 110, 170}, // Muted Peach
+	{120, 165, 195, 170}, // Muted Sky
+	{200, 185, 110, 170}, // Muted Butter
+	{200, 130, 120, 170}, // Muted Coral
+	{175, 130, 180, 170}, // Muted Lilac
 }
 
 func GenerateGridImage(grid [][]string, positions map[string]WordPosition, foundWords map[string]bool) ([]byte, error) {
@@ -91,13 +93,13 @@ func GenerateGridImage(grid [][]string, positions map[string]WordPosition, found
 
 	dc := gg.NewContext(width, height)
 
-	// Background
-	dc.SetRGB255(15, 15, 15)
+	// Background - warm dark tone instead of pure gray
+	dc.SetRGB255(16, 16, 16)
 	dc.Clear()
 
-	// Draw grid lines
-	dc.SetRGBA255(255, 255, 255, 30)
-	dc.SetLineWidth(1)
+	// Draw grid lines - bolder for better visibility
+	dc.SetRGBA255(235, 225, 210, 60)
+	dc.SetLineWidth(2)
 	for i := 0; i <= gridSize; i++ {
 		x := padding + i*cellSize
 		dc.DrawLine(float64(x), float64(padding), float64(x), float64(height-padding))
@@ -106,9 +108,9 @@ func GenerateGridImage(grid [][]string, positions map[string]WordPosition, found
 	}
 	dc.Stroke()
 
-	// Draw lines for found words
+	// Draw highlight lines for found words
 	dc.SetLineCapRound()
-	dc.SetLineWidth(float64(cellSize) * 0.7)
+	dc.SetLineWidth(float64(cellSize) * 0.55)
 
 	colorIdx := 0
 	for word, found := range foundWords {
@@ -141,7 +143,7 @@ func GenerateGridImage(grid [][]string, positions map[string]WordPosition, found
 			x := padding + c*cellSize + cellSize/2
 			y := padding + r*cellSize + cellSize/2
 
-			dc.SetRGB255(255, 255, 255)
+			dc.SetRGB255(235, 230, 220)
 			dc.DrawStringAnchored(grid[r][c], float64(x), float64(y), 0.5, 0.5)
 		}
 	}

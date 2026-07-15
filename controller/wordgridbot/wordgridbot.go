@@ -179,12 +179,12 @@ func StartWordGridGame(bot *tgbotapi.BotAPI, chatID int64, client *mongo.Client)
 		return
 	}
 
-	words := getRandomWords(14)
-	grid, positions := GenerateGrid(words, 12)
+	words := getRandomWords(10)
+	grid, placedWords, positions := GenerateGrid(words, 10)
 
 	state.Active = true
 	state.Grid = grid
-	state.Words = words
+	state.Words = placedWords
 	state.WordPositions = positions
 	state.FoundWords = make(map[string]bool)
 	state.UserScores = make(map[int64]int)
