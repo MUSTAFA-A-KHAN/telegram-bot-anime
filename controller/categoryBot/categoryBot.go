@@ -1231,6 +1231,10 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			geographybot.HandleGuess(bot, message, client, chatID, message.Text)
 		}
 
+		if wordgridbot.IsWordGridActive(chatID) {
+			wordgridbot.HandleGuess(bot, message, client, chatID, message.Text)
+		}
+
 		if animebot.IsAnimeActive(chatID) {
 			animebot.HandleGuess(bot, message, client, chatID, message.Text)
 		}
