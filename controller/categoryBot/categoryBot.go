@@ -17,6 +17,7 @@ import (
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/scramybot"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/translator"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/wordlebot"
+	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/wordgridbot"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/model"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/model/validator"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/repository"
@@ -274,6 +275,7 @@ func StartBot(token string) error {
 	wordlebot.LoadSavedStates(client)
 	scramybot.LoadSavedStates(client)
 	geographybot.LoadSavedStates(client)
+	wordgridbot.LoadSavedStates(client)
 	geographybot.LoadGeographyData()
 
 	if err := wordlebot.LoadWordleWords(); err != nil {
@@ -413,6 +415,9 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			return
 		case "geography":
 			geographybot.HandleGeographyCommand(bot, chatID, message.From.FirstName, client)
+			return
+		case "wordgrid":
+			wordgridbot.StartWordGridGame(bot, chatID, client)
 			return
 		case "anime":
 			animebot.HandleAnimeCommand(bot, chatID, client)
@@ -764,6 +769,10 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			geographybot.HandleGuess(bot, message, client, chatID, message.Text)
 		}
 
+		if wordgridbot.IsWordGridActive(chatID) {
+			wordgridbot.HandleGuess(bot, message, client, chatID, message.Text)
+		}
+
 		if animebot.IsAnimeActive(chatID) {
 			animebot.HandleGuess(bot, message, client, chatID, message.Text)
 		}
@@ -910,6 +919,9 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 	case "geography":
 		geographybot.HandleGeographyCommand(bot, chatID, message.From.FirstName, client)
 		return
+		case "wordgrid":
+			wordgridbot.StartWordGridGame(bot, chatID, client)
+			return
 	case "anime":
 		animebot.HandleAnimeCommand(bot, chatID, client)
 		return
@@ -925,6 +937,9 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		} else {
 			view.SendMessage(bot, chatID, "No active Geography game.")
 		}
+	case "cancelwordgrid":
+		wordgridbot.HandleCancelWordGrid(bot, chatID)
+		return
 	case "stats":
 		buttons := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Word Guess Group", "statsgroup_wordguess"), tgbotapi.NewInlineKeyboardButtonData("Wordle Group", "statsgroup_wordle")), tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Scramy Group", "statsgroup_scramy"), tgbotapi.NewInlineKeyboardButtonData("Geography Group 🌍", "statsgroup_geography")))
 		view.SendMessageWithButtons(bot, chatID, "🐊🇮🇳\n📊 Choose group stats to view:", buttons)
