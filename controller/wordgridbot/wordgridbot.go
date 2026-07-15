@@ -15,11 +15,12 @@ import (
 )
 
 func LoadWords() []string {
-	content, err := os.ReadFile("controller/translator/words.txt")
+	content, err := os.ReadFile("controller/translator/scramy_words.txt")
 	if err != nil {
-		log.Printf("Error reading words.txt: %v", err)
+		log.Printf("Error reading scramy_words.txt: %v", err)
 		return []string{"HELLO", "WORLD", "GAMES", "TELEGRAM"}
 	}
+
 	words := strings.Split(string(content), "\n")
 	var valid []string
 	for _, w := range words {
@@ -34,15 +35,44 @@ func LoadWords() []string {
 var allWords = LoadWords()
 
 func getRandomWords(n int) []string {
-	words := make([]string, len(allWords))
-	copy(words, allWords)
-	rand.Shuffle(len(words), func(i, j int) {
-		words[i], words[j] = words[j], words[i]
-	})
-	if len(words) > n {
-		return words[:n]
+	// Group words by length
+	wordsByLength := make(map[int][]string)
+	for _, word := range allWords {
+		word = strings.ToUpper(word)
+		len := len(word)
+		if len >= 4 && len <= 8 {
+			wordsByLength[len] = append(wordsByLength[len], word)
+		}
 	}
-	return words
+
+	// Pick words in increasing order of length
+	// Limit words per length to ensure variety
+	var result []string
+	wordsPerLength := (n + 4) / 5 // Distribute words across 5 different lengths (4-8)
+
+	for length := 4; length <= 8 && len(result) < n; length++ {
+		words := wordsByLength[length]
+		if len(words) == 0 {
+			continue
+		}
+
+		// Shuffle words of this length
+		rand.Shuffle(len(words), func(i, j int) {
+			words[i], words[j] = words[j], words[i]
+		})
+
+		// Add limited words from this length
+		wordsToAdd := wordsPerLength
+		if len(result)+wordsToAdd > n {
+			wordsToAdd = n - len(result)
+		}
+		if len(words) < wordsToAdd {
+			wordsToAdd = len(words)
+		}
+		result = append(result, words[:wordsToAdd]...)
+	}
+
+	return result
 }
 
 func getCluesText(words []string, foundWords map[string]bool) string {
@@ -52,8 +82,8 @@ func getCluesText(words []string, foundWords map[string]bool) string {
 		if foundWords[w] {
 			clues = append(clues, fmt.Sprintf("✅ %s", w))
 		} else {
-			blanks := strings.Repeat("_ ", len(w)-1)
-			clues = append(clues, fmt.Sprintf("✅ %c %s", w[0], strings.TrimSpace(blanks)))
+			dashes := strings.Repeat("-", len(w)-1)
+			clues = append(clues, fmt.Sprintf("%c%s (%d)", w[0], dashes, len(w)))
 		}
 	}
 	return strings.Join(clues, "\n")
@@ -92,6 +122,42 @@ func GetLeaderboardText(userScores map[int64]int, userNames map[int64]string) st
 		sb.WriteString(fmt.Sprintf("%s %s - %d pts\n", medal, entry.Name, entry.Score))
 	}
 	return sb.String()
+}
+
+func countRemainingWords(words []string, foundWords map[string]bool) int {
+	remaining := 0
+	for _, w := range words {
+		if !foundWords[strings.ToUpper(w)] {
+			remaining++
+		}
+	}
+	return remaining
+}
+
+func sendWordFoundFeedback(bot *tgbotapi.BotAPI, chatID int64, userID int, userName string, foundWord string, pointsEarned int, remainingWords int, gridMessageID int) {
+	remaining := "Remaining"
+	if remainingWords == 1 {
+		remaining = "Last One"
+	} else if remainingWords == 0 {
+		remaining = "🎉 LAST WORD! +15 BONUS POINTS!"
+	}
+
+	text := fmt.Sprintf("👤 *%s* found *%s*. +%d Points ✅\n\n📌 *%s*", userName, foundWord, pointsEarned, remaining)
+
+	// Create link to grid message
+	gridLink := fmt.Sprintf("https://t.me/c/%d/%d", -chatID-1000000000000, gridMessageID)
+
+	inlineKeyboard := tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonURL("🔙 Go To Grid", gridLink),
+		),
+	)
+
+	msg := tgbotapi.NewMessage(chatID, text)
+	msg.ReplyToMessageID = gridMessageID
+	msg.ReplyMarkup = inlineKeyboard
+	msg.ParseMode = tgbotapi.ModeMarkdown
+	bot.Send(msg)
 }
 
 func StartWordGridGame(bot *tgbotapi.BotAPI, chatID int64, client *mongo.Client) {
@@ -190,10 +256,23 @@ func HandleGuess(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.
 
 	// Word found!
 	state.FoundWords[guess] = true
-	state.UserScores[int64(message.From.ID)] += 10
+
+	// Calculate remaining words BEFORE adding points
+	remainingWords := countRemainingWords(state.Words, state.FoundWords)
+
+	// Determine points: bonus if this is the last word
+	pointsEarned := 10
+	if remainingWords == 0 {
+		pointsEarned = 25 // Bonus for finding the last word
+	}
+
+	state.UserScores[int64(message.From.ID)] += pointsEarned
 	state.UserNames[int64(message.From.ID)] = message.From.FirstName
 
-	go repository.InsertWordleBonusDoc(message.From.ID, message.From.FirstName, chatID, client, "WordGridPoints", 10)
+	go repository.InsertWordleBonusDoc(message.From.ID, message.From.FirstName, chatID, client, "WordGridPoints", pointsEarned)
+
+	// Send feedback message
+	go sendWordFoundFeedback(bot, chatID, message.From.ID, message.From.FirstName, guess, pointsEarned, remainingWords, state.MessageID)
 
 	// Check if game is over
 	allFound := true
