@@ -14,6 +14,8 @@ import (
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/translator/utilities"
 )
 
+var NvidiaBaseURL = "https://api.llm7.io/v1"
+
 type RequestBody struct {
 	Text    string `json:"text"`
 	ModelID string `json:"model_id"`
