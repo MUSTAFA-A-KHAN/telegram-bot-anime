@@ -1972,6 +1972,10 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		wordlebot.HandleWordleCommand(bot, chatID, callback.From.FirstName, client)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Wordle Started!"))
 		return
+	case "wordgrid_start":
+		wordgridbot.StartWordGridGame(bot, chatID, client)
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Word Grid Started!"))
+		return
 	case "cancel_new_wordle":
 		if wordlebot.CancelPendingGame(bot, chatID, callback.From.FirstName) {
 			bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Cancelled new game request."))
