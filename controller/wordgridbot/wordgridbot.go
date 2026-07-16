@@ -16,7 +16,7 @@ import (
 )
 
 func LoadWords() []string {
-	content, err := os.ReadFile("controller/translator/scramy_words.txt")
+	content, err := os.ReadFile("controller/wordgridbot/lib/english_words_gt_10164946_family_safe_v3.txt")
 	if err != nil {
 		log.Printf("Error reading scramy_words.txt: %v", err)
 		return []string{"HELLO", "WORLD", "GAMES", "TELEGRAM"}
