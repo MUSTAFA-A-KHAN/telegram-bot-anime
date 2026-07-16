@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/repository"
+	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/service"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/view"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -286,14 +287,32 @@ func HandleGuess(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.
 	imgBytes, _ := GenerateGridImage(state.Grid, state.WordPositions, state.FoundWords)
 
 	caption := fmt.Sprintf("🔠 *Word Grid (Hard Mode)*\n\n🔍 *Find These Words:*\n\n%s\n\n♨️ _Find Words, Gain Score Points & Improve Your Leaderboard Rank._", getCluesText(state.Words, state.FoundWords))
-	caption += GetLeaderboardText(state.UserScores, state.UserNames)
+	if !allFound {
+		caption += GetLeaderboardText(state.UserScores, state.UserNames)
+	}
+
+	var newMsgText string
+	var newMsgMarkup tgbotapi.InlineKeyboardMarkup
 
 	if allFound {
 		state.Active = false
-		caption = fmt.Sprintf("🎉 *Word Grid Completed!*\n\nAll words have been found!\n\n%s", GetLeaderboardText(state.UserScores, state.UserNames))
+		caption = fmt.Sprintf("🎉 *Word Grid Completed!*\n\nAll words have been found!\n\n🔍 *Words:*\n%s", getCluesText(state.Words, state.FoundWords))
+
+		roundSummary := GetLeaderboardText(state.UserScores, state.UserNames)
+		// Convert Markdown * to HTML <b> for roundSummary, since globalLeaderboard is HTML.
+		roundSummaryHTML := strings.ReplaceAll(roundSummary, "*", "<b>")
+		roundSummaryHTML = strings.ReplaceAll(roundSummaryHTML, "<b>Leaderboard:<b>", "<b>Leaderboard:</b>")
+		globalLeaderboard := service.LeaderBoardList(client, "WordGridPoints", chatID)
+
+		newMsgText = fmt.Sprintf("🎉 <b>Game Over Round Summary</b> 🎉\n%s\n\n%s", roundSummaryHTML, globalLeaderboard)
+		newMsgMarkup = tgbotapi.NewInlineKeyboardMarkup(
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("Start New Grid 🔠", "wordgrid_start"),
+			),
+		)
 	}
 
-	go func(chat int64, msgID int, bts []byte, cap string, active bool, s *WordGridState) {
+	go func(chat int64, msgID int, bts []byte, cap string, active bool, s *WordGridState, isGameOver bool, finalMsg string, finalMarkup tgbotapi.InlineKeyboardMarkup) {
 		view.EditMessageMediaWithStyledButtons(bot.Token, chat, msgID, bts, "wordgrid.png", nil)
 
 		// Send a new message to update the caption correctly as editMessageMedia doesn't always update caption easily if not provided in the media object JSON correctly
@@ -301,8 +320,15 @@ func HandleGuess(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.
 		editCaption.ParseMode = tgbotapi.ModeMarkdown
 		bot.Send(editCaption)
 
+		if isGameOver {
+			newMsg := tgbotapi.NewMessage(chat, finalMsg)
+			newMsg.ParseMode = tgbotapi.ModeHTML
+			newMsg.ReplyMarkup = finalMarkup
+			bot.Send(newMsg)
+		}
+
 		saveWordGridStateAsync(chat, s)
-	}(chatID, state.MessageID, imgBytes, caption, state.Active, state)
+	}(chatID, state.MessageID, imgBytes, caption, state.Active, state, allFound, newMsgText, newMsgMarkup)
 }
 
 func HandleCancelWordGrid(bot *tgbotapi.BotAPI, chatID int64) {
