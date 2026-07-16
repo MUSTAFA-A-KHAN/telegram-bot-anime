@@ -1347,7 +1347,7 @@ hoped
 hopes
 horde
 horns
-horny
+*
 horse
 hosts
 hotel
@@ -1909,7 +1909,7 @@ peers
 pelts
 penal
 pence
-penis
+*
 penny
 peons
 perch
@@ -2303,7 +2303,7 @@ seven
 sever
 sewed
 sewer
-sexes
+*es
 shack
 shade
 shady
@@ -3024,7 +3024,7 @@ whist
 white
 whole
 whoop
-whore
+*
 whose
 wicks
 widen
