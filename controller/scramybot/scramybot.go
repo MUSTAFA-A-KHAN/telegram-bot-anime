@@ -20,15 +20,15 @@ import (
 
 // ScramyStateDoc is the MongoDB-serializable version of ScramyState
 type ScramyStateDoc struct {
-	ChatID         int64            `bson:"_id"`
-	Active         bool             `bson:"active"`
-	Letters        string           `bson:"letters"`
-	FoundWords     []string         `bson:"found_words"`
+	ChatID         int64               `bson:"_id"`
+	Active         bool                `bson:"active"`
+	Letters        string              `bson:"letters"`
+	FoundWords     []string            `bson:"found_words"`
 	UserWords      map[string][]string `bson:"user_words"`
-	UserScores     map[string]int   `bson:"user_scores"`
-	UserNames      map[string]string `bson:"user_names"`
-	MaxWords       int              `bson:"max_words"`
-	PendingNewGame bool             `bson:"pending_new_game"`
+	UserScores     map[string]int      `bson:"user_scores"`
+	UserNames      map[string]string   `bson:"user_names"`
+	MaxWords       int                 `bson:"max_words"`
+	PendingNewGame bool                `bson:"pending_new_game"`
 }
 
 // saveScramyStateAsync asynchronously saves the Scramy state to MongoDB
@@ -404,7 +404,7 @@ func HandleScramyCommand(bot *tgbotapi.BotAPI, chatID int64, username string) {
 		ss.PendingNewGame = true
 		ss.CancelChan = make(chan bool, 1)
 		ss.Unlock()
-			saveScramyStateAsync(chatID, ss)
+		saveScramyStateAsync(chatID, ss)
 
 		markup := tgbotapi.NewInlineKeyboardMarkup(
 			tgbotapi.NewInlineKeyboardRow(
@@ -424,7 +424,7 @@ func HandleScramyCommand(bot *tgbotapi.BotAPI, chatID int64, username string) {
 				ss.Lock()
 				if !ss.PendingNewGame {
 					ss.Unlock()
-			saveScramyStateAsync(chatID, ss)
+					saveScramyStateAsync(chatID, ss)
 					return
 				}
 				ss.PendingNewGame = false
@@ -435,7 +435,7 @@ func HandleScramyCommand(bot *tgbotapi.BotAPI, chatID int64, username string) {
 				ss.UserScores = make(map[int]int)
 				ss.UserNames = make(map[int]string)
 				ss.Unlock()
-			saveScramyStateAsync(chatID, ss)
+				saveScramyStateAsync(chatID, ss)
 
 				if err == nil {
 					deleteMsg := tgbotapi.NewDeleteMessage(chatID, sentMsg.MessageID)
@@ -469,7 +469,7 @@ func HandleScramyCommand(bot *tgbotapi.BotAPI, chatID int64, username string) {
 	ss.UserScores = make(map[int]int)
 	ss.UserNames = make(map[int]string)
 	ss.Unlock()
-			saveScramyStateAsync(chatID, ss)
+	saveScramyStateAsync(chatID, ss)
 
 	settings := GetChatSettings(chatID, nil)
 	isSquared := settings.ScramyLetterView == "squared"

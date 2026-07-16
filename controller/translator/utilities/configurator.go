@@ -9,6 +9,7 @@ import (
 	"strings"
 	"unicode"
 )
+
 var tokenPattern = regexp.MustCompile(`^[a-zA-Z0-9]+$`)
 
 func isLikelyRawToken(s string) bool {

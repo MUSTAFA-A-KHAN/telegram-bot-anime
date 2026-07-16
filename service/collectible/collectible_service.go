@@ -6,8 +6,8 @@ import (
 	"time"
 
 	model "github.com/MUSTAFA-A-KHAN/telegram-bot-anime/model/collectible"
-	repo "github.com/MUSTAFA-A-KHAN/telegram-bot-anime/repository/collectible"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/repository"
+	repo "github.com/MUSTAFA-A-KHAN/telegram-bot-anime/repository/collectible"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 

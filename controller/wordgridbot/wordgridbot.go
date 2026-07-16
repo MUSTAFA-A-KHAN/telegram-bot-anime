@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/repository"
-	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/service"
+
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/view"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -94,6 +94,13 @@ func GetLeaderboardText(userScores map[int64]int, userNames map[int64]string) st
 	if len(userScores) == 0 {
 		return ""
 	}
+	return getLeaderboardTextInternal(userScores, userNames, false)
+}
+
+func getLeaderboardTextInternal(userScores map[int64]int, userNames map[int64]string, useHTML bool) string {
+	if len(userScores) == 0 {
+		return ""
+	}
 
 	type scoreEntry struct {
 		Name  string
@@ -102,7 +109,11 @@ func GetLeaderboardText(userScores map[int64]int, userNames map[int64]string) st
 
 	var scores []scoreEntry
 	for id, score := range userScores {
-		scores = append(scores, scoreEntry{Name: userNames[id], Score: score})
+		name := userNames[id]
+		if useHTML {
+			name = fmt.Sprintf("<a href=\"tg://user?id=%d\">%s</a>", id, name)
+		}
+		scores = append(scores, scoreEntry{Name: name, Score: score})
 	}
 
 	sort.Slice(scores, func(i, j int) bool {
@@ -110,7 +121,11 @@ func GetLeaderboardText(userScores map[int64]int, userNames map[int64]string) st
 	})
 
 	var sb strings.Builder
-	sb.WriteString("\n\n🏆 *Leaderboard:*\n")
+	if useHTML {
+		sb.WriteString("\n\n🏆 <b>Leaderboard:</b>\n")
+	} else {
+		sb.WriteString("\n\n🏆 *Leaderboard:*\n")
+	}
 	for i, entry := range scores {
 		medal := "🏅"
 		if i == 0 {
@@ -124,7 +139,6 @@ func GetLeaderboardText(userScores map[int64]int, userNames map[int64]string) st
 	}
 	return sb.String()
 }
-
 func countRemainingWords(words []string, foundWords map[string]bool) int {
 	remaining := 0
 	for _, w := range words {
@@ -298,14 +312,13 @@ func HandleGuess(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.
 		state.Active = false
 		caption = fmt.Sprintf("🎉 *Word Grid Completed!*\n\nAll words have been found!\n\n🔍 *Words:*\n%s", getCluesText(state.Words, state.FoundWords))
 
-		roundSummary := GetLeaderboardText(state.UserScores, state.UserNames)
-		// Convert Markdown * to HTML <b> for roundSummary, since globalLeaderboard is HTML.
-		roundSummaryHTML := strings.ReplaceAll(roundSummary, "*", "<b>")
-		roundSummaryHTML = strings.ReplaceAll(roundSummaryHTML, "<b>Leaderboard:<b>", "<b>Leaderboard:</b>")
-		globalLeaderboard := service.LeaderBoardList(client, "WordGridPoints", chatID)
+		roundSummaryHTML := getLeaderboardTextInternal(state.UserScores, state.UserNames, true)
 
-		newMsgText = fmt.Sprintf("🎉 <b>Game Over Round Summary</b> 🎉\n%s\n\n%s", roundSummaryHTML, globalLeaderboard)
+		newMsgText = fmt.Sprintf("🎉 <b>Game Over Round Summary</b> 🎉\n%s", roundSummaryHTML)
 		newMsgMarkup = tgbotapi.NewInlineKeyboardMarkup(
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("Show Global Leaderboard 🌍", "statsglobal_wordgrid"),
+			),
 			tgbotapi.NewInlineKeyboardRow(
 				tgbotapi.NewInlineKeyboardButtonData("Start New Grid 🔠", "wordgrid_start"),
 			),

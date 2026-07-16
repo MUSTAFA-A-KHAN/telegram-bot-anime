@@ -14,12 +14,12 @@ import (
 
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/model/collectible"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/repository"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/fogleman/gg"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/golang/freetype/truetype"
 	"go.mongodb.org/mongo-driver/mongo"
-	"golang.org/x/image/font/gofont/goregular"
 	"golang.org/x/image/font/gofont/gobold"
+	"golang.org/x/image/font/gofont/goregular"
 )
 
 // GenerateLeaderboardImage queries the leaderboard and generates an image scorecard.
@@ -270,7 +270,7 @@ func GenerateCollectibleImage(bot *tgbotapi.BotAPI, item collectible.Item, templ
 
 	// Text for owner
 	dc.SetColor(color.White)
-	dc.DrawStringAnchored(ownerText, rectWidth2/2, boxY + rectHeight2/2, 0.5, 0.5)
+	dc.DrawStringAnchored(ownerText, rectWidth2/2, boxY+rectHeight2/2, 0.5, 0.5)
 
 	// Draw Rarity overlay (Bottom Right)
 	rarityText := string(template.Rarity)
@@ -303,7 +303,7 @@ func GenerateCollectibleImage(bot *tgbotapi.BotAPI, item collectible.Item, templ
 	}
 
 	dc.SetColor(rarityColor)
-	dc.DrawStringAnchored(rarityText, rarityBoxX + rectWidth3/2, rarityBoxY + rectHeight3/2, 0.5, 0.5)
+	dc.DrawStringAnchored(rarityText, rarityBoxX+rectWidth3/2, rarityBoxY+rectHeight3/2, 0.5, 0.5)
 
 	buf := new(bytes.Buffer)
 	if err := dc.EncodePNG(buf); err != nil {
