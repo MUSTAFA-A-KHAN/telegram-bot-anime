@@ -2,10 +2,10 @@ package wordlebot
 
 import (
 	"fmt"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/wordlebot/image_generator"
-	"go.mongodb.org/mongo-driver/mongo"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/view"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // RefreshActiveGameMessage updates the active wordle game message

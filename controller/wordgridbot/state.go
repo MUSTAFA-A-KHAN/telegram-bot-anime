@@ -19,28 +19,28 @@ type WordPosition struct {
 // WordGridState holds the in-memory state of an active Word Grid game
 type WordGridState struct {
 	sync.RWMutex
-	Active         bool
-	Grid           [][]string
-	Words          []string
-	WordPositions  map[string]WordPosition
-	FoundWords     map[string]bool
-	UserScores     map[int64]int
-	UserNames      map[int64]string
-	MessageID      int
-	CancelChan     chan bool
+	Active        bool
+	Grid          [][]string
+	Words         []string
+	WordPositions map[string]WordPosition
+	FoundWords    map[string]bool
+	UserScores    map[int64]int
+	UserNames     map[int64]string
+	MessageID     int
+	CancelChan    chan bool
 }
 
 // WordGridStateDoc is the MongoDB-serializable version of WordGridState
 type WordGridStateDoc struct {
-	ChatID         int64                   `bson:"_id"`
-	Active         bool                    `bson:"active"`
-	Grid           [][]string              `bson:"grid"`
-	Words          []string                `bson:"words"`
-	WordPositions  map[string]WordPosition `bson:"word_positions"`
-	FoundWords     map[string]bool         `bson:"found_words"`
-	UserScores     map[string]int          `bson:"user_scores"`
-	UserNames      map[string]string       `bson:"user_names"`
-	MessageID      int                     `bson:"message_id"`
+	ChatID        int64                   `bson:"_id"`
+	Active        bool                    `bson:"active"`
+	Grid          [][]string              `bson:"grid"`
+	Words         []string                `bson:"words"`
+	WordPositions map[string]WordPosition `bson:"word_positions"`
+	FoundWords    map[string]bool         `bson:"found_words"`
+	UserScores    map[string]int          `bson:"user_scores"`
+	UserNames     map[string]string       `bson:"user_names"`
+	MessageID     int                     `bson:"message_id"`
 }
 
 var (

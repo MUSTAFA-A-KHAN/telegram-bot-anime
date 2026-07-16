@@ -62,6 +62,8 @@ func LeaderBoardListButtons(client *mongo.Client, collection string, chatID int6
 			score += " 💎"
 		} else if collection == "GeographyPoints" {
 			score += " 🌍"
+		} else if collection == "WordGridPoints" {
+			score += " 🔠"
 		}
 
 		rankDisplay := fmt.Sprintf("%d", i+1)
@@ -71,7 +73,7 @@ func LeaderBoardListButtons(client *mongo.Client, collection string, chatID int6
 			style = styles[i]
 		} else {
 			rankDisplay = "⭐ " + rankDisplay
-			style=""
+			style = ""
 		}
 
 		text := fmt.Sprintf("%s | %s | %s", rankDisplay, name, score)
@@ -92,6 +94,7 @@ func LeaderBoardListButtons(client *mongo.Client, collection string, chatID int6
 	wordleLabel := "Wordle"
 	scramyLabel := "Scramy"
 	geographyLabel := "Geography"
+	wordGridLabel := "Word Grid"
 
 	if strings.HasSuffix(callbackData, "wordguess") {
 		wordGuessLabel = "✅ " + wordGuessLabel
@@ -101,6 +104,8 @@ func LeaderBoardListButtons(client *mongo.Client, collection string, chatID int6
 		scramyLabel = "✅ " + scramyLabel
 	} else if strings.HasSuffix(callbackData, "geography") {
 		geographyLabel = "✅ " + geographyLabel
+	} else if strings.HasSuffix(callbackData, "wordgrid") {
+		wordGridLabel = "✅ " + wordGridLabel
 	}
 
 	var navPrefix string
@@ -110,12 +115,14 @@ func LeaderBoardListButtons(client *mongo.Client, collection string, chatID int6
 		wordleLabel += " Global"
 		scramyLabel += " Global"
 		geographyLabel += " Global"
+		wordGridLabel += " Global"
 	} else {
 		navPrefix = "statsgroup_"
 		wordGuessLabel += " Group"
 		wordleLabel += " Group"
 		scramyLabel += " Group"
 		geographyLabel += " Group"
+		wordGridLabel += " Group"
 	}
 
 	navRow1 := []view.CustomInlineKeyboardButton{
@@ -126,9 +133,13 @@ func LeaderBoardListButtons(client *mongo.Client, collection string, chatID int6
 		{Text: scramyLabel, CallbackData: navPrefix + "scramy"},
 		{Text: geographyLabel, CallbackData: navPrefix + "geography"},
 	}
+	navRow3 := []view.CustomInlineKeyboardButton{
+		{Text: wordGridLabel, CallbackData: navPrefix + "wordgrid"},
+	}
 
 	buttons = append(buttons, navRow1)
 	buttons = append(buttons, navRow2)
+	buttons = append(buttons, navRow3)
 
 	return &view.CustomInlineKeyboardMarkup{
 		InlineKeyboard: buttons,

@@ -82,4 +82,3 @@ func TestGenerateGridAndImage(t *testing.T) {
 		t.Errorf("Generated image is empty")
 	}
 }
-

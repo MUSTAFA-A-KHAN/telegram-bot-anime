@@ -16,8 +16,8 @@ import (
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/geographybot"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/scramybot"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/translator"
-	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/wordlebot"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/wordgridbot"
+	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/wordlebot"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/model"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/model/validator"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/repository"
@@ -919,9 +919,9 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 	case "geography":
 		geographybot.HandleGeographyCommand(bot, chatID, message.From.FirstName, client)
 		return
-		case "wordgrid":
-			wordgridbot.StartWordGridGame(bot, chatID, client)
-			return
+	case "wordgrid":
+		wordgridbot.StartWordGridGame(bot, chatID, client)
+		return
 	case "anime":
 		animebot.HandleAnimeCommand(bot, chatID, client)
 		return
