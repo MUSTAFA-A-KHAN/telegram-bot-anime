@@ -122,7 +122,7 @@ func getLeaderboardTextInternal(userScores map[int64]int, userNames map[int64]st
 
 	var sb strings.Builder
 	if useHTML {
-		sb.WriteString("\n\n🏆 <b>Leaderboard:</b>\n<blockquote expandable>\n")
+		sb.WriteString("\n\n🏆 <b>Leaderboard:</b>\n")
 	} else {
 		sb.WriteString("\n\n🏆 *Leaderboard:*\n")
 	}
@@ -136,9 +136,6 @@ func getLeaderboardTextInternal(userScores map[int64]int, userNames map[int64]st
 			medal = "🥉"
 		}
 		sb.WriteString(fmt.Sprintf("%s %s - %d pts\n", medal, entry.Name, entry.Score))
-	}
-	if useHTML {
-		sb.WriteString("</blockquote>\n")
 	}
 	return sb.String()
 }

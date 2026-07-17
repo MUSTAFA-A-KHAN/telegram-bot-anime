@@ -639,9 +639,11 @@ func HandleGuess(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.
 			msg += fmt.Sprintf("<pre><code class=\"language-Winner\">%s - %d 💎</code></pre>\n", html.EscapeString(scores[0].Name), scores[0].Score)
 			if len(scores) > 1 {
 				msg += "👥 <b>Participants:</b>\n"
+				msg += "<blockquote expandable>\n"
 				for i := 1; i < len(scores); i++ {
-					msg += fmt.Sprintf("<blockquote>%s - %d 💎</blockquote>\n", html.EscapeString(scores[i].Name), scores[i].Score)
+					msg += fmt.Sprintf("%s - %d 💎\n", html.EscapeString(scores[i].Name), scores[i].Score)
 				}
+				msg += "</blockquote>\n"
 			}
 		}
 
