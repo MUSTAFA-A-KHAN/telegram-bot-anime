@@ -20,15 +20,15 @@ import (
 
 // ScramyStateDoc is the MongoDB-serializable version of ScramyState
 type ScramyStateDoc struct {
-	ChatID         int64            `bson:"_id"`
-	Active         bool             `bson:"active"`
-	Letters        string           `bson:"letters"`
-	FoundWords     []string         `bson:"found_words"`
+	ChatID         int64               `bson:"_id"`
+	Active         bool                `bson:"active"`
+	Letters        string              `bson:"letters"`
+	FoundWords     []string            `bson:"found_words"`
 	UserWords      map[string][]string `bson:"user_words"`
-	UserScores     map[string]int   `bson:"user_scores"`
-	UserNames      map[string]string `bson:"user_names"`
-	MaxWords       int              `bson:"max_words"`
-	PendingNewGame bool             `bson:"pending_new_game"`
+	UserScores     map[string]int      `bson:"user_scores"`
+	UserNames      map[string]string   `bson:"user_names"`
+	MaxWords       int                 `bson:"max_words"`
+	PendingNewGame bool                `bson:"pending_new_game"`
 }
 
 // saveScramyStateAsync asynchronously saves the Scramy state to MongoDB
@@ -258,16 +258,20 @@ func generateScramyLetters() string {
 			letters[i], letters[j] = letters[j], letters[i]
 		})
 
-		letterSet := make(map[rune]bool)
+		// Bolt Optimization: Replace map[rune]bool with a boolean array for faster O(1) lookups
+		// and use a byte-indexed loop to avoid rune decoding overhead since all words are ASCII.
+		var letterSet [256]bool
 		for _, l := range letters {
-			letterSet[l] = true
+			if l < 256 {
+				letterSet[l] = true
+			}
 		}
 
 		count := 0
 		for _, w := range validWordsList {
 			valid := true
-			for _, ch := range w {
-				if !letterSet[ch] {
+			for i := 0; i < len(w); i++ {
+				if !letterSet[w[i]] {
 					valid = false
 					break
 				}
@@ -400,7 +404,7 @@ func HandleScramyCommand(bot *tgbotapi.BotAPI, chatID int64, username string) {
 		ss.PendingNewGame = true
 		ss.CancelChan = make(chan bool, 1)
 		ss.Unlock()
-			saveScramyStateAsync(chatID, ss)
+		saveScramyStateAsync(chatID, ss)
 
 		markup := tgbotapi.NewInlineKeyboardMarkup(
 			tgbotapi.NewInlineKeyboardRow(
@@ -420,7 +424,7 @@ func HandleScramyCommand(bot *tgbotapi.BotAPI, chatID int64, username string) {
 				ss.Lock()
 				if !ss.PendingNewGame {
 					ss.Unlock()
-			saveScramyStateAsync(chatID, ss)
+					saveScramyStateAsync(chatID, ss)
 					return
 				}
 				ss.PendingNewGame = false
@@ -431,7 +435,7 @@ func HandleScramyCommand(bot *tgbotapi.BotAPI, chatID int64, username string) {
 				ss.UserScores = make(map[int]int)
 				ss.UserNames = make(map[int]string)
 				ss.Unlock()
-			saveScramyStateAsync(chatID, ss)
+				saveScramyStateAsync(chatID, ss)
 
 				if err == nil {
 					deleteMsg := tgbotapi.NewDeleteMessage(chatID, sentMsg.MessageID)
@@ -443,7 +447,7 @@ func HandleScramyCommand(bot *tgbotapi.BotAPI, chatID int64, username string) {
 
 				buttons := tgbotapi.NewInlineKeyboardMarkup(
 					tgbotapi.NewInlineKeyboardRow(
-						tgbotapi.NewInlineKeyboardButtonData("Change Layout ⚙️", "setting_scramy_letters"),
+						tgbotapi.NewInlineKeyboardButtonData("Change Layout ⚙️", "setting_scramy_letters_new"),
 					),
 				)
 				msg := fmt.Sprintf("📝 *WORD SCRAMBLE*\n\n🦴 Make words using these letters\n\n%s\n\n🔎 Words with 4 or more letters are accepted. Longer words give more points!\n\nTotal: 0/10", getLetterString(ss.Letters, isSquared))
@@ -465,14 +469,14 @@ func HandleScramyCommand(bot *tgbotapi.BotAPI, chatID int64, username string) {
 	ss.UserScores = make(map[int]int)
 	ss.UserNames = make(map[int]string)
 	ss.Unlock()
-			saveScramyStateAsync(chatID, ss)
+	saveScramyStateAsync(chatID, ss)
 
 	settings := GetChatSettings(chatID, nil)
 	isSquared := settings.ScramyLetterView == "squared"
 
 	buttons := tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("Change Layout ⚙️", "setting_scramy_letters"),
+			tgbotapi.NewInlineKeyboardButtonData("Change Layout ⚙️", "setting_scramy_letters_new"),
 		),
 	)
 	msg := fmt.Sprintf("📝 *WORD SCRAMBLE*\n\n🦴 Make words using these letters\n\n%s\n\n🔎 Words with 4 or more letters are accepted. Longer words give more points!\n\nTotal: 0/10", getLetterString(ss.Letters, isSquared))
@@ -501,17 +505,20 @@ func CancelPendingGame(bot *tgbotapi.BotAPI, chatID int64, username string) bool
 }
 
 func isValidWordFromLetters(word string, letters string) bool {
-	letterSet := make(map[rune]bool)
-	letters = strings.ReplaceAll(letters, ",", "")
-	letters = strings.ReplaceAll(letters, " ", "")
-	letters = strings.ToLower(letters)
-
-	for _, l := range letters {
-		letterSet[l] = true
+	// Bolt Optimization: Use a 256 boolean array instead of map for O(1) ASCII lookup,
+	// and single loop mapping over raw characters avoiding string allocation overheads.
+	var letterSet [256]bool
+	for i := 0; i < len(letters); i++ {
+		c := letters[i]
+		if c >= 'A' && c <= 'Z' {
+			letterSet[c+32] = true
+		} else if c >= 'a' && c <= 'z' {
+			letterSet[c] = true
+		}
 	}
 
-	for _, ch := range word {
-		if !letterSet[ch] {
+	for i := 0; i < len(word); i++ {
+		if !letterSet[word[i]] {
 			return false
 		}
 	}

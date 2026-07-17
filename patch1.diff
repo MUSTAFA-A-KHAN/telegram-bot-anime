@@ -1,0 +1,20 @@
+--- service/leaderBoardList.go
++++ service/leaderBoardList.go
+@@ -21,7 +21,7 @@
+
+	rankEmojis := []string{"🥇", "🥈", "🥉"}
+
+-	leaderboard := "🏆 <b>Top 10 Players Leaderboard</b> 🏆\n\n"
++	leaderboard := "🏆 <b>Top 10 Players Leaderboard</b> 🏆\n<blockquote expandable>\n"
+
+	for i := 0; i < limit; i++ {
+		count := idCounts[i]
+@@ -49,7 +49,7 @@
+		leaderboard += fmt.Sprintf("<b>%s</b> %s — %s\n", rankDisplay, name, score)
+	}
+
+-	leaderboard += "\n✨ <b>Keep it up and aim for the top!</b> ✨\n"
++	leaderboard += "</blockquote>\n✨ <b>Keep it up and aim for the top!</b> ✨\n"
+
+	return leaderboard
+ }
