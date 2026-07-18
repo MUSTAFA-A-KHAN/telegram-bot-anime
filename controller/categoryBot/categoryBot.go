@@ -11,6 +11,7 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/config"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/animebot"
 	collectibleController "github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/collectible"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/geographybot"
@@ -265,6 +266,8 @@ func (cs *ChatState) reset(chatID int64) {
 
 // StartBot initializes and starts the bot
 func StartBot(token string) error {
+	config.Load(token)
+
 	// Create a single MongoDB client instance once
 	client := repository.DbManager()
 	if client == nil {
@@ -897,7 +900,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 				tgbotapi.NewInlineKeyboardButtonData("Geography Settings 🌍", "setting_geography_main"),
 			),
 		)
-		view.SendMessageWithButtons(bot, message.Chat.ID, "⚙️ *Settings*\nChoose a setting to configure:", buttons)
+		view.SendMessageWithButtonsV2(message.Chat.ID, "⚙️ *Settings*\nChoose a setting to configure:", buttons, message.From.ID, message.EphemeralMessageID)
 		return
 	case "geosettings":
 		buttons := tgbotapi.NewInlineKeyboardMarkup(
