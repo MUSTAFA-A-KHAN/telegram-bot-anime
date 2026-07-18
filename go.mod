@@ -16,6 +16,7 @@ require (
 )
 
 require (
+	github.com/OvyFlash/telegram-bot-api v0.0.0-20260715235732-aca8bf3898bb // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/klauspost/compress v1.13.6 // indirect
 	github.com/montanaflynn/stats v0.7.1 // indirect
@@ -27,3 +28,5 @@ require (
 	golang.org/x/crypto v0.26.0 // indirect
 	golang.org/x/sync v0.20.0 // indirect
 )
+
+//replace github.com/go-telegram-bot-api/telegram-bot-api => github.com/Intelora-Skyth/telegram-bot-api v1.0.0
