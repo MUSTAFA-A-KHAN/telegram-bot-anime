@@ -115,6 +115,16 @@ func SendMessageWithButtonsV2(chatID int64, text string, buttons tgbotapi.Inline
 	return err
 }
 
+// SendRichMessage sends a rich message using the OvyFlash library with blocks (paragraphs, tables, images, etc.)
+func SendRichMessage(chatID int64, richMessage tgbotapiv5Ovy.InputRichMessage) error {
+	bot, _ := tgbotapiv5Ovy.NewBotAPI(config.App.CatTelegramToken)
+	_, err := bot.SendRichMessage(tgbotapiv5Ovy.NewSendRichMessage(chatID, richMessage))
+	if err != nil {
+		log.Print("Error sending rich message:", err)
+	}
+	return err
+}
+
 // SendMessageWithButtons sends a message with inline keyboard buttons to the user
 func SendMessageWithKeyboardButton(bot *tgbotapi.BotAPI, chatID int64, text string, buttons tgbotapi.InlineKeyboardButton) error {
 	// button := tgbotapi.NewInlineKeyboardButtonURL("Click Here", "url")
