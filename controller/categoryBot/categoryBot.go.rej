@@ -1,0 +1,12 @@
+--- controller/categoryBot/categoryBot.go
++++ controller/categoryBot/categoryBot.go
+@@ -900,9 +900,6 @@
+		view.SendMessageWithButtons(bot, message.Chat.ID, "⚙️ *Settings*\nChoose a setting to configure:", buttons)
+		return
+	case "geosettings":
+-		if message.EphemeralMessageID != 0 {
+-			return
+-		}
+		buttons := tgbotapi.NewInlineKeyboardMarkup(
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("MCQ Mode (Multiple Choice)", "setting_geo_mode_mcq"),

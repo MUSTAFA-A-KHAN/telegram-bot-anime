@@ -10,11 +10,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/config"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/model"
-	tgbotapiv5Ovy "github.com/OvyFlash/telegram-bot-api"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
-	tgbotapiv5 "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+
 )
 
 // SendMessage sends a simple text message to the user
@@ -82,7 +80,7 @@ func SendMessageWithEffectID(bot *tgbotapi.BotAPI, chatID int64, text string, ef
 // SendMessageWithButtons sends a message with inline keyboard buttons to the user
 func SendMessageWithMarkDown(bot *tgbotapi.BotAPI, chatID int64, text string) error {
 	msg := tgbotapi.NewMessage(chatID, text)
-	msg.ParseMode = tgbotapiv5.ModeMarkdownV2
+	msg.ParseMode = "MarkdownV2"
 	_, err := bot.Send(msg)
 	return err
 }
@@ -95,23 +93,6 @@ func SendMessageWithButtons(bot *tgbotapi.BotAPI, chatID int64, text string, but
 		msg.ReplyMarkup = buttons
 	}
 	_, err := bot.Send(msg)
-	return err
-}
-
-// SendMessageWithButtons sends a message with inline keyboard buttons to the user
-func SendMessageWithButtonsV2(chatID int64, text string, buttons tgbotapi.InlineKeyboardMarkup, usrid int, msgID int) error {
-	msg := tgbotapiv5Ovy.NewMessage(chatID, text)
-	msg.ParseMode = tgbotapiv5Ovy.ModeMarkdown
-	msg.ReceiverUserID = int64(usrid)
-	msg.ReplyParameters.EphemeralMessageID = msgID
-	if len(buttons.InlineKeyboard) > 0 {
-		msg.ReplyMarkup = buttons
-	}
-	bot, _ := tgbotapiv5Ovy.NewBotAPI(config.App.CatTelegramToken)
-	_, err := bot.Send(msg)
-	// update, err := bot.HandleUpdate(nil)
-	// update.Message
-	log.Print("Error:", err)
 	return err
 }
 
