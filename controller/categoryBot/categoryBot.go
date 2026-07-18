@@ -25,6 +25,7 @@ import (
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/service"
 	installOllama "github.com/MUSTAFA-A-KHAN/telegram-bot-anime/service/installOllama"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/view"
+	tgbotapiv5Ovy "github.com/OvyFlash/telegram-bot-api"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	lev "github.com/texttheater/golang-levenshtein/levenshtein"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -930,6 +931,181 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		return
 	case "animehint":
 		animebot.HandleAnimeHint(bot, chatID)
+		return
+	case "richmessage":
+		// Dummy command to demonstrate SendRichMessage with table, image, and text
+		photoMedia := tgbotapiv5Ovy.NewInputMediaPhoto(tgbotapiv5Ovy.FileURL("https://wallpapers.com/images/hd/celebratory-congratulations-banner-qeo95d2enk0nay3r.jpg"))
+		richMessage := tgbotapiv5Ovy.NewInputRichMessageBlocks(
+			tgbotapiv5Ovy.InputRichBlockSectionHeading{
+				Type: "heading",
+				Text: "📋 Demo Rich Message",
+				Size: 2,
+			},
+			tgbotapiv5Ovy.InputRichBlockParagraph{
+				Type: "paragraph",
+				Text: "This is a demonstration of Telegram's rich message format using the OvyFlash library. It includes headings, paragraphs, tables, and images.",
+			},
+			tgbotapiv5Ovy.InputRichBlockDivider{
+				Type: "divider",
+			},
+			tgbotapiv5Ovy.InputRichBlockTable{
+				Type: "table",
+				Cells: [][]tgbotapiv5Ovy.RichBlockTableCell{
+					{
+						{Text: "Player", IsHeader: true, Align: "left", Valign: "middle"},
+						{Text: "Score", IsHeader: true, Align: "center", Valign: "middle"},
+						{Text: "Rank", IsHeader: true, Align: "center", Valign: "middle"},
+					},
+					{
+						{Text: "Alice", Align: "left", Valign: "middle"},
+						{Text: "1250", Align: "center", Valign: "middle"},
+						{Text: "🥇", Align: "center", Valign: "middle"},
+					},
+					{
+						{Text: "Bob", Align: "left", Valign: "middle"},
+						{Text: "980", Align: "center", Valign: "middle"},
+						{Text: "🥈", Align: "center", Valign: "middle"},
+					},
+					{
+						{Text: "Charlie", Align: "left", Valign: "middle"},
+						{Text: "720", Align: "center", Valign: "middle"},
+						{Text: "🥉", Align: "center", Valign: "middle"},
+					},
+				},
+				IsBordered: true,
+				IsStriped:  true,
+				Caption:    "🏆 Top Players Leaderboard",
+			},
+			tgbotapiv5Ovy.InputRichBlockParagraph{
+				Type: "paragraph",
+				Text: "Below is a random image fetched for demonstration:",
+			},
+			tgbotapiv5Ovy.InputRichBlockPhoto{
+				Type:  "photo",
+				Photo: photoMedia,
+				Caption: &tgbotapiv5Ovy.RichBlockCaption{
+					Text: "📸 Random Demo Image",
+				},
+			},
+		)
+		view.SendRichMessage(chatID, richMessage)
+		return
+	case "scramyleaderboard":
+		// Fetch real scramy leaderboard data (global)
+		photoMedia := tgbotapiv5Ovy.NewInputMediaPhoto(tgbotapiv5Ovy.FileURL("https://wallpapers.com/images/hd/celebratory-congratulations-banner-qeo95d2enk0nay3r.jpg"))
+		idCounts, err := repository.CountIDOccurrences(client, "ScramyEn", 0)
+		if err != nil {
+			log.Printf("Error fetching scramy leaderboard: %v", err)
+			view.SendMessage(bot, chatID, "Failed to fetch leaderboard data.")
+			return
+		}
+
+		limit := 10
+		if len(idCounts) < limit {
+			limit = len(idCounts)
+		}
+
+		// Generate leaderboard image
+		// imgBytes, imgErr := service.GenerateLeaderboardImage(client, "ScramyEn", 0, "🔀 Scramy Leaderboard")
+
+		// Build table cells for the rich message
+		rankEmojis := []string{"🥇", "🥈", "🥉"}
+		cells := make([][]tgbotapiv5Ovy.RichBlockTableCell, 0, limit+1)
+		// Header row
+		cells = append(cells, []tgbotapiv5Ovy.RichBlockTableCell{
+			{Text: "Rank", IsHeader: true, Align: "center", Valign: "middle"},
+			{Text: "Player", IsHeader: true, Align: "left", Valign: "middle"},
+			{Text: "Score", IsHeader: true, Align: "center", Valign: "middle"},
+		})
+
+		for i := 0; i < limit; i++ {
+			count := idCounts[i]
+			name := fmt.Sprintf("%v", count["Name"])
+			score := fmt.Sprintf("%v", count["count"]) + " 💎"
+
+			var userID int
+			if id, ok := count["_id"]; ok {
+				switch v := id.(type) {
+				case int32:
+					userID = int(v)
+				case int64:
+					userID = int(v)
+				case int:
+					userID = v
+				}
+			}
+
+			// Fetch and append equipped emojis to the user's name
+			equippedEmojis, eqErr := repository.GetEquippedEmojis(client, userID)
+			if eqErr == nil && len(equippedEmojis) > 0 {
+				name += " " + strings.Join(equippedEmojis, "")
+			}
+
+			rankDisplay := fmt.Sprintf("%d", i+1)
+			if i < 3 {
+				rankDisplay = rankEmojis[i]
+			} else {
+				rankDisplay = "⭐ " + rankDisplay
+			}
+
+			cells = append(cells, []tgbotapiv5Ovy.RichBlockTableCell{
+				{Text: rankDisplay, Align: "center", Valign: "middle"},
+				{Text: name, Align: "left", Valign: "middle"},
+				{Text: score, Align: "center", Valign: "middle"},
+			})
+		}
+
+		// Build the rich message blocks
+		var blocks []tgbotapiv5Ovy.InputRichBlock
+
+		blocks = append(blocks,
+			tgbotapiv5Ovy.InputRichBlockPhoto{
+				Type:  "photo",
+				Photo: photoMedia,
+				Caption: &tgbotapiv5Ovy.RichBlockCaption{
+					Text: "📸",
+				},
+			},
+			tgbotapiv5Ovy.InputRichBlockSectionHeading{
+				Type: "heading",
+				Text: "🔀 Scramy Leaderboard",
+				Size: 2,
+			},
+			tgbotapiv5Ovy.InputRichBlockParagraph{
+				Type: "paragraph",
+				Text: "Top players ranked by their Scramy scores across all groups:",
+			},
+		)
+
+		// Add the leaderboard image if generation succeeded
+		// // if imgErr == nil && len(imgBytes) > 0 {
+		// 	photoMedia := tgbotapiv5Ovy.NewInputMediaPhoto(tgbotapiv5Ovy.FileBytes{
+		// 		Name:  "leaderboard.png",
+		// 		Bytes: imgBytes,
+		// 	})
+		// 	blocks = append(blocks, tgbotapiv5Ovy.InputRichBlockPhoto{
+		// 		Type:  "photo",
+		// 		Photo: photoMedia,
+		// 	})
+		// }
+
+		blocks = append(blocks,
+			tgbotapiv5Ovy.InputRichBlockDivider{Type: "divider"},
+			tgbotapiv5Ovy.InputRichBlockTable{
+				Type:       "table",
+				Cells:      cells,
+				IsBordered: true,
+				IsStriped:  true,
+				Caption:    "🏆 Top Players",
+			},
+			tgbotapiv5Ovy.InputRichBlockParagraph{
+				Type: "paragraph",
+				Text: "✨ Keep it up and aim for the top! Play /scramy to earn more points.",
+			},
+		)
+
+		richMessage := tgbotapiv5Ovy.NewInputRichMessageBlocks(blocks...)
+		view.SendRichMessage(chatID, richMessage)
 		return
 	case "geohint":
 		geographybot.HandleGeographyHint(bot, message, client, chatID, translator.NewTextTranslator())
