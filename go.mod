@@ -27,3 +27,6 @@ require (
 	golang.org/x/crypto v0.26.0 // indirect
 	golang.org/x/sync v0.20.0 // indirect
 )
+
+//replace github.com/go-telegram-bot-api/telegram-bot-api => github.com/Intelora-Skyth/telegram-bot-api v1.0.0
+replace github.com/go-telegram-bot-api/telegram-bot-api => github.com/MUSTAFA-A-KHAN/telegram-bot-api v1.0.1
