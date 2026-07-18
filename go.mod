@@ -3,6 +3,7 @@ module github.com/MUSTAFA-A-KHAN/telegram-bot-anime
 go 1.25.0
 
 require (
+	github.com/OvyFlash/telegram-bot-api v0.0.0-20260715235732-aca8bf3898bb
 	github.com/STRockefeller/dictionaries v0.0.0-20230418055520-d602c50bb54f
 	github.com/agnivade/levenshtein v1.2.1
 	github.com/fogleman/gg v1.3.0
