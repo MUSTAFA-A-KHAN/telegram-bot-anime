@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"log"
 	"net/url"
+	"regexp"
 	"strings"
 	"time"
-	"regexp"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -18,11 +18,6 @@ func handleFilters(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 	chatID := message.Chat.ID
 	settings := GetChatSettings(chatID)
 
-	// Don't filter group admins
-	if isAdmin(bot, chatID, message.From.ID) {
-		return
-	}
-
 	text := strings.ToLower(strings.TrimSpace(message.Text))
 	if text == "" && message.Caption != "" {
 		text = strings.ToLower(strings.TrimSpace(message.Caption))
@@ -32,6 +27,11 @@ func handleFilters(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 	if rule, exists := settings.Rules[text]; exists {
 		sendRuleResponse(bot, chatID, message.MessageID, rule)
 		// We don't return here just in case the message also contained a bad link
+	}
+
+	// Don't filter group admins
+	if isAdmin(bot, chatID, message.From.ID) {
+		return
 	}
 
 	// 2. Scam Detection
@@ -84,6 +84,10 @@ func sendRuleResponse(bot *tgbotapi.BotAPI, chatID int64, replyToMessageID int, 
 		videoMsg := tgbotapi.NewVideoShare(chatID, rule.ResponseFileID)
 		videoMsg.ReplyToMessageID = replyToMessageID
 		msg = videoMsg
+	case "voice":
+		voiceMsg := tgbotapi.NewVoiceShare(chatID, rule.ResponseFileID)
+		voiceMsg.ReplyToMessageID = replyToMessageID
+		msg = voiceMsg
 	case "document":
 		docMsg := tgbotapi.NewDocumentShare(chatID, rule.ResponseFileID)
 		docMsg.ReplyToMessageID = replyToMessageID
@@ -224,6 +228,10 @@ func isAllowedDomain(link string, allowedDomains []string) bool {
 	host = strings.TrimPrefix(host, "www.")
 
 	for _, domain := range allowedDomains {
+		// If the allowed entry is a full URL, match it as a prefix.
+		if strings.HasPrefix(strings.TrimSuffix(strings.ToLower(link), "/"), strings.TrimSuffix(strings.ToLower(domain), "/")) {
+			return true
+		}
 		domain = strings.ToLower(strings.TrimPrefix(domain, "www."))
 		if host == domain || strings.HasSuffix(host, "."+domain) {
 			return true
