@@ -3284,7 +3284,7 @@ gally
 dizen
 wedge
 kanga
-haham
+&m
 nuque
 spurn
 until
@@ -10513,7 +10513,7 @@ duvet
 sepoy
 rusts
 curse
-hahas
+&s
 kerve
 kyaks
 longa
