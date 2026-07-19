@@ -16,11 +16,59 @@ var urlRegex = regexp.MustCompile(`(?i)(https?:\/\/[^\s]+)|(www\.[^\s]+)|([a-zA-
 
 func handleFilters(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.Client) {
 	chatID := message.Chat.ID
+	userID := message.From.ID
 	settings := GetChatSettings(chatID)
 
 	text := strings.ToLower(strings.TrimSpace(message.Text))
 	if text == "" && message.Caption != "" {
 		text = strings.ToLower(strings.TrimSpace(message.Caption))
+	}
+
+	// BOT MENTION OR REPLY MENU (Admins only)
+	if isAdmin(bot, chatID, userID) && message.ReplyToMessage != nil {
+		isBotMentioned := false
+		botUsername := bot.Self.UserName
+
+		// Check if the reply text mentions the bot
+		if strings.Contains(text, "@"+strings.ToLower(botUsername)) {
+			isBotMentioned = true
+		}
+
+		if isBotMentioned {
+			SetPendingRuleMessage(chatID, userID, message.ReplyToMessage)
+
+			// Show inline menu for this message
+			msg := tgbotapi.NewMessage(chatID, "What would you like to do with the replied message?")
+			msg.ReplyToMessageID = message.MessageID
+
+			var keyboard [][]tgbotapi.InlineKeyboardButton
+
+			// Always allow adding as a rule response
+			keyboard = append(keyboard, tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("📝 Add as Rule Response", "menu_add_rule"),
+			))
+
+			// If it's text, we can also add it as a scam keyword
+			if message.ReplyToMessage.Text != "" {
+				keyboard = append(keyboard, tgbotapi.NewInlineKeyboardRow(
+					tgbotapi.NewInlineKeyboardButtonData("🚫 Add as Scam Keyword", "menu_add_scam"),
+				))
+			}
+
+			keyboard = append(keyboard, tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("❌ Cancel", "menu_cancel"),
+			))
+
+			msg.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(keyboard...)
+			bot.Send(msg)
+			return
+		}
+	}
+
+	// INTERACTIVE FLOW HANDLING
+	if state, exists := GetInteractiveState(chatID, userID); exists {
+		handleInteractiveState(bot, message, client, settings, state)
+		return
 	}
 
 	// 1. Auto-responder Rule Match (Exact Match)
@@ -239,4 +287,89 @@ func isAllowedDomain(link string, allowedDomains []string) bool {
 	}
 
 	return false
+}
+
+func handleInteractiveState(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.Client, settings *ModChatSettings, state AddRuleState) {
+	chatID := message.Chat.ID
+	userID := message.From.ID
+
+	if message.Text == "/cancel" {
+		ClearInteractiveState(chatID, userID)
+		sendMessage(bot, chatID, "Rule creation cancelled.")
+		return
+	}
+
+	if state.Step == 1 {
+		// Expecting trigger word
+		if message.Text == "" {
+			sendMessage(bot, chatID, "Please send a text keyword to trigger the rule, or type /cancel to abort.")
+			return
+		}
+
+		trigger := strings.ToLower(strings.TrimSpace(message.Text))
+		SetInteractiveState(chatID, userID, AddRuleState{Step: 2, TriggerWord: trigger})
+
+		msg := tgbotapi.NewMessage(chatID, fmt.Sprintf("Great! Now send the text or media that should be sent when someone says `%s`.", trigger))
+		msg.ParseMode = "Markdown"
+		msg.ReplyMarkup = tgbotapi.ForceReply{ForceReply: true, Selective: true}
+		bot.Send(msg)
+		return
+	}
+
+	if state.Step == 2 || state.Step == 3 {
+
+		var msgToProcess *tgbotapi.Message
+
+		if state.Step == 2 {
+			msgToProcess = message
+		} else { // Step 3
+			// We already have the response from the pending rule message
+			// And the current message contains the trigger word
+			if message.Text == "" {
+				sendMessage(bot, chatID, "Please send a text keyword to trigger the rule, or type /cancel to abort.")
+				return
+			}
+			state.TriggerWord = strings.ToLower(strings.TrimSpace(message.Text))
+
+			pendingMsg, exists := GetAndClearPendingRuleMessage(chatID, userID)
+			if !exists || pendingMsg == nil {
+				sendMessage(bot, chatID, "Error: The pending message was lost. Please try again.")
+				ClearInteractiveState(chatID, userID)
+				return
+			}
+			msgToProcess = pendingMsg
+		}
+
+		// Expecting response
+		rule := ModRuleDoc{TriggerWord: state.TriggerWord}
+
+		if msgToProcess.Photo != nil && len(*msgToProcess.Photo) > 0 {
+			photos := *msgToProcess.Photo
+			rule.ResponseType = "photo"
+			rule.ResponseFileID = photos[len(photos)-1].FileID
+		} else if msgToProcess.Video != nil {
+			rule.ResponseType = "video"
+			rule.ResponseFileID = msgToProcess.Video.FileID
+		} else if msgToProcess.Voice != nil {
+			rule.ResponseType = "voice"
+			rule.ResponseFileID = msgToProcess.Voice.FileID
+		} else if msgToProcess.Document != nil {
+			rule.ResponseType = "document"
+			rule.ResponseFileID = msgToProcess.Document.FileID
+		} else if msgToProcess.Animation != nil {
+			rule.ResponseType = "animation"
+			rule.ResponseFileID = msgToProcess.Animation.FileID
+		} else if msgToProcess.Text != "" {
+			rule.ResponseType = "text"
+			rule.ResponseText = msgToProcess.Text
+		} else {
+			sendMessage(bot, chatID, "Unsupported media type. Please send text, photo, video, document, voice, or animation.")
+			return
+		}
+
+		settings.Rules[state.TriggerWord] = rule
+		SaveChatSettings(client, settings)
+		ClearInteractiveState(chatID, userID)
+		sendMessage(bot, chatID, fmt.Sprintf("✅ Rule added for keyword: `%s`", state.TriggerWord))
+	}
 }

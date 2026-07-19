@@ -68,6 +68,17 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, dbClient int
 		return
 	}
 
+	// Also handle commands in captions
+	if message.Caption != "" {
+		isCmd, cmd, args := ExtractCommandFromCaption(message)
+		if isCmd {
+			// We can slightly mutate the message so handleCommand works
+			message.Text = "/" + cmd + " " + args
+			handleCommand(bot, message, client)
+			return
+		}
+	}
+
 	// Handle regular messages for filtering and auto-responder
 	handleFilters(bot, message, client)
 }
@@ -98,6 +109,17 @@ func handleCommand(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		}
 
 		trigger := strings.ToLower(strings.TrimSpace(parts[0]))
+
+		// INTERACTIVE FLOW INIT
+		if trigger == "" && message.ReplyToMessage == nil && message.Caption == "" {
+			SetInteractiveState(chatID, userID, AddRuleState{Step: 1})
+
+			msg := tgbotapi.NewMessage(chatID, "Please send the keyword for the new rule.")
+			msg.ReplyMarkup = tgbotapi.ForceReply{ForceReply: true, Selective: true}
+			bot.Send(msg)
+			return
+		}
+
 		rule := ModRuleDoc{TriggerWord: trigger}
 
 		if message.ReplyToMessage != nil {
@@ -126,12 +148,40 @@ func handleCommand(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 				sendMessage(bot, chatID, "Unsupported media type for rule.")
 				return
 			}
+		} else if message.Caption != "" {
+			// Support direct caption rule addition without replying
+			if message.Photo != nil && len(*message.Photo) > 0 {
+				photos := *message.Photo
+				rule.ResponseType = "photo"
+				rule.ResponseFileID = photos[len(photos)-1].FileID
+			} else if message.Video != nil {
+				rule.ResponseType = "video"
+				rule.ResponseFileID = message.Video.FileID
+			} else if message.Voice != nil {
+				rule.ResponseType = "voice"
+				rule.ResponseFileID = message.Voice.FileID
+			} else if message.Document != nil {
+				rule.ResponseType = "document"
+				rule.ResponseFileID = message.Document.FileID
+			} else if message.Animation != nil {
+				rule.ResponseType = "animation"
+				rule.ResponseFileID = message.Animation.FileID
+			} else {
+				sendMessage(bot, chatID, "Unsupported media type for rule in caption.")
+				return
+			}
 		} else if len(parts) > 1 {
 			// Text rule
 			rule.ResponseType = "text"
 			rule.ResponseText = strings.TrimSpace(parts[1])
 		} else {
-			sendMessage(bot, chatID, "Please provide a response text or reply to a message with the command.")
+			// They provided a trigger, but no response or reply
+			SetInteractiveState(chatID, userID, AddRuleState{Step: 2, TriggerWord: trigger})
+
+			msg := tgbotapi.NewMessage(chatID, fmt.Sprintf("Great! Now send the text or media that should be sent when someone says `%s`.", trigger))
+			msg.ParseMode = "Markdown"
+			msg.ReplyMarkup = tgbotapi.ForceReply{ForceReply: true, Selective: true}
+			bot.Send(msg)
 			return
 		}
 
@@ -262,15 +312,59 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 	case "toggle_block_links":
 		settings.BlockLinks = !settings.BlockLinks
 		SaveChatSettings(client, settings)
+		updateSettingsMenu(bot, callback.Message, settings)
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Settings updated."))
 
 	case "toggle_scam_detection":
 		settings.ScamDetection = !settings.ScamDetection
 		SaveChatSettings(client, settings)
-	}
+		updateSettingsMenu(bot, callback.Message, settings)
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Settings updated."))
 
-	// Update the menu
-	updateSettingsMenu(bot, callback.Message, settings)
-	bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Settings updated."))
+	case "menu_add_rule":
+		// Enter the interactive flow but we already have the response
+		SetInteractiveState(chatID, userID, AddRuleState{Step: 3}) // Step 3 means we are just waiting for the trigger word
+
+		msg := tgbotapi.NewMessage(chatID, "What keyword should trigger this rule?")
+		msg.ReplyMarkup = tgbotapi.ForceReply{ForceReply: true, Selective: true}
+		bot.Send(msg)
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
+
+		// Delete the inline menu
+		delMsg := tgbotapi.NewDeleteMessage(chatID, callback.Message.MessageID)
+		bot.Send(delMsg)
+
+	case "menu_add_scam":
+		if pendingMsg, ok := GetAndClearPendingRuleMessage(chatID, userID); ok && pendingMsg.Text != "" {
+			keyword := strings.ToLower(strings.TrimSpace(pendingMsg.Text))
+
+			// Check if already exists
+			exists := false
+			for _, w := range settings.ScamKeywords {
+				if w == keyword {
+					exists = true
+					break
+				}
+			}
+
+			if !exists {
+				settings.ScamKeywords = append(settings.ScamKeywords, keyword)
+				SaveChatSettings(client, settings)
+				sendMessage(bot, chatID, fmt.Sprintf("✅ Added `%s` to scam filter.", keyword))
+			} else {
+				sendMessage(bot, chatID, "Phrase is already in the scam filter.")
+			}
+		}
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
+		delMsg := tgbotapi.NewDeleteMessage(chatID, callback.Message.MessageID)
+		bot.Send(delMsg)
+
+	case "menu_cancel":
+		GetAndClearPendingRuleMessage(chatID, userID) // Clear the pending message
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Cancelled"))
+		delMsg := tgbotapi.NewDeleteMessage(chatID, callback.Message.MessageID)
+		bot.Send(delMsg)
+	}
 }
 
 func sendSettingsMenu(bot *tgbotapi.BotAPI, chatID int64, settings *ModChatSettings) {
