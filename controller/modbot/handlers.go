@@ -109,6 +109,10 @@ func handleCommand(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			} else if message.ReplyToMessage.Video != nil {
 				rule.ResponseType = "video"
 				rule.ResponseFileID = message.ReplyToMessage.Video.FileID
+
+			} else if message.ReplyToMessage.Voice != nil {
+				rule.ResponseType = "voice"
+				rule.ResponseFileID = message.ReplyToMessage.Voice.FileID
 			} else if message.ReplyToMessage.Document != nil {
 				rule.ResponseType = "document"
 				rule.ResponseFileID = message.ReplyToMessage.Document.FileID
