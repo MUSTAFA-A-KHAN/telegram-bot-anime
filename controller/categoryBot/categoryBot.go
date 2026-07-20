@@ -353,16 +353,16 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		case "rules":
 			rulesText := "🎮 *Game Rules*\n\n" +
 				"👥 *Players*\n" +
-				"• Guess the word by typing your answer.\n" +
-				"• Use `/hint` to get clues (wait 1 min between hints).\n" +
-				"• Use `/reveal` if you give up (available after 10 mins).\n\n" +
+				"🧠 — Guess the word by typing your answer.\n" +
+				"🕵️ — Use `/hint` to get clues (wait 1 min between hints).\n" +
+				"🏳️ — Use `/reveal` if you give up (available after 10 mins).\n\n" +
 				"👑 *Leaders*\n" +
-				"• Claim leadership via button or `/word` command.\n" +
-				"• Explain the word without saying it directly.\n" +
-				"• Drop leadership or get a new word via buttons.\n\n" +
+				"🏅 — Claim leadership via button or `/word` command.\n" +
+				"🗣️ — Explain the word without saying it directly.\n" +
+				"🔄 — Drop leadership or get a new word via buttons.\n\n" +
 				"🌍 *General*\n" +
-				"• Be respectful and fair.\n" +
-				"• Have fun and enjoy the game!\n\n" +
+				"🤝 — Be respectful and fair.\n" +
+				"🎉 — Have fun and enjoy the game!\n\n" +
 				"💡 *Tip:* Type `/word` to start or `/rules` to view this menu."
 			msg := tgbotapi.NewMessage(chatID, rulesText)
 			msg.ParseMode = "Markdown"
@@ -1190,16 +1190,16 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 	case "rules":
 		rulesText := "🎮 *Game Rules*\n\n" +
 			"👥 *Players*\n" +
-			"• Guess the word by typing your answer.\n" +
-			"• Use `/hint` to get clues (wait 1 min between hints).\n" +
-			"• Use `/reveal` if you give up (available after 10 mins).\n\n" +
+			"🧠 — Guess the word by typing your answer.\n" +
+			"🕵️ — Use `/hint` to get clues (wait 1 min between hints).\n" +
+			"🏳️ — Use `/reveal` if you give up (available after 10 mins).\n\n" +
 			"👑 *Leaders*\n" +
-			"• Claim leadership by clicking 'Explain' or using the appropriate command.\n" +
-			"• Explain the word without saying it directly.\n" +
-			"• Drop leadership or get a new word via buttons.\n\n" +
+			"🏅 — Claim leadership by clicking 'Explain' or using the appropriate command.\n" +
+			"🗣️ — Explain the word without saying it directly.\n" +
+			"🔄 — Drop leadership or get a new word via buttons.\n\n" +
 			"🌍 *General*\n" +
-			"• Be respectful and fair.\n" +
-			"• Have fun and enjoy the game!\n\n" +
+			"🤝 — Be respectful and fair.\n" +
+			"🎉 — Have fun and enjoy the game!\n\n" +
 			"💡 *Tip:* Type `/word` to start or `/rules` to view this menu."
 		msg := tgbotapi.NewMessage(chatID, rulesText)
 		msg.ParseMode = "Markdown"

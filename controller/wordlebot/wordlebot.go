@@ -426,7 +426,7 @@ func HandleWordleCommand(bot *tgbotapi.BotAPI, chatID int64, username string, cl
 					missEmoji = "⬜"
 				}
 
-				msg := fmt.Sprintf("🐊 🖼 *Wordle started!* ✨\n\n• The word consists of 5 letters.\n• You have %d attempts.\n\n💡 Hints:\n🟩 Correct letter in the right spot\n🟨 Correct letter but in the wrong spot\n%s Letter is not in the word\n\nSend a 5-letter word to guess.", ws.MaxAttempts, missEmoji)
+				msg := fmt.Sprintf("🐊 🖼 *Wordle started!* ✨\n\n🔡 — The word consists of 5 letters.\n🎯 — You have %d attempts.\n\n💡 Hints:\n🟩 Correct letter in the right spot\n🟨 Correct letter but in the wrong spot\n%s Letter is not in the word\n\nSend a 5-letter word to guess.", ws.MaxAttempts, missEmoji)
 				view.SendMessageWithButtons(bot, chatID, msg, buttons)
 			case <-ws.CancelChan:
 				// Cancelled by a user
@@ -461,7 +461,7 @@ func HandleWordleCommand(bot *tgbotapi.BotAPI, chatID int64, username string, cl
 		missEmoji = "⬜"
 	}
 
-	msg := fmt.Sprintf("🐊 🖼 *Wordle started!* ✨\n\n• The word consists of 5 letters.\n• You have %d attempts.\n\n💡 Hints:\n🟩 Correct letter in the right spot\n🟨 Correct letter but in the wrong spot\n%s Letter is not in the word\n\nSend a 5-letter word to guess.", ws.MaxAttempts, missEmoji)
+	msg := fmt.Sprintf("🐊 🖼 *Wordle started!* ✨\n\n🔡 — The word consists of 5 letters.\n🎯 — You have %d attempts.\n\n💡 Hints:\n🟩 Correct letter in the right spot\n🟨 Correct letter but in the wrong spot\n%s Letter is not in the word\n\nSend a 5-letter word to guess.", ws.MaxAttempts, missEmoji)
 	view.SendMessageWithButtons(bot, chatID, msg, buttons)
 }
 

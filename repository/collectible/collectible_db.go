@@ -12,11 +12,11 @@ import (
 )
 
 const (
-	dbName                 = "Telegram"
-	templatesCollection    = "CollectibleTemplates"
-	itemsCollection        = "Collectibles"
-	listingsCollection     = "MarketListings"
-	counterCollection      = "Counters" // Used for generating unique serial numbers
+	dbName              = "Telegram"
+	templatesCollection = "CollectibleTemplates"
+	itemsCollection     = "Collectibles"
+	listingsCollection  = "MarketListings"
+	counterCollection   = "Counters" // Used for generating unique serial numbers
 )
 
 // GetTemplates returns all available collectible templates

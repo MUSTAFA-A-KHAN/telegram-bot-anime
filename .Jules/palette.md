@@ -20,3 +20,7 @@
 ## $(date +%Y-%m-%d) - Add ForceReply to user input messages
 **Learning:** For interactive text-guessing interactions that requires user context, a simple message might be missed or require manual 'replying'. Adding ForceReply to the message ensures the user prompt keyboard forces the user to reply to the bot message, linking the contexts seamlessly.
 **Action:** When creating text prompts in Telegram Bots that wait for user inputs to update a specific state (like a custom word), attach `ForceReply` to the sent message using `tgbotapi.ForceReply{ForceReply: true}`.
+
+## 2024-06-15 - Improve Visual Hierarchy for Lists
+**Learning:** Dense text blocks with standard bullet points (`•`) are hard to scan on mobile devices. Using context-relevant emojis combined with em-dashes (`—`) instead of bullet points significantly improves readability and visual hierarchy, making the interface more pleasant to use.
+**Action:** When creating or modifying lists in textual outputs (like `/rules` or introductory messages), replace standard bullet points with context-relevant emojis and em-dashes to enhance scannability.

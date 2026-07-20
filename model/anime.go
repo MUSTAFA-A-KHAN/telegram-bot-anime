@@ -205,7 +205,6 @@ func GenerateAuroraHint(word string) string {
 	return strings.Join(result, " + ")
 }
 
-
 // GetWordMeaning fetches the meaning of a word from the cache or dictionary API.
 func GetWordMeaning(word string) string {
 	if len(word) == 0 {
