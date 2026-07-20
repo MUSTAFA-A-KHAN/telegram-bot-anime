@@ -1,9 +1,9 @@
 package modbot
 
 import (
-	"log"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/repository"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	"log"
 )
 
 // StartModBot initializes and starts the moderator bot

@@ -22,12 +22,12 @@ type ModRuleDoc struct {
 
 // ModChatSettings represents the moderator settings for a specific chat
 type ModChatSettings struct {
-	ChatID        int64                 `bson:"_id"`
-	BlockLinks    bool                  `bson:"block_links"`
-	ScamDetection bool                  `bson:"scam_detection"`
-	ScamKeywords  []string              `bson:"scam_keywords"`
-	AllowedDomains []string             `bson:"allowed_domains"`
-	Rules         map[string]ModRuleDoc `bson:"rules"` // TriggerWord as key for O(1) lookups
+	ChatID         int64                 `bson:"_id"`
+	BlockLinks     bool                  `bson:"block_links"`
+	ScamDetection  bool                  `bson:"scam_detection"`
+	ScamKeywords   []string              `bson:"scam_keywords"`
+	AllowedDomains []string              `bson:"allowed_domains"`
+	Rules          map[string]ModRuleDoc `bson:"rules"` // TriggerWord as key for O(1) lookups
 }
 
 // UserViolationDoc tracks infractions for a user in a specific chat
@@ -40,8 +40,8 @@ type UserViolationDoc struct {
 }
 
 var (
-	settingsCache = make(map[int64]*ModChatSettings)
-	settingsMutex sync.RWMutex
+	settingsCache   = make(map[int64]*ModChatSettings)
+	settingsMutex   sync.RWMutex
 	violationsCache = make(map[string]*UserViolationDoc)
 	violationsMutex sync.RWMutex
 )
@@ -73,7 +73,7 @@ func GetChatSettings(chatID int64) *ModChatSettings {
 		ChatID:         chatID,
 		BlockLinks:     false,
 		ScamDetection:  false,
-		ScamKeywords:   []string{"paid survey", "crypto research"}, // Default scam words
+		ScamKeywords:   []string{"paid survey", "crypto research"},           // Default scam words
 		AllowedDomains: []string{"youtube.com", "wikipedia.org", "youtu.be"}, // Default allowed domains
 		Rules:          make(map[string]ModRuleDoc),
 	}
@@ -200,10 +200,10 @@ func IncrementUserViolations(client *mongo.Client, chatID int64, userID int) int
 	v, exists := violationsCache[id]
 	if !exists {
 		v = &UserViolationDoc{
-			ID:        id,
-			ChatID:    chatID,
-			UserID:    userID,
-			Count:     0,
+			ID:     id,
+			ChatID: chatID,
+			UserID: userID,
+			Count:  0,
 		}
 		violationsCache[id] = v
 	}

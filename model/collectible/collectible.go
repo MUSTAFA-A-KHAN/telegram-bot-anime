@@ -35,11 +35,11 @@ type Item struct {
 
 // MarketListing represents an item currently listed for sale by a user
 type MarketListing struct {
-	ID        string    `bson:"_id,omitempty"`
-	ItemID    string    `bson:"item_id"`
-	SellerID  int       `bson:"seller_id"`
-	Price     int       `bson:"price"`
-	ListedAt  time.Time `bson:"listed_at"`
+	ID       string    `bson:"_id,omitempty"`
+	ItemID   string    `bson:"item_id"`
+	SellerID int       `bson:"seller_id"`
+	Price    int       `bson:"price"`
+	ListedAt time.Time `bson:"listed_at"`
 }
 
 // CollectionScore assigns a base value to rarities for leaderboard purposes
