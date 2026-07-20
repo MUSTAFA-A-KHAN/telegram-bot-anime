@@ -1,8 +1,8 @@
 package modbot
 
 import (
-	"strings"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	"strings"
 )
 
 // ExtractCommandFromCaption extracts a command and its arguments from a message caption if it exists.

@@ -1,8 +1,8 @@
 package modbot
 
 import (
-	"sync"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	"sync"
 )
 
 // AddRuleState represents the current state of a user's interactive addrule session
