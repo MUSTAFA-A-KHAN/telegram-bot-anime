@@ -253,6 +253,68 @@ func DeleteMessageAfterDelay(bot *tgbotapi.BotAPI, chatID int64, messageID int, 
 
 }
 
+var ovyBot *tgbotapiv5Ovy.BotAPI
+
+// SendScramyRichMessage sends a rich message specifically designed for Scramy H1 mode using github.com/OvyFlash/telegram-bot-api
+func SendScramyRichMessage(botToken string, chatID int64, textTop string, letters string, textBottom string, buttons tgbotapi.InlineKeyboardMarkup) error {
+	if ovyBot == nil {
+		bot, err := tgbotapiv5Ovy.NewBotAPI(botToken)
+		if err != nil {
+			return fmt.Errorf("failed to init OvyFlash bot: %w", err)
+		}
+		ovyBot = bot
+	}
+
+	// Construct the OvyFlash rich message blocks
+	msg := tgbotapiv5Ovy.NewSendRichMessage(chatID, tgbotapiv5Ovy.NewInputRichMessageBlocks(
+		tgbotapiv5Ovy.InputRichBlockParagraph{
+			Type: "paragraph",
+			Text: textTop,
+		},
+		tgbotapiv5Ovy.InputRichBlockSectionHeading{
+			Type: "section_heading",
+			Text: letters,
+			Size: 1, // H1
+		},
+		tgbotapiv5Ovy.InputRichBlockParagraph{
+			Type: "paragraph",
+			Text: textBottom,
+		},
+	))
+
+	// Convert tgbotapi.InlineKeyboardMarkup to tgbotapiv5Ovy.InlineKeyboardMarkup
+	var ovyKeyboard [][]tgbotapiv5Ovy.InlineKeyboardButton
+	for _, row := range buttons.InlineKeyboard {
+		var ovyRow []tgbotapiv5Ovy.InlineKeyboardButton
+		for _, btn := range row {
+			var ovyBtn tgbotapiv5Ovy.InlineKeyboardButton
+			ovyBtn.Text = btn.Text
+			if btn.CallbackData != nil {
+				ovyBtn.CallbackData = btn.CallbackData
+			}
+			if btn.URL != nil {
+				ovyBtn.URL = btn.URL
+			}
+			// Copy other fields if needed, but CallbackData and URL are standard
+			ovyRow = append(ovyRow, ovyBtn)
+		}
+		ovyKeyboard = append(ovyKeyboard, ovyRow)
+	}
+
+	if len(ovyKeyboard) > 0 {
+		msg.ReplyMarkup = tgbotapiv5Ovy.InlineKeyboardMarkup{
+			InlineKeyboard: ovyKeyboard,
+		}
+	}
+
+	_, err := ovyBot.SendRichMessage(msg)
+	if err != nil {
+		return fmt.Errorf("failed to send rich message request: %w", err)
+	}
+
+	return nil
+}
+
 // SendMessagehtmlWithButtons sends an HTML message with inline keyboard buttons to the user
 func SendMessagehtmlWithButtons(bot *tgbotapi.BotAPI, chatID int64, text string, buttons tgbotapi.InlineKeyboardMarkup) error {
 	msg := tgbotapi.NewMessage(chatID, text)
