@@ -13,13 +13,15 @@ import (
 )
 
 var urlRegex = regexp.MustCompile(`(?i)(https?:\/\/[^\s]+)|(www\.[^\s]+)|([a-zA-Z0-9-]+\.[a-zA-Z]{2,}(\/[^\s]*)?)`)
+// groupAnonymousBotID is the Telegram user ID for GroupAnonymousBot,
+// used when an admin sends a message anonymously as the group.
+const groupAnonymousBotID = 1087968824
 
 func handleFilters(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.Client) {
 	chatID := message.Chat.ID
 
-	// Anonymous messages (message.From == nil) are sent by admins/owners
-	// who chose to post as the group. Skip all filtering for these messages.
-	if message.From == nil {
+	// Messages sent via GroupAnonymousBot (anonymous admins) should not be filtered.
+	if message.From == nil || message.From.ID == groupAnonymousBotID {
 		return
 	}
 
@@ -165,8 +167,8 @@ func sendRuleResponse(bot *tgbotapi.BotAPI, chatID int64, replyToMessageID int, 
 func handleViolation(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.Client, reason string) {
 	chatID := message.Chat.ID
 
-	// Anonymous messages are from admins/owners; skip violation handling.
-	if message.From == nil {
+	// Messages from GroupAnonymousBot (anonymous admins) should not be filtered.
+	if message.From == nil || message.From.ID == groupAnonymousBotID {
 		return
 	}
 

@@ -86,8 +86,8 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, dbClient int
 func handleCommand(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.Client) {
 	chatID := message.Chat.ID
 
-	// Anonymous messages are from admins/owners; skip command processing.
-	if message.From == nil {
+	// Messages from GroupAnonymousBot (anonymous admins) should not be processed.
+	if message.From == nil || message.From.ID == groupAnonymousBotID {
 		return
 	}
 
