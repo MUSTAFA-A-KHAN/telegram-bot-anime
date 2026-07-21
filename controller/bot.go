@@ -737,7 +737,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 				"📝 `/word` — Start a new game\n" +
 				"📖 `/rules` — Learn how to play\n" +
 				"📊 `/stats` — View your scores\n\n" +
-				"Have fun!"
+				"🎉 Have fun!"
 			view.SendMessage(bot, message.Chat.ID, welcomeMsg)
 		}
 	case "setting":
