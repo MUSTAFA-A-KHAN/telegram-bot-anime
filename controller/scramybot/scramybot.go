@@ -677,16 +677,16 @@ func HandleGuess(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.
 			),
 		)
 
-		if isH1 {
-			// Rich text cannot easily be a reply with the current OvyFlash types without constructing a custom payload,
-			// and our helper SendScramyRichMessage doesn't currently support replying. We will send it as a normal message for H1.
-			topText := msg
-			bottomText := ""
-			lettersStr := getLetterString(ss.Letters, false)
-			view.SendScramyRichMessage(bot.Token, chatID, topText, lettersStr, bottomText, buttons)
-		} else {
-			view.ReplyToMessageWithButtonsHTML(bot, message.MessageID, chatID, msg, buttons)
-		}
+		// if isH1 {
+		// 	// Rich text cannot easily be a reply with the current OvyFlash types without constructing a custom payload,
+		// 	// and our helper SendScramyRichMessage doesn't currently support replying. We will send it as a normal message for H1.
+		// 	topText := msg
+		// 	bottomText := ""
+		// 	lettersStr := getLetterString(ss.Letters, false)
+		// 	view.SendScramyRichMessage(bot.Token, chatID, topText, lettersStr, bottomText, buttons)
+		// } else {
+		view.ReplyToMessageWithButtonsHTML(bot, message.MessageID, chatID, msg, buttons)
+		// }
 	} else {
 		if isH1 {
 			topText := fmt.Sprintf("%s found \"%s\"\n+%d 💎\n\n", message.From.FirstName, capitalizeWord(guess), points)
