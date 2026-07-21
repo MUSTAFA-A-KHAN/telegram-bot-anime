@@ -20,7 +20,7 @@ func main() {
 	categorycharades := CategoryVariable
 	instagram := "7995903003:AAEcvtxq1Swak9W_uuMwQ-Jv-YXKOp_i-pw"
 	fontbotToken := "YOUR_FONT_BOT_TOKEN_HERE" // Replace with your actual font bot token
-	modbotToken := os.Getenv("MOD_BOT_TOKEN")  // Token for the moderator bot
+	modbotToken := os.Getenv("MOD_BOT_TOKEN") // Token for the moderator bot
 	// WaitGroup to wait for all goroutines to finish
 	var wg sync.WaitGroup
 
