@@ -115,14 +115,10 @@ func SendMessageWithButtonsV2(chatID int64, text string, buttons tgbotapi.Inline
 	return err
 }
 
-// SendRichMessage sends a rich message using the OvyFlash library with blocks (paragraphs, tables, images, etc.)
+// SendRichMessage sends a rich message using the OvyFlash library with blocks (paragraphs, tables, images, etc.).
+// Uses the configured CatTelegramToken and no buttons.
 func SendRichMessage(chatID int64, richMessage tgbotapiv5Ovy.InputRichMessage) error {
-	bot, _ := tgbotapiv5Ovy.NewBotAPI(config.App.CatTelegramToken)
-	_, err := bot.SendRichMessage(tgbotapiv5Ovy.NewSendRichMessage(chatID, richMessage))
-	if err != nil {
-		log.Print("Error sending rich message:", err)
-	}
-	return err
+	return SendRichMessageWithButtons(config.App.CatTelegramToken, chatID, richMessage, nil)
 }
 
 // SendMessageWithButtons sends a message with inline keyboard buttons to the user
@@ -251,6 +247,113 @@ func DeleteMessageAfterDelay(bot *tgbotapi.BotAPI, chatID int64, messageID int, 
 		log.Printf("Failed to delete message: %v", err)
 	}
 
+}
+
+var ovyBot *tgbotapiv5Ovy.BotAPI
+
+// getOvyBot returns a cached OvyFlash bot instance, initializing it with the given token on first call.
+func getOvyBot(botToken string) (*tgbotapiv5Ovy.BotAPI, error) {
+	if ovyBot == nil {
+		bot, err := tgbotapiv5Ovy.NewBotAPI(botToken)
+		if err != nil {
+			return nil, fmt.Errorf("failed to init OvyFlash bot: %w", err)
+		}
+		ovyBot = bot
+	}
+	return ovyBot, nil
+}
+
+// ConvertToOvyKeyboard converts tgbotapi.InlineKeyboardMarkup to tgbotapiv5Ovy.InlineKeyboardMarkup.
+func ConvertToOvyKeyboard(buttons tgbotapi.InlineKeyboardMarkup) *tgbotapiv5Ovy.InlineKeyboardMarkup {
+	var ovyKeyboard [][]tgbotapiv5Ovy.InlineKeyboardButton
+	for _, row := range buttons.InlineKeyboard {
+		var ovyRow []tgbotapiv5Ovy.InlineKeyboardButton
+		for _, btn := range row {
+			var ovyBtn tgbotapiv5Ovy.InlineKeyboardButton
+			ovyBtn.Text = btn.Text
+			if btn.CallbackData != nil {
+				ovyBtn.CallbackData = btn.CallbackData
+			}
+			if btn.URL != nil {
+				ovyBtn.URL = btn.URL
+			}
+			ovyRow = append(ovyRow, ovyBtn)
+		}
+		ovyKeyboard = append(ovyKeyboard, ovyRow)
+	}
+	if len(ovyKeyboard) == 0 {
+		return nil
+	}
+	return &tgbotapiv5Ovy.InlineKeyboardMarkup{InlineKeyboard: ovyKeyboard}
+}
+
+// SendRichMessageWithButtons sends a rich message using the OvyFlash library with blocks (paragraphs, tables, images, etc.)
+// and optional inline keyboard buttons. It caches the bot instance keyed by token for reuse.
+func SendRichMessageWithButtons(botToken string, chatID int64, richMessage tgbotapiv5Ovy.InputRichMessage, buttons *tgbotapiv5Ovy.InlineKeyboardMarkup) error {
+	bot, err := getOvyBot(botToken)
+	if err != nil {
+		return err
+	}
+
+	msg := tgbotapiv5Ovy.NewSendRichMessage(chatID, richMessage)
+	if buttons != nil {
+		msg.ReplyMarkup = *buttons
+	}
+
+	_, err = bot.SendRichMessage(msg)
+	if err != nil {
+		return fmt.Errorf("failed to send rich message: %w", err)
+	}
+	return nil
+}
+
+// EditRichMessage edits an existing rich message using the OvyFlash library with blocks (paragraphs, tables, images, etc.)
+// and optional inline keyboard buttons. It caches the bot instance keyed by token for reuse.
+func EditRichMessage(botToken string, chatID int64, messageID int, richMessage tgbotapiv5Ovy.InputRichMessage, buttons *tgbotapiv5Ovy.InlineKeyboardMarkup) error {
+	bot, err := getOvyBot(botToken)
+	if err != nil {
+		return err
+	}
+
+	editMsg := tgbotapiv5Ovy.EditMessageTextConfig{
+		BaseEdit: tgbotapiv5Ovy.BaseEdit{
+			BaseChatMessage: tgbotapiv5Ovy.BaseChatMessage{
+				ChatConfig: tgbotapiv5Ovy.ChatConfig{ChatID: chatID},
+				MessageID:  messageID,
+			},
+			ReplyMarkup: buttons,
+		},
+		RichMessage: richMessage,
+	}
+
+	_, err = bot.Send(editMsg)
+	if err != nil {
+		return fmt.Errorf("failed to edit rich message: %w", err)
+	}
+	return nil
+}
+
+// SendScramyRichMessage sends a rich message specifically designed for Scramy H1 mode.
+// Deprecated: Use SendRichMessage directly with manually constructed blocks instead.
+func SendScramyRichMessage(botToken string, chatID int64, textTop string, letters string, textBottom string, buttons tgbotapi.InlineKeyboardMarkup) error {
+	richMessage := tgbotapiv5Ovy.NewInputRichMessageBlocks(
+		tgbotapiv5Ovy.InputRichBlockParagraph{
+			Type: "paragraph",
+			Text: textTop,
+		},
+		tgbotapiv5Ovy.InputRichBlockSectionHeading{
+			Type: "heading",
+			Text: letters,
+			Size: 1, // H1
+		},
+		tgbotapiv5Ovy.InputRichBlockParagraph{
+			Type: "paragraph",
+			Text: textBottom,
+		},
+	)
+
+	ovyKeyboard := ConvertToOvyKeyboard(buttons)
+	return SendRichMessageWithButtons(botToken, chatID, richMessage, ovyKeyboard)
 }
 
 // SendMessagehtmlWithButtons sends an HTML message with inline keyboard buttons to the user

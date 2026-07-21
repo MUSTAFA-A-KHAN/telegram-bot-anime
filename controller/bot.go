@@ -1574,6 +1574,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 			tgbotapi.NewInlineKeyboardRow(
 				tgbotapi.NewInlineKeyboardButtonData("Squared 🔠", "set_scramy_squared_new"),
 				tgbotapi.NewInlineKeyboardButtonData("Normal abc", "set_scramy_normal_new"),
+				tgbotapi.NewInlineKeyboardButtonData("H1 📝", "set_scramy_h1_new"),
 			),
 			tgbotapi.NewInlineKeyboardRow(
 				tgbotapi.NewInlineKeyboardButtonData("🔙 Back", "refresh_scramy_game"),
@@ -1591,6 +1592,15 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		editMsg.ReplyMarkup = &buttons
 		bot.Send(editMsg)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Scramy set to Squared"))
+		return
+	case "set_scramy_h1":
+		scramybot.UpdateScramyLetterView(chatID, "h1", client)
+		editMsg := tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, "✅ Scramy letters updated to *H1*.")
+		editMsg.ParseMode = tgbotapi.ModeMarkdown
+		buttons := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("🔙 Back to Settings", "settings_main")))
+		editMsg.ReplyMarkup = &buttons
+		bot.Send(editMsg)
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Scramy letters updated!"))
 		return
 	case "set_scramy_normal":
 		scramybot.UpdateScramyLetterView(chatID, "normal", client)
@@ -1773,6 +1783,11 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		scramybot.UpdateScramyLetterView(chatID, "normal", client)
 		scramybot.RefreshActiveGameMessage(bot, chatID, callback.Message.MessageID, client)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Scramy set to Normal"))
+		return
+	case "set_scramy_h1_new":
+		scramybot.UpdateScramyLetterView(chatID, "h1", client)
+		scramybot.RefreshActiveGameMessage(bot, chatID, callback.Message.MessageID, client)
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Scramy set to H1"))
 		return
 	case "set_wordle_view_text_new":
 		wordlebot.UpdateWordleViewType(chatID, "text", client)

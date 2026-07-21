@@ -444,14 +444,22 @@ func HandleScramyCommand(bot *tgbotapi.BotAPI, chatID int64, username string) {
 
 				settings := GetChatSettings(chatID, nil)
 				isSquared := settings.ScramyLetterView == "squared"
+				isH1 := settings.ScramyLetterView == "h1"
 
 				buttons := tgbotapi.NewInlineKeyboardMarkup(
 					tgbotapi.NewInlineKeyboardRow(
 						tgbotapi.NewInlineKeyboardButtonData("Change Layout ⚙️", "setting_scramy_letters_new"),
 					),
 				)
-				msg := fmt.Sprintf("📝 *WORD SCRAMBLE*\n\n🦴 Make words using these letters\n\n%s\n\n🔎 Words with 4 or more letters are accepted. Longer words give more points!\n\nTotal: 0/10", getLetterString(ss.Letters, isSquared))
-				view.SendMessageWithButtons(bot, chatID, msg, buttons)
+				if isH1 {
+					topText := "📝 WORD SCRAMBLE\n\n🦴 Make words using these letters\n\n"
+					bottomText := "\n\n🔎 Words with 4 or more letters are accepted. Longer words give more points!\n\nTotal: 0/10"
+					letters := getLetterString(ss.Letters, false)
+					view.SendScramyRichMessage(bot.Token, chatID, topText, letters, bottomText, buttons)
+				} else {
+					msg := fmt.Sprintf("📝 *WORD SCRAMBLE*\n\n🦴 Make words using these letters\n\n%s\n\n🔎 Words with 4 or more letters are accepted. Longer words give more points!\n\nTotal: 0/10", getLetterString(ss.Letters, isSquared))
+					view.SendMessageWithButtons(bot, chatID, msg, buttons)
+				}
 			case <-ss.CancelChan:
 				if err == nil {
 					deleteMsg := tgbotapi.NewDeleteMessage(chatID, sentMsg.MessageID)
@@ -473,14 +481,22 @@ func HandleScramyCommand(bot *tgbotapi.BotAPI, chatID int64, username string) {
 
 	settings := GetChatSettings(chatID, nil)
 	isSquared := settings.ScramyLetterView == "squared"
+	isH1 := settings.ScramyLetterView == "h1"
 
 	buttons := tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("Change Layout ⚙️", "setting_scramy_letters_new"),
 		),
 	)
-	msg := fmt.Sprintf("📝 *WORD SCRAMBLE*\n\n🦴 Make words using these letters\n\n%s\n\n🔎 Words with 4 or more letters are accepted. Longer words give more points!\n\nTotal: 0/10", getLetterString(ss.Letters, isSquared))
-	view.SendMessageWithButtons(bot, chatID, msg, buttons)
+	if isH1 {
+		topText := "📝 WORD SCRAMBLE\n\n🦴 Make words using these letters\n\n"
+		bottomText := "\n\n🔎 Words with 4 or more letters are accepted. Longer words give more points!\n\nTotal: 0/10"
+		letters := getLetterString(ss.Letters, false)
+		view.SendScramyRichMessage(bot.Token, chatID, topText, letters, bottomText, buttons)
+	} else {
+		msg := fmt.Sprintf("📝 *WORD SCRAMBLE*\n\n🦴 Make words using these letters\n\n%s\n\n🔎 Words with 4 or more letters are accepted. Longer words give more points!\n\nTotal: 0/10", getLetterString(ss.Letters, isSquared))
+		view.SendMessageWithButtons(bot, chatID, msg, buttons)
+	}
 }
 
 // CancelPendingGame cancels an ongoing new game request
@@ -584,13 +600,20 @@ func HandleGuess(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.
 
 	settings := GetChatSettings(chatID, client)
 	isSquared := settings.ScramyLetterView == "squared"
+	isH1 := settings.ScramyLetterView == "h1"
 	letterStr := getLetterString(ss.Letters, isSquared)
 
 	if len(ss.FoundWords) >= ss.MaxWords {
 		ss.Active = false
 
-		msg := fmt.Sprintf("<b>%s</b> found \"<b>%s</b>\"\n+%d 💎\n\n🪟 %s\n\nTotal words found: %d/10\n\n◐ <b>Game over</b> ◑\n\n",
-			html.EscapeString(message.From.FirstName), html.EscapeString(capitalizeWord(guess)), points, letterStr, len(ss.FoundWords))
+		var msg string
+		if isH1 {
+			msg = fmt.Sprintf("<b>%s</b> found \"<b>%s</b>\"\n+%d 💎\n\nTotal words found: %d/10\n\n◐ <b>Game over</b> ◑\n\n",
+				html.EscapeString(message.From.FirstName), html.EscapeString(capitalizeWord(guess)), points, len(ss.FoundWords))
+		} else {
+			msg = fmt.Sprintf("<b>%s</b> found \"<b>%s</b>\"\n+%d 💎\n\n🪟 %s\n\nTotal words found: %d/10\n\n◐ <b>Game over</b> ◑\n\n",
+				html.EscapeString(message.From.FirstName), html.EscapeString(capitalizeWord(guess)), points, letterStr, len(ss.FoundWords))
+		}
 
 		longestWord := ""
 		longestWordUserID := 0
@@ -654,11 +677,27 @@ func HandleGuess(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.
 			),
 		)
 
-		view.ReplyToMessageWithButtonsHTML(bot, message.MessageID, chatID, msg, buttons)
+		if isH1 {
+			// Rich text cannot easily be a reply with the current OvyFlash types without constructing a custom payload,
+			// and our helper SendScramyRichMessage doesn't currently support replying. We will send it as a normal message for H1.
+			topText := msg
+			bottomText := ""
+			lettersStr := getLetterString(ss.Letters, false)
+			view.SendScramyRichMessage(bot.Token, chatID, topText, lettersStr, bottomText, buttons)
+		} else {
+			view.ReplyToMessageWithButtonsHTML(bot, message.MessageID, chatID, msg, buttons)
+		}
 	} else {
-		msg := fmt.Sprintf("%s found \"%s\"\n+%d 💎\n\n🪟 %s\n\nTotal words found: %d/10",
-			message.From.FirstName, capitalizeWord(guess), points, letterStr, len(ss.FoundWords))
+		if isH1 {
+			topText := fmt.Sprintf("%s found \"%s\"\n+%d 💎\n\n", message.From.FirstName, capitalizeWord(guess), points)
+			bottomText := fmt.Sprintf("\n\nTotal words found: %d/10", len(ss.FoundWords))
+			lettersStr := getLetterString(ss.Letters, false)
+			view.SendScramyRichMessage(bot.Token, chatID, topText, lettersStr, bottomText, tgbotapi.InlineKeyboardMarkup{})
+		} else {
+			msg := fmt.Sprintf("%s found \"%s\"\n+%d 💎\n\n🪟 %s\n\nTotal words found: %d/10",
+				message.From.FirstName, capitalizeWord(guess), points, letterStr, len(ss.FoundWords))
 
-		view.ReplyToMessage(bot, message.MessageID, chatID, msg)
+			view.ReplyToMessage(bot, message.MessageID, chatID, msg)
+		}
 	}
 }
