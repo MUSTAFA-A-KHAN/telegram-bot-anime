@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/repository"
@@ -66,7 +67,7 @@ func LeaderBoardListButtons(client *mongo.Client, collection string, chatID int6
 			score += " 🔠"
 		}
 
-		rankDisplay := fmt.Sprintf("%d", i+1)
+		rankDisplay := strconv.Itoa(i + 1)
 		style := "primary" // Telegram only supports "primary", "success", "danger"
 		if i < 3 {
 			rankDisplay = rankEmojis[i]

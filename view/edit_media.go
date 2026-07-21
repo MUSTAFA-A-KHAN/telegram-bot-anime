@@ -8,6 +8,7 @@ import (
 	"log"
 	"mime/multipart"
 	"net/http"
+	"strconv"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
@@ -19,8 +20,8 @@ func EditMessageMediaWithStyledButtons(botToken string, chatID int64, messageID 
 	w := multipart.NewWriter(&b)
 
 	// Add chat_id and message_id
-	w.WriteField("chat_id", fmt.Sprintf("%d", chatID))
-	w.WriteField("message_id", fmt.Sprintf("%d", messageID))
+	w.WriteField("chat_id", strconv.FormatInt(chatID, 10))
+	w.WriteField("message_id", strconv.Itoa(messageID))
 
 	// Add media details as JSON string
 	mediaDetails := map[string]interface{}{

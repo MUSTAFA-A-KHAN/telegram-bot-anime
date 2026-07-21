@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"html"
 	"log"
+	"strconv"
 	"strings"
 
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/repository"
@@ -51,7 +52,7 @@ func LeaderBoardList(client *mongo.Client, collection string, chatID int64) stri
 		if collection == "WordleEn" {
 			score += " 🪙"
 		}
-		rankDisplay := fmt.Sprintf("%d", i+1)
+		rankDisplay := strconv.Itoa(i + 1)
 		if i < 3 {
 			rankDisplay = rankEmojis[i]
 		} else {

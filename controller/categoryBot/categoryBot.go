@@ -6,6 +6,7 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -1041,7 +1042,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 				name += " " + strings.Join(equippedEmojis, "")
 			}
 
-			rankDisplay := fmt.Sprintf("%d", i+1)
+			rankDisplay := strconv.Itoa(i + 1)
 			if i < 3 {
 				rankDisplay = rankEmojis[i]
 			} else {

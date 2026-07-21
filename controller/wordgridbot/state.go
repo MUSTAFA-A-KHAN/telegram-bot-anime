@@ -3,6 +3,7 @@ package wordgridbot
 import (
 	"fmt"
 	"log"
+	"strconv"
 	"sync"
 
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/repository"
@@ -54,12 +55,12 @@ func saveWordGridStateAsync(chatID int64, state *WordGridState) {
 
 	userScoresStr := make(map[string]int)
 	for k, v := range state.UserScores {
-		userScoresStr[fmt.Sprintf("%d", k)] = v
+		userScoresStr[strconv.FormatInt(k, 10)] = v
 	}
 
 	userNamesStr := make(map[string]string)
 	for k, v := range state.UserNames {
-		userNamesStr[fmt.Sprintf("%d", k)] = v
+		userNamesStr[strconv.FormatInt(k, 10)] = v
 	}
 
 	doc := WordGridStateDoc{

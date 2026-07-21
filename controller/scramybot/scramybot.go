@@ -8,6 +8,7 @@ import (
 	"math/rand"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -38,17 +39,17 @@ func saveScramyStateAsync(chatID int64, state *ScramyState) {
 	// Convert int keys to string keys for MongoDB BSON compatibility
 	userWordsStr := make(map[string][]string)
 	for k, v := range state.UserWords {
-		userWordsStr[fmt.Sprintf("%d", k)] = v
+		userWordsStr[strconv.Itoa(k)] = v
 	}
 
 	userScoresStr := make(map[string]int)
 	for k, v := range state.UserScores {
-		userScoresStr[fmt.Sprintf("%d", k)] = v
+		userScoresStr[strconv.Itoa(k)] = v
 	}
 
 	userNamesStr := make(map[string]string)
 	for k, v := range state.UserNames {
-		userNamesStr[fmt.Sprintf("%d", k)] = v
+		userNamesStr[strconv.Itoa(k)] = v
 	}
 
 	doc := ScramyStateDoc{
