@@ -16,6 +16,13 @@ var urlRegex = regexp.MustCompile(`(?i)(https?:\/\/[^\s]+)|(www\.[^\s]+)|([a-zA-
 
 func handleFilters(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.Client) {
 	chatID := message.Chat.ID
+
+	// Anonymous messages (message.From == nil) are sent by admins/owners
+	// who chose to post as the group. Skip all filtering for these messages.
+	if message.From == nil {
+		return
+	}
+
 	userID := message.From.ID
 	settings := GetChatSettings(chatID)
 
@@ -157,6 +164,12 @@ func sendRuleResponse(bot *tgbotapi.BotAPI, chatID int64, replyToMessageID int, 
 
 func handleViolation(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.Client, reason string) {
 	chatID := message.Chat.ID
+
+	// Anonymous messages are from admins/owners; skip violation handling.
+	if message.From == nil {
+		return
+	}
+
 	userID := message.From.ID
 
 	// Delete message
