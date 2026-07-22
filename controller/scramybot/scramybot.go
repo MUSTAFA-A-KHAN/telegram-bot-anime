@@ -8,6 +8,7 @@ import (
 	"math/rand"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -38,17 +39,17 @@ func saveScramyStateAsync(chatID int64, state *ScramyState) {
 	// Convert int keys to string keys for MongoDB BSON compatibility
 	userWordsStr := make(map[string][]string)
 	for k, v := range state.UserWords {
-		userWordsStr[fmt.Sprintf("%d", k)] = v
+		userWordsStr[strconv.FormatInt(int64(k), 10)] = v
 	}
 
 	userScoresStr := make(map[string]int)
 	for k, v := range state.UserScores {
-		userScoresStr[fmt.Sprintf("%d", k)] = v
+		userScoresStr[strconv.FormatInt(int64(k), 10)] = v
 	}
 
 	userNamesStr := make(map[string]string)
 	for k, v := range state.UserNames {
-		userNamesStr[fmt.Sprintf("%d", k)] = v
+		userNamesStr[strconv.FormatInt(int64(k), 10)] = v
 	}
 
 	doc := ScramyStateDoc{
@@ -541,11 +542,23 @@ func isValidWordFromLetters(word string, letters string) bool {
 	return true
 }
 
+// capitalizeWord capitalizes the first letter. Input must be lowercase.
+// capitalizeWord capitalizes the first letter and lowers the rest.
 func capitalizeWord(word string) string {
 	if len(word) == 0 {
 		return word
 	}
-	return strings.ToUpper(string(word[0])) + strings.ToLower(word[1:])
+	b := []byte(word)
+	if b[0] >= 'a' && b[0] <= 'z' {
+		b[0] -= 32
+	}
+	for i := 1; i < len(b); i++ {
+		if b[i] >= 'A' && b[i] <= 'Z' {
+			b[i] += 32
+		}
+	}
+	// Bolt Optimization: replaced strings.ToUpper and concatenations with inline slice manipulation to avoid allocations.
+	return string(b)
 }
 
 // HandleGuess processes a guess for a Scramy game
