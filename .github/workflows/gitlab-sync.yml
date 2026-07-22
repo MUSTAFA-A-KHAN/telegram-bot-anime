@@ -18,7 +18,5 @@ jobs:
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "action@github.com"
-
           git remote add gitlab https://oauth2:${{ secrets.GITLAB_TOKEN }}@gitlab.com/mustafakhan62608/telegram-bot-anime.git
-
           git push gitlab HEAD:main --force
