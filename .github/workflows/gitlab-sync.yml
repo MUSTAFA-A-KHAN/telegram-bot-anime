@@ -19,6 +19,4 @@ jobs:
           git config --global user.name "GitHub Actions"
           git config --global user.email "action@github.com"
           git remote add gitlab ${{ secrets.GITLAB_REPO }}
-          echo ${{ secrets.GITLAB_TOKEN  }}
-          echo ${{ secrets.GITLAB_REPO}}
           git push gitlab HEAD:main --force
