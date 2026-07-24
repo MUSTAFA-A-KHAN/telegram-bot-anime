@@ -28,10 +28,10 @@ func RefreshActiveGameMessage(bot *tgbotapi.BotAPI, chatID int64, messageID int,
 		),
 	)
 
-	if isH1 {
+	if isH1 || isSquared {
 		topText := "📝 WORD SCRAMBLE\n\n🦴 Make words using these letters\n\n"
 		bottomText := fmt.Sprintf("\n\n🔎 Words with 4 or more letters are accepted. Longer words give more points!\n\nTotal: %d/%d", len(ss.FoundWords), ss.MaxWords)
-		letters := getLetterString(ss.Letters, false)
+		letters := getLetterString(ss.Letters, isSquared)
 
 		richMessage := tgbotapiv5Ovy.NewInputRichMessageBlocks(
 			tgbotapiv5Ovy.InputRichBlockParagraph{
@@ -52,7 +52,7 @@ func RefreshActiveGameMessage(bot *tgbotapi.BotAPI, chatID int64, messageID int,
 		ovyKeyboard := view.ConvertToOvyKeyboard(buttons)
 		view.EditRichMessage(bot.Token, chatID, messageID, richMessage, ovyKeyboard)
 	} else {
-		msgText := fmt.Sprintf("📝 *WORD SCRAMBLE*\n\n🦴 Make words using these letters\n\n%s\n\n🔎 Words with 4 or more letters are accepted. Longer words give more points!\n\nTotal: %d/%d", getLetterString(ss.Letters, isSquared), len(ss.FoundWords), ss.MaxWords)
+		msgText := fmt.Sprintf("📝 *WORD SCRAMBLE*\n\n🦴 Make words using these letters\n\n%s\n\n🔎 Words with 4 or more letters are accepted. Longer words give more points!\n\nTotal: %d/%d", getLetterString(ss.Letters, false), len(ss.FoundWords), ss.MaxWords)
 
 		editMsg := tgbotapi.NewEditMessageText(chatID, messageID, msgText)
 		editMsg.ReplyMarkup = &buttons
