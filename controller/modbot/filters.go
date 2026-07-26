@@ -26,6 +26,21 @@ func handleFilters(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
         }
 
         userID := message.From.ID
+
+        // Globally banned users: delete message and re-kick silently
+        if IsGloballyBanned(userID) {
+                deleteMsg := tgbotapi.NewDeleteMessage(chatID, message.MessageID)
+                bot.DeleteMessage(deleteMsg)
+                // Re-kick the user from this chat as a safeguard
+                bot.KickChatMember(tgbotapi.KickChatMemberConfig{
+                        ChatMemberConfig: tgbotapi.ChatMemberConfig{
+                                ChatID: chatID,
+                                UserID: userID,
+                        },
+                })
+                return
+        }
+
         settings := GetChatSettings(chatID)
 
         text := strings.ToLower(strings.TrimSpace(message.Text))
@@ -247,36 +262,48 @@ func handleViolation(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mo
                 bot.Send(dm) // ignore errors for DMs
         }
 
-        // Apply mute on 3rd violation
+        // Apply global ban on 3rd violation
         if count >= 3 {
-                muteDuration := time.Hour * 24 // 24-hour mute
-                untilTime := time.Now().Add(muteDuration).Unix()
+                err := GlobalBanUser(client, userID, reason, 0)
+                if err != nil {
+                        log.Printf("Failed to globally ban user %d: %v", userID, err)
+                        sendMessage(bot, chatID, fmt.Sprintf("Failed to ban %s globally. Error: %v", username, err))
+                        return
+                }
 
-                restrictConfig := tgbotapi.RestrictChatMemberConfig{
+                // Kick user from the current chat
+                kickConfig := tgbotapi.KickChatMemberConfig{
                         ChatMemberConfig: tgbotapi.ChatMemberConfig{
                                 ChatID: chatID,
                                 UserID: userID,
                         },
-                        UntilDate:             untilTime,
-                        CanSendMessages:       new(bool),
-                        CanSendMediaMessages:  new(bool),
-                        CanSendOtherMessages:  new(bool),
-                        CanAddWebPagePreviews: new(bool),
+                }
+                _, kickErr := bot.KickChatMember(kickConfig)
+                if kickErr != nil {
+                        log.Printf("Failed to kick user %d from chat %d: %v", userID, chatID, kickErr)
                 }
 
-                // Ensure pointers are false to mute
-                *restrictConfig.CanSendMessages = false
-                *restrictConfig.CanSendMediaMessages = false
-                *restrictConfig.CanSendOtherMessages = false
-                *restrictConfig.CanAddWebPagePreviews = false
-
-                _, err := bot.RestrictChatMember(restrictConfig)
-                if err != nil {
-                        log.Printf("Failed to restrict user %d in chat %d: %v", userID, chatID, err)
-                        sendMessage(bot, chatID, fmt.Sprintf("Failed to mute %s. Make sure I have administrator rights.", username))
-                } else {
-                        sendMessage(bot, chatID, fmt.Sprintf("🔇 %s has been muted for 24 hours for repeated violations.", username))
+                // Try to kick from all other known chats
+                settingsMutex.RLock()
+                for cid := range settingsCache {
+                        if cid == chatID {
+                                continue
+                        }
+                        otherKickConfig := tgbotapi.KickChatMemberConfig{
+                                ChatMemberConfig: tgbotapi.ChatMemberConfig{
+                                        ChatID: cid,
+                                        UserID: userID,
+                                },
+                        }
+                        bot.KickChatMember(otherKickConfig) // Best-effort
                 }
+                settingsMutex.RUnlock()
+
+                sendMessage(bot, chatID, fmt.Sprintf("🚫 %s has been **globally banned** for repeated violations.", username))
+
+                // Update the DM report to reflect the global ban
+                dmReport = fmt.Sprintf("🚨 *GLOBAL BAN*\nUser: %s (ID: %d)\nReason: %s\nViolations: %d\nBanned from all chats.",
+                        username, userID, reason, count)
         }
 }
 

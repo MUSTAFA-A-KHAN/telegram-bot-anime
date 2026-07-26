@@ -39,11 +39,30 @@ type UserViolationDoc struct {
 	UpdatedAt time.Time `bson:"updated_at"`
 }
 
+// GlobalBanDoc represents a globally banned user
+type GlobalBanDoc struct {
+	UserID    int       `bson:"_id"`
+	BannedAt  time.Time `bson:"banned_at"`
+	Reason    string    `bson:"reason"`
+	BannedBy  int       `bson:"banned_by"`
+}
+
+// GlobalAdminDoc represents a global administrator
+type GlobalAdminDoc struct {
+	UserID  int       `bson:"_id"`
+	AddedAt time.Time `bson:"added_at"`
+	AddedBy int       `bson:"added_by"`
+}
+
 var (
-	settingsCache   = make(map[int64]*ModChatSettings)
-	settingsMutex   sync.RWMutex
-	violationsCache = make(map[string]*UserViolationDoc)
-	violationsMutex sync.RWMutex
+	settingsCache      = make(map[int64]*ModChatSettings)
+	settingsMutex      sync.RWMutex
+	violationsCache    = make(map[string]*UserViolationDoc)
+	violationsMutex    sync.RWMutex
+	globalBansCache    = make(map[int]*GlobalBanDoc)
+	globalBansMutex    sync.RWMutex
+	globalAdminsCache  = make(map[int]bool)
+	globalAdminsMutex  sync.RWMutex
 )
 
 // GetChatSettings retrieves the settings for a chat (from cache or creates new)
@@ -177,6 +196,51 @@ func loadSettings(client *mongo.Client) {
 	}
 	violationsMutex.Unlock()
 	log.Printf("Loaded %d ModBot user violations from MongoDB", len(vResults))
+
+	// Load Global Bans
+	gbCollection := client.Database("Telegram").Collection("ModGlobalBans")
+	gbCursor, err := gbCollection.Find(context.TODO(), bson.M{})
+	if err != nil {
+		log.Printf("Failed to load global bans: %v", err)
+		return
+	}
+	defer gbCursor.Close(context.TODO())
+
+	var gbResults []GlobalBanDoc
+	if err = gbCursor.All(context.TODO(), &gbResults); err != nil {
+		log.Printf("Failed to decode global bans: %v", err)
+		return
+	}
+
+	globalBansMutex.Lock()
+	for _, gb := range gbResults {
+		copyGB := gb
+		globalBansCache[gb.UserID] = &copyGB
+	}
+	globalBansMutex.Unlock()
+	log.Printf("Loaded %d globally banned users from MongoDB", len(gbResults))
+
+	// Load Global Admins
+	gaCollection := client.Database("Telegram").Collection("ModGlobalAdmins")
+	gaCursor, err := gaCollection.Find(context.TODO(), bson.M{})
+	if err != nil {
+		log.Printf("Failed to load global admins: %v", err)
+		return
+	}
+	defer gaCursor.Close(context.TODO())
+
+	var gaResults []GlobalAdminDoc
+	if err = gaCursor.All(context.TODO(), &gaResults); err != nil {
+		log.Printf("Failed to decode global admins: %v", err)
+		return
+	}
+
+	globalAdminsMutex.Lock()
+	for _, ga := range gaResults {
+		globalAdminsCache[ga.UserID] = true
+	}
+	globalAdminsMutex.Unlock()
+	log.Printf("Loaded %d global admins from MongoDB", len(gaResults))
 }
 
 // GetUserViolations returns the number of violations a user has
@@ -232,3 +296,150 @@ func IncrementUserViolations(client *mongo.Client, chatID int64, userID int) int
 
 	return newCount
 }
+
+// IsGloballyBanned checks if a user is globally banned
+func IsGloballyBanned(userID int) bool {
+	globalBansMutex.RLock()
+	defer globalBansMutex.RUnlock()
+	_, exists := globalBansCache[userID]
+	return exists
+}
+
+// GlobalBanUser adds a user to the global ban list and saves to DB
+func GlobalBanUser(client *mongo.Client, userID int, reason string, bannedBy int) error {
+	globalBansMutex.Lock()
+	_, exists := globalBansCache[userID]
+	if exists {
+		globalBansMutex.Unlock()
+		return fmt.Errorf("user %d is already globally banned", userID)
+	}
+
+	ban := &GlobalBanDoc{
+		UserID:   userID,
+		BannedAt: time.Now(),
+		Reason:   reason,
+		BannedBy: bannedBy,
+	}
+	globalBansCache[userID] = ban
+	globalBansMutex.Unlock()
+
+	if client != nil {
+		go func() {
+			collection := client.Database("Telegram").Collection("ModGlobalBans")
+			filter := bson.M{"_id": userID}
+			update := bson.M{"$set": ban}
+			opts := options.Update().SetUpsert(true)
+
+			_, err := collection.UpdateOne(context.TODO(), filter, update, opts)
+			if err != nil {
+				log.Printf("Failed to save global ban for user %d: %v", userID, err)
+			}
+		}()
+	}
+
+	return nil
+}
+
+// GlobalUnbanUser removes a user from the global ban list and DB
+func GlobalUnbanUser(client *mongo.Client, userID int) error {
+	globalBansMutex.Lock()
+	delete(globalBansCache, userID)
+	globalBansMutex.Unlock()
+
+	if client != nil {
+		go func() {
+			collection := client.Database("Telegram").Collection("ModGlobalBans")
+			_, err := collection.DeleteOne(context.TODO(), bson.M{"_id": userID})
+			if err != nil {
+				log.Printf("Failed to remove global ban for user %d: %v", userID, err)
+			}
+		}()
+	}
+
+	return nil
+}
+
+// GetGloballyBannedUsers returns a copy of the global ban list
+func GetGloballyBannedUsers() map[int]*GlobalBanDoc {
+	globalBansMutex.RLock()
+	defer globalBansMutex.RUnlock()
+
+	result := make(map[int]*GlobalBanDoc, len(globalBansCache))
+	for k, v := range globalBansCache {
+		copy := *v
+		result[k] = &copy
+	}
+	return result
+}
+
+// IsGlobalAdmin checks if a user is a global admin
+func IsGlobalAdmin(userID int) bool {
+	globalAdminsMutex.RLock()
+	defer globalAdminsMutex.RUnlock()
+	return globalAdminsCache[userID]
+}
+
+// AddGlobalAdmin adds a user to the global admin list
+func AddGlobalAdmin(client *mongo.Client, userID int, addedBy int) error {
+	globalAdminsMutex.Lock()
+	_, exists := globalAdminsCache[userID]
+	if exists {
+		globalAdminsMutex.Unlock()
+		return fmt.Errorf("user %d is already a global admin", userID)
+	}
+	globalAdminsCache[userID] = true
+	globalAdminsMutex.Unlock()
+
+	if client != nil {
+		doc := GlobalAdminDoc{
+			UserID:  userID,
+			AddedAt: time.Now(),
+			AddedBy: addedBy,
+		}
+		go func() {
+			collection := client.Database("Telegram").Collection("ModGlobalAdmins")
+			filter := bson.M{"_id": userID}
+			update := bson.M{"$set": doc}
+			opts := options.Update().SetUpsert(true)
+
+			_, err := collection.UpdateOne(context.TODO(), filter, update, opts)
+			if err != nil {
+				log.Printf("Failed to save global admin %d: %v", userID, err)
+			}
+		}()
+	}
+
+	return nil
+}
+
+// RemoveGlobalAdmin removes a user from the global admin list
+func RemoveGlobalAdmin(client *mongo.Client, userID int) error {
+	globalAdminsMutex.Lock()
+	delete(globalAdminsCache, userID)
+	globalAdminsMutex.Unlock()
+
+	if client != nil {
+		go func() {
+			collection := client.Database("Telegram").Collection("ModGlobalAdmins")
+			_, err := collection.DeleteOne(context.TODO(), bson.M{"_id": userID})
+			if err != nil {
+				log.Printf("Failed to remove global admin %d: %v", userID, err)
+			}
+		}()
+	}
+
+	return nil
+}
+
+// GetGlobalAdmins returns a copy of the global admin list
+func GetGlobalAdmins() []int {
+	globalAdminsMutex.RLock()
+	defer globalAdminsMutex.RUnlock()
+
+	result := make([]int, 0, len(globalAdminsCache))
+	for id := range globalAdminsCache {
+		result = append(result, id)
+	}
+	return result
+}
+
