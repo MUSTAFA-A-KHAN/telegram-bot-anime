@@ -143,7 +143,7 @@ func loadSettings(client *mongo.Client) {
 			s.Rules = make(map[string]ModRuleDoc)
 		}
 		if s.ScamKeywords == nil {
-			s.ScamKeywords = []string{"paid survey", "crypto research"}
+			s.SccamKeywords:   []string{"paid survey", "crypto research", "وظيفة", "عمل", "شغل", "فرصة", "وظايف", "شواغر", "التسويق", "تسويق", "من البيت", "عن بعد", "بدون خبرة", "دخل يومي", "ارباح", "ربح", "شركة عالمية", "التوظيف", "توظيف"},  
 		}
 		if s.AllowedDomains == nil {
 			s.AllowedDomains = []string{"youtube.com", "wikipedia.org", "youtu.be"}
