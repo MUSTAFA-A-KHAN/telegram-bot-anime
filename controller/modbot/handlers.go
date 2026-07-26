@@ -3,6 +3,7 @@ package modbot
 import (
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -297,6 +298,135 @@ func handleCommand(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			sendMessage(bot, chatID, "Domain not found in allowed list.")
 		}
 
+	// Global admin only commands
+	// globalban - only group admins can execute, globalunban - only global admins
+	case "globalban":
+		if !isAdmin(bot, chatID, userID) {
+			sendMessage(bot, chatID, "You must be an admin to use this command.")
+			return
+		}
+		targetID, reason, err := parseTargetAndReason(message)
+		if err != nil {
+			sendMessage(bot, chatID, fmt.Sprintf("Usage: `/globalban <reason>` (reply to a user) or `/globalban <user_id> <reason>`"))
+			return
+		}
+		if err := GlobalBanUser(client, targetID, reason, userID); err != nil {
+			sendMessage(bot, chatID, fmt.Sprintf("Failed to globally ban user: %v", err))
+			return
+		}
+		sendMessage(bot, chatID, fmt.Sprintf("🚫 User %d has been globally banned. Reason: %s", targetID, reason))
+
+		// Kick from current chat
+		kickConfig := tgbotapi.KickChatMemberConfig{
+			ChatMemberConfig: tgbotapi.ChatMemberConfig{
+				ChatID: chatID,
+				UserID: targetID,
+			},
+		}
+		bot.KickChatMember(kickConfig)
+
+		// Try to kick from all other known chats
+		for cid := range settingsCache {
+			if cid == chatID {
+				continue
+			}
+			otherKickConfig := tgbotapi.KickChatMemberConfig{
+				ChatMemberConfig: tgbotapi.ChatMemberConfig{
+					ChatID: cid,
+					UserID: targetID,
+				},
+			}
+			bot.KickChatMember(otherKickConfig) // Best-effort
+		}
+
+	case "globalunban":
+		if !IsGlobalAdmin(userID) {
+			sendMessage(bot, chatID, "❌ Only global admins can use this command.")
+			return
+		}
+		targetID, _, err := parseTargetAndReason(message)
+		if err != nil {
+			sendMessage(bot, chatID, "Usage: `/globalunban` (reply to a user) or `/globalunban <user_id>`")
+			return
+		}
+		if !IsGloballyBanned(targetID) {
+			sendMessage(bot, chatID, fmt.Sprintf("User %d is not globally banned.", targetID))
+			return
+		}
+		if err := GlobalUnbanUser(client, targetID); err != nil {
+			sendMessage(bot, chatID, fmt.Sprintf("Failed to unban user: %v", err))
+			return
+		}
+		sendMessage(bot, chatID, fmt.Sprintf("✅ User %d has been globally unbanned.", targetID))
+
+	case "globalbannedlist":
+		if !isAdmin(bot, chatID, userID) {
+			sendMessage(bot, chatID, "You must be an admin to use this command.")
+			return
+		}
+		bannedUsers := GetGloballyBannedUsers()
+		if len(bannedUsers) == 0 {
+			sendMessage(bot, chatID, "No globally banned users.")
+			return
+		}
+		msg := "🚫 *Globally Banned Users:*\n"
+		for userID, ban := range bannedUsers {
+			msg += fmt.Sprintf("• `%d` - %s (by %d on %s)\n", userID, ban.Reason, ban.BannedBy, ban.BannedAt.Format("2006-01-02"))
+		}
+		sendMessage(bot, chatID, msg)
+
+	case "addglobaladmin":
+		if !IsGlobalAdmin(userID) {
+			sendMessage(bot, chatID, "❌ Only global admins can add other global admins.")
+			return
+		}
+		targetID, _, err := parseTargetAndReason(message)
+		if err != nil {
+			sendMessage(bot, chatID, "Usage: `/addglobaladmin` (reply to a user) or `/addglobaladmin <user_id>`")
+			return
+		}
+		if err := AddGlobalAdmin(client, targetID, userID); err != nil {
+			sendMessage(bot, chatID, fmt.Sprintf("Failed to add global admin: %v", err))
+			return
+		}
+		sendMessage(bot, chatID, fmt.Sprintf("✅ User %d is now a global admin.", targetID))
+
+	case "removeglobaladmin":
+		if !IsGlobalAdmin(userID) {
+			sendMessage(bot, chatID, "❌ Only global admins can remove global admins.")
+			return
+		}
+		targetID, _, err := parseTargetAndReason(message)
+		if err != nil {
+			sendMessage(bot, chatID, "Usage: `/removeglobaladmin` (reply to a user) or `/removeglobaladmin <user_id>`")
+			return
+		}
+		if !IsGlobalAdmin(targetID) {
+			sendMessage(bot, chatID, fmt.Sprintf("User %d is not a global admin.", targetID))
+			return
+		}
+		if err := RemoveGlobalAdmin(client, targetID); err != nil {
+			sendMessage(bot, chatID, fmt.Sprintf("Failed to remove global admin: %v", err))
+			return
+		}
+		sendMessage(bot, chatID, fmt.Sprintf("✅ User %d is no longer a global admin.", targetID))
+
+	case "globaladminlist":
+		if !isAdmin(bot, chatID, userID) {
+			sendMessage(bot, chatID, "You must be an admin to use this command.")
+			return
+		}
+		admins := GetGlobalAdmins()
+		if len(admins) == 0 {
+			sendMessage(bot, chatID, "No global admins configured.")
+			return
+		}
+		msg := "👑 *Global Admins:*\n"
+		for _, id := range admins {
+			msg += fmt.Sprintf("• `%d`\n", id)
+		}
+		sendMessage(bot, chatID, msg)
+
 	case "modsettings":
 		sendSettingsMenu(bot, chatID, settings)
 	}
@@ -413,4 +543,39 @@ func sendMessage(bot *tgbotapi.BotAPI, chatID int64, text string) {
 	if err != nil {
 		log.Printf("Failed to send message: %v", err)
 	}
+}
+
+// parseTargetAndReason extracts the target user ID and reason from a command message.
+// Target can be from replying to a message, or providing a user ID as first argument.
+func parseTargetAndReason(message *tgbotapi.Message) (targetID int, reason string, err error) {
+	args := strings.Fields(strings.TrimSpace(message.CommandArguments()))
+
+	// If replying to a message, use that user's ID
+	if message.ReplyToMessage != nil && message.ReplyToMessage.From != nil {
+		targetID = message.ReplyToMessage.From.ID
+		reason = strings.Join(args, " ")
+		if reason == "" {
+			reason = "Manual global ban by admin"
+		}
+		return targetID, reason, nil
+	}
+
+	// Otherwise, expect first arg is user ID
+	if len(args) == 0 {
+		return 0, "", fmt.Errorf("missing target")
+	}
+
+	id, err := strconv.Atoi(args[0])
+	if err != nil {
+		return 0, "", fmt.Errorf("invalid user ID: %v", err)
+	}
+	targetID = id
+
+	if len(args) > 1 {
+		reason = strings.Join(args[1:], " ")
+	} else {
+		reason = "Manual global ban by admin"
+	}
+
+	return targetID, reason, nil
 }
