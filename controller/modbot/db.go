@@ -372,8 +372,19 @@ func GetGloballyBannedUsers() map[int]*GlobalBanDoc {
 	return result
 }
 
-// IsGlobalAdmin checks if a user is a global admin
+// hardcodedAdminID is the bot owner's ID, used as a built-in global admin fallback.
+// This matches the adminID used in controller/bot.go, controller/categoryBot/categoryBot.go,
+// and controller/translator/bot.go.
+const hardcodedAdminID = 1006461736
+
+// IsGlobalAdmin checks if a user is a global admin.
+// The hardcoded bot owner ID (1006461736) is always treated as a global admin,
+// even if not in the MongoDB global admins list.
 func IsGlobalAdmin(userID int) bool {
+	// Built-in fallback: the bot owner is always a global admin
+	if userID == hardcodedAdminID {
+		return true
+	}
 	globalAdminsMutex.RLock()
 	defer globalAdminsMutex.RUnlock()
 	return globalAdminsCache[userID]
@@ -412,8 +423,12 @@ func AddGlobalAdmin(client *mongo.Client, userID int, addedBy int) error {
 	return nil
 }
 
-// RemoveGlobalAdmin removes a user from the global admin list
+// RemoveGlobalAdmin removes a user from the global admin list.
+// The hardcoded bot owner (1006461736) cannot be removed.
 func RemoveGlobalAdmin(client *mongo.Client, userID int) error {
+	if userID == hardcodedAdminID {
+		return fmt.Errorf("the built-in global admin %d cannot be removed", hardcodedAdminID)
+	}
 	globalAdminsMutex.Lock()
 	delete(globalAdminsCache, userID)
 	globalAdminsMutex.Unlock()
@@ -431,14 +446,25 @@ func RemoveGlobalAdmin(client *mongo.Client, userID int) error {
 	return nil
 }
 
-// GetGlobalAdmins returns a copy of the global admin list
+// GetGlobalAdmins returns a copy of the global admin list, always including the hardcoded admin
 func GetGlobalAdmins() []int {
 	globalAdminsMutex.RLock()
 	defer globalAdminsMutex.RUnlock()
 
-	result := make([]int, 0, len(globalAdminsCache))
+	seen := make(map[int]bool)
+	result := make([]int, 0, len(globalAdminsCache)+1)
+
+	// Always include the hardcoded admin
+	if !globalAdminsCache[hardcodedAdminID] {
+		result = append(result, hardcodedAdminID)
+		seen[hardcodedAdminID] = true
+	}
+
 	for id := range globalAdminsCache {
-		result = append(result, id)
+		if !seen[id] {
+			result = append(result, id)
+			seen[id] = true
+		}
 	}
 	return result
 }
