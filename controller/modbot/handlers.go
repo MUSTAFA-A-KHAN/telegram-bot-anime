@@ -132,7 +132,7 @@ func handleCommand(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			return
 		}
 
-		trigger := strings.ToLower(strings.TrimSpace(parts[0]))
+		trigger := normalizeRuleTrigger(parts[0])
 
 		// INTERACTIVE FLOW INIT
 		if trigger == "" && message.ReplyToMessage == nil && message.Caption == "" {
@@ -214,14 +214,25 @@ func handleCommand(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		sendMessage(bot, chatID, fmt.Sprintf("✅ Rule added for keyword: `%s`", trigger))
 
 	case "delrule":
-		args := strings.ToLower(strings.TrimSpace(message.CommandArguments()))
+		args := normalizeRuleTrigger(message.CommandArguments())
 		if args == "" {
 			sendMessage(bot, chatID, "Usage: `/delrule <word>`")
 			return
 		}
 
-		if _, exists := settings.Rules[args]; exists {
-			delete(settings.Rules, args)
+		if chatID > 0 && IsGlobalAdmin(userID) {
+			removed := deleteRuleGlobally(client, args)
+			if removed > 0 {
+				sendMessage(bot, chatID, fmt.Sprintf("✅ Removed rule `%s` from all cached chats.", args))
+			} else {
+				sendMessage(bot, chatID, fmt.Sprintf("Rule not found for: `%s`", args))
+			}
+			return
+		}
+
+		ruleKey, exists := findRuleKeyByNormalizedTrigger(settings, args)
+		if exists {
+			delete(settings.Rules, ruleKey)
 			SaveChatSettings(client, settings)
 			sendMessage(bot, chatID, fmt.Sprintf("✅ Rule removed for keyword: `%s`", args))
 		} else {
@@ -541,14 +552,40 @@ func sendGlobalRuleMenu(bot *tgbotapi.BotAPI, chatID int64) {
 	}
 }
 
+func deleteRuleGlobally(client *mongo.Client, trigger string) int {
+	trigger = normalizeRuleTrigger(trigger)
+
+	settingsMutex.RLock()
+	chatIDs := make([]int64, 0, len(settingsCache))
+	for chatID := range settingsCache {
+		chatIDs = append(chatIDs, chatID)
+	}
+	settingsMutex.RUnlock()
+
+	removed := 0
+	for _, chatID := range chatIDs {
+		settings := GetChatSettings(chatID)
+		ruleKey, exists := findRuleKeyByNormalizedTrigger(settings, trigger)
+		if !exists {
+			continue
+		}
+
+		delete(settings.Rules, ruleKey)
+		SaveChatSettings(client, settings)
+		removed++
+	}
+
+	return removed
+}
+
 func GetGlobalRuleForTrigger(trigger string) (ModRuleDoc, bool) {
 	settingsMutex.RLock()
 	defer settingsMutex.RUnlock()
 
-	normalizedTrigger := strings.ToLower(strings.TrimSpace(trigger))
+	normalizedTrigger := normalizeRuleTrigger(trigger)
 	for _, settings := range settingsCache {
-		if rule, ok := settings.Rules[normalizedTrigger]; ok {
-			return rule, true
+		if ruleKey, ok := findRuleKeyByNormalizedTrigger(settings, normalizedTrigger); ok {
+			return settings.Rules[ruleKey], true
 		}
 	}
 	return ModRuleDoc{}, false

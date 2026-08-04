@@ -36,6 +36,32 @@ func ArabicNormalize(input string) string {
         return strings.TrimSpace(collapseSpaces(b.String()))
 }
 
+func normalizeRuleTrigger(input string) string {
+        normalized := strings.ToLower(strings.TrimSpace(input))
+        normalized = ArabicNormalize(normalized)
+        normalized = strings.TrimSpace(normalized)
+
+        words := strings.Fields(normalized)
+        for i, word := range words {
+                for strings.HasPrefix(word, "ال") {
+                        word = strings.TrimPrefix(word, "ال")
+                }
+                words[i] = word
+        }
+
+        return strings.Join(words, " ")
+}
+
+func findRuleKeyByNormalizedTrigger(settings *ModChatSettings, trigger string) (string, bool) {
+        normalizedTrigger := normalizeRuleTrigger(trigger)
+        for key := range settings.Rules {
+                if normalizeRuleTrigger(key) == normalizedTrigger {
+                        return key, true
+                }
+        }
+        return "", false
+}
+
 // Arabic normalization constants
 const (
         tatweel = '\u0640' // Arabic tatweel/kashida (ـ)

@@ -106,10 +106,11 @@ func handleFilters(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
         }
 
         // 1. Auto-responder Rule Match (Exact Match)
-        if rule, exists := settings.Rules[text]; exists {
-                sendRuleResponse(bot, chatID, message.MessageID, rule)
-                // We don't return here just in case the message also contained a bad link
-        }
+	normalizedTrigger := normalizeRuleTrigger(text)
+	if ruleKey, exists := findRuleKeyByNormalizedTrigger(settings, normalizedTrigger); exists {
+		sendRuleResponse(bot, chatID, message.MessageID, settings.Rules[ruleKey])
+		// We don't return here just in case the message also contained a bad link
+	}
 
         // Don't filter group admins
         if isAdmin(bot, chatID, message.From.ID) {
@@ -360,7 +361,7 @@ func handleInteractiveState(bot *tgbotapi.BotAPI, message *tgbotapi.Message, cli
                         return
                 }
 
-                trigger := strings.ToLower(strings.TrimSpace(message.Text))
+trigger := normalizeRuleTrigger(message.Text)
                 SetInteractiveState(chatID, userID, AddRuleState{Step: 2, TriggerWord: trigger})
 
                 msg := tgbotapi.NewMessage(chatID, fmt.Sprintf("Great! Now send the text or media that should be sent when someone says `%s`.", trigger))
@@ -383,7 +384,7 @@ func handleInteractiveState(bot *tgbotapi.BotAPI, message *tgbotapi.Message, cli
                                 sendMessage(bot, chatID, "Please send a text keyword to trigger the rule, or type /cancel to abort.")
                                 return
                         }
-                        state.TriggerWord = strings.ToLower(strings.TrimSpace(message.Text))
+state.TriggerWord = normalizeRuleTrigger(message.Text)
 
                         pendingMsg, exists := GetAndClearPendingRuleMessage(chatID, userID)
                         if !exists || pendingMsg == nil {
