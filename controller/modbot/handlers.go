@@ -3,6 +3,7 @@ package modbot
 import (
 	"fmt"
 	"log"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -80,6 +81,14 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, dbClient int
 		}
 	}
 
+	if message.Chat != nil && message.Chat.ID > 0 {
+		trigger := strings.ToLower(strings.TrimSpace(message.Text))
+		if rule, ok := GetGlobalRuleForTrigger(trigger); ok {
+			sendRuleResponse(bot, message.Chat.ID, 0, rule)
+			return
+		}
+	}
+
 	// Handle regular messages for filtering and auto-responder
 	handleFilters(bot, message, client)
 }
@@ -105,6 +114,14 @@ func handleCommand(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 	settings := GetChatSettings(chatID)
 
 	switch message.Command() {
+	case "start", "menu":
+		if chatID > 0 {
+			sendGlobalRuleMenu(bot, chatID)
+			return
+		}
+		// sendMessage(bot, chatID, "Use this command in a private chat with the bot to open the response menu.")
+		return
+
 	case "addrule":
 		// Usage: /addrule <trigger_word> <response_text> OR /addrule <trigger_word> (as a reply to media)
 		args := message.CommandArguments()
@@ -508,6 +525,79 @@ func sendSettingsMenu(bot *tgbotapi.BotAPI, chatID int64, settings *ModChatSetti
 	msg.ParseMode = "Markdown"
 	msg.ReplyMarkup = getSettingsKeyboard(settings)
 	bot.Send(msg)
+}
+
+func sendGlobalRuleMenu(bot *tgbotapi.BotAPI, chatID int64) {
+	triggers := getGlobalRuleTriggers()
+	if len(triggers) == 0 {
+		sendMessage(bot, chatID, "No modbot rule responses are configured yet.")
+		return
+	}
+
+	msg := tgbotapi.NewMessage(chatID, "📚 Choose a response from the keyboard:")
+	msg.ReplyMarkup = buildRuleSelectionKeyboardFromTriggers(triggers)
+	if _, err := bot.Send(msg); err != nil {
+		log.Printf("Failed to send rule menu to chat %d: %v", chatID, err)
+	}
+}
+
+func GetGlobalRuleForTrigger(trigger string) (ModRuleDoc, bool) {
+	settingsMutex.RLock()
+	defer settingsMutex.RUnlock()
+
+	normalizedTrigger := strings.ToLower(strings.TrimSpace(trigger))
+	for _, settings := range settingsCache {
+		if rule, ok := settings.Rules[normalizedTrigger]; ok {
+			return rule, true
+		}
+	}
+	return ModRuleDoc{}, false
+}
+
+func getGlobalRuleTriggers() []string {
+	settingsMutex.RLock()
+	defer settingsMutex.RUnlock()
+
+	triggers := make([]string, 0)
+	seen := make(map[string]bool)
+	for _, settings := range settingsCache {
+		for trigger := range settings.Rules {
+			if seen[trigger] {
+				continue
+			}
+			seen[trigger] = true
+			triggers = append(triggers, trigger)
+		}
+	}
+	sort.Strings(triggers)
+	return triggers
+}
+
+func buildRuleSelectionKeyboardFromTriggers(triggers []string) tgbotapi.ReplyKeyboardMarkup {
+	rows := make([][]tgbotapi.KeyboardButton, 0)
+	row := make([]tgbotapi.KeyboardButton, 0)
+
+	for _, trigger := range triggers {
+		row = append(row, tgbotapi.NewKeyboardButton(trigger))
+		if len(row) == 3 {
+			rows = append(rows, row)
+			row = make([]tgbotapi.KeyboardButton, 0)
+		}
+	}
+	if len(row) > 0 {
+		rows = append(rows, row)
+	}
+
+	return tgbotapi.NewReplyKeyboard(rows...)
+}
+
+func buildRuleSelectionKeyboard(settings *ModChatSettings) tgbotapi.ReplyKeyboardMarkup {
+	triggers := make([]string, 0, len(settings.Rules))
+	for trigger := range settings.Rules {
+		triggers = append(triggers, trigger)
+	}
+	sort.Strings(triggers)
+	return buildRuleSelectionKeyboardFromTriggers(triggers)
 }
 
 func updateSettingsMenu(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, settings *ModChatSettings) {
