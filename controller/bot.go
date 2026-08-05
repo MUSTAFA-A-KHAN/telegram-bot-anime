@@ -674,7 +674,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		word := chatState.Word
 		chatState.RUnlock()
 
-		if service.NormalizeAndCompare(message.Text, word) && message.From.ID == chatState.User {
+		if service.NormalizeAndComparePlural(message.Text, word) && message.From.ID == chatState.User {
 			view.SendMessage(bot, chatID, fmt.Sprintf("🦉 Correct! %s ! You guessed the word '%s' correctly!", telegramReactions[7], word))
 			view.ReactToMessage(bot.Token, chatID, message.MessageID, telegramReactions[17], true)
 			view.ReactToMessage(bot.Token, chatID, message.MessageID, "⚡", true)
@@ -1068,7 +1068,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		leader := chatState.Leader
 		chatState.RUnlock()
 
-		if user != 0 && service.NormalizeAndCompare(message.Text, word) && message.From.ID != user {
+		if user != 0 && service.NormalizeAndComparePlural(message.Text, word) && message.From.ID != user {
 			chatState.reset(chatID)
 
 			// THE CHARACTER UPGRADE:
@@ -2037,7 +2037,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		chatState.RLock()
 		word := chatState.Word
 		chatState.RUnlock()
-		if service.NormalizeAndCompare(callback.Message.Text, word) {
+		if service.NormalizeAndComparePlural(callback.Message.Text, word) {
 			buttons := createSingleButtonKeyboard("🌟 Claim Leadership 🙋", "explain")
 			view.SendMessageWithButtons(bot, callback.Message.Chat.ID, fmt.Sprintf("%s! %s guessed the word correctly.", telegramReactions[0], callback.From.FirstName), buttons)
 			chatState.reset(chatID)
