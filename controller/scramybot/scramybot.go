@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/repository"
+	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/service"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/view"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -665,6 +666,13 @@ func HandleGuess(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.
 			}
 			scores = append(scores, userScoreEntry{ID: userID, Name: name, Score: score})
 			go repository.InsertWordleBonusDoc(userID, name, chatID, client, "ScramyEn", score) // reusing logic since it just inserts Score/Points
+
+			// ⚡ Add Progression Integration
+			go func(uID int64, username string) {
+				if client != nil {
+					service.AwardGameResult(client, uID, username, true) // Treating finding a word as a win/participation in Scramy
+				}
+			}(int64(userID), name)
 		}
 
 		sort.SliceStable(scores, func(i, j int) bool {

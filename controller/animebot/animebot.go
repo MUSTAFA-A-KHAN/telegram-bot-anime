@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/repository"
+	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/service"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/view"
 	"github.com/agnivade/levenshtein"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
@@ -118,6 +119,13 @@ func HandleGuess(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.
 
 		points := 10
 		go repository.InsertWordleBonusDoc(message.From.ID, message.From.FirstName, chatID, client, "AnimePoints", points)
+
+		// ⚡ Add Progression Integration (Award XP/Coins)
+		go func(uID int64, username string) {
+			if client != nil {
+				service.AwardGameResult(client, uID, username, true) // Winner
+			}
+		}(int64(message.From.ID), message.From.FirstName)
 
 		successMsg := "🎉 Correct! It was <b>" + bestAnswer + "</b>!\nYou earned " + strconv.Itoa(points) + " points!"
 		markup := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Play Again 🎌", "anime_start")))
