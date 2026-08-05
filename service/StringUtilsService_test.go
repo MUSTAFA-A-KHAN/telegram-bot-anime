@@ -26,3 +26,32 @@ func TestNormalizeAndCompare(t *testing.T) {
 		}
 	}
 }
+
+func TestNormalizeAndComparePlural(t *testing.T) {
+	tests := []struct {
+		s1   string
+		s2   string
+		want bool
+	}{
+		{"apple", "apples", true},
+		{"apples", "apple", true},
+		{"box", "boxes", true},
+		{"boxes", "box", true},
+		{"city", "cities", false}, // We don't handle complex plurals right now per simple spec
+		{"apple", "orange", false},
+		{"car", "cars", true},
+		{"cars", "car", true},
+		{"dog", "doges", true}, // "dog" + "es" = "doges", but wait: doges vs dog, len=5 vs 3, diff=2. "es" matches. Wait, is "doges" a plural of "dog"? No, "dogs" is. But simple rule allows it. That's fine per spec.
+		{"match", "matches", true},
+		{"matches", "match", true},
+		{"apple", "apple", true},
+		{"", "", true},
+		{"a", "as", true},
+	}
+
+	for _, tt := range tests {
+		if got := NormalizeAndComparePlural(tt.s1, tt.s2); got != tt.want {
+			t.Errorf("NormalizeAndComparePlural(%q, %q) = %v; want %v", tt.s1, tt.s2, got, tt.want)
+		}
+	}
+}
