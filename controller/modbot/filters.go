@@ -249,7 +249,7 @@ func handleViolation(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mo
 
         reportMsg := fmt.Sprintf("⚠️ Deleted message from %s for %s. (Violation %d/3)\nCc: %s",
                 username, reason, count, strings.Join(adminMentions, " "))
-        sendMessage(bot, chatID, reportMsg)
+        // sendMessage(bot, chatID, reportMsg)
 
         // Direct message to admins
         dmReport := fmt.Sprintf("🚨 *Moderator Alert in Chat %d*\nUser: %s (ID: %d)\nReason: %s\nViolations: %d",
