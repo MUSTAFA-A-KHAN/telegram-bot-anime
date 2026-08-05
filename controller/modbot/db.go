@@ -41,10 +41,10 @@ type UserViolationDoc struct {
 
 // GlobalBanDoc represents a globally banned user
 type GlobalBanDoc struct {
-	UserID    int       `bson:"_id"`
-	BannedAt  time.Time `bson:"banned_at"`
-	Reason    string    `bson:"reason"`
-	BannedBy  int       `bson:"banned_by"`
+	UserID   int       `bson:"_id"`
+	BannedAt time.Time `bson:"banned_at"`
+	Reason   string    `bson:"reason"`
+	BannedBy int       `bson:"banned_by"`
 }
 
 // GlobalAdminDoc represents a global administrator
@@ -54,15 +54,24 @@ type GlobalAdminDoc struct {
 	AddedBy int       `bson:"added_by"`
 }
 
+// GlobalKeyboardMenuDoc stores the enabled/disabled state of a global DM keyboard item.
+type GlobalKeyboardMenuDoc struct {
+	Trigger   string    `bson:"_id"`
+	Enabled   bool      `bson:"enabled"`
+	UpdatedAt time.Time `bson:"updated_at"`
+}
+
 var (
-	settingsCache      = make(map[int64]*ModChatSettings)
-	settingsMutex      sync.RWMutex
-	violationsCache    = make(map[string]*UserViolationDoc)
-	violationsMutex    sync.RWMutex
-	globalBansCache    = make(map[int]*GlobalBanDoc)
-	globalBansMutex    sync.RWMutex
-	globalAdminsCache  = make(map[int]bool)
-	globalAdminsMutex  sync.RWMutex
+	settingsCache             = make(map[int64]*ModChatSettings)
+	settingsMutex             sync.RWMutex
+	violationsCache           = make(map[string]*UserViolationDoc)
+	violationsMutex           sync.RWMutex
+	globalBansCache           = make(map[int]*GlobalBanDoc)
+	globalBansMutex           sync.RWMutex
+	globalAdminsCache         = make(map[int]bool)
+	globalAdminsMutex         sync.RWMutex
+	globalKeyboardConfigCache = make(map[string]bool)
+	globalKeyboardConfigMutex sync.RWMutex
 )
 
 // GetChatSettings retrieves the settings for a chat (from cache or creates new)
@@ -163,7 +172,7 @@ func loadSettings(client *mongo.Client) {
 		}
 		if s.ScamKeywords == nil {
 			s.ScamKeywords = []string{"paid survey", "crypto research", "وظيفة", "عمل", "شغل", "فرصة", "وظايف", "شواغر", "التسويق", "تسويق", "من البيت", "عن بعد", "بدون خبرة", "دخل يومي", "ارباح", "ربح", "شركة عالمية", "التوظيف", "توظيف"}
-                }
+		}
 		if s.AllowedDomains == nil {
 			s.AllowedDomains = []string{"youtube.com", "wikipedia.org", "youtu.be"}
 		}
@@ -241,6 +250,28 @@ func loadSettings(client *mongo.Client) {
 	}
 	globalAdminsMutex.Unlock()
 	log.Printf("Loaded %d global admins from MongoDB", len(gaResults))
+
+	// Load global keyboard menu configuration
+	gkCollection := client.Database("Telegram").Collection("ModGlobalKeyboardMenu")
+	gkCursor, err := gkCollection.Find(context.TODO(), bson.M{})
+	if err != nil {
+		log.Printf("Failed to load global keyboard menu settings: %v", err)
+		return
+	}
+	defer gkCursor.Close(context.TODO())
+
+	var gkResults []GlobalKeyboardMenuDoc
+	if err = gkCursor.All(context.TODO(), &gkResults); err != nil {
+		log.Printf("Failed to decode global keyboard menu settings: %v", err)
+		return
+	}
+
+	globalKeyboardConfigMutex.Lock()
+	for _, item := range gkResults {
+		globalKeyboardConfigCache[item.Trigger] = item.Enabled
+	}
+	globalKeyboardConfigMutex.Unlock()
+	log.Printf("Loaded %d global keyboard menu states from MongoDB", len(gkResults))
 }
 
 // GetUserViolations returns the number of violations a user has
@@ -469,3 +500,53 @@ func GetGlobalAdmins() []int {
 	return result
 }
 
+func isGlobalKeyboardItemEnabled(trigger string) bool {
+	globalKeyboardConfigMutex.RLock()
+	defer globalKeyboardConfigMutex.RUnlock()
+
+	enabled, exists := globalKeyboardConfigCache[trigger]
+	if !exists {
+		return true
+	}
+	return enabled
+}
+
+func getEnabledGlobalKeyboardTriggers(triggers []string) []string {
+	globalKeyboardConfigMutex.RLock()
+	defer globalKeyboardConfigMutex.RUnlock()
+
+	enabled := make([]string, 0, len(triggers))
+	for _, trigger := range triggers {
+		if enabledState, exists := globalKeyboardConfigCache[trigger]; exists {
+			if !enabledState {
+				continue
+			}
+		} else {
+			// Newly discovered triggers default to enabled.
+		}
+		enabled = append(enabled, trigger)
+	}
+	return enabled
+}
+
+func SetGlobalKeyboardMenuState(client *mongo.Client, trigger string, enabled bool) {
+	globalKeyboardConfigMutex.Lock()
+	globalKeyboardConfigCache[trigger] = enabled
+	globalKeyboardConfigMutex.Unlock()
+
+	if client == nil {
+		return
+	}
+
+	go func() {
+		collection := client.Database("Telegram").Collection("ModGlobalKeyboardMenu")
+		filter := bson.M{"_id": trigger}
+		update := bson.M{"$set": GlobalKeyboardMenuDoc{Trigger: trigger, Enabled: enabled, UpdatedAt: time.Now()}}
+		opts := options.Update().SetUpsert(true)
+
+		_, err := collection.UpdateOne(context.TODO(), filter, update, opts)
+		if err != nil {
+			log.Printf("Failed to save global keyboard menu state for %q: %v", trigger, err)
+		}
+	}()
+}

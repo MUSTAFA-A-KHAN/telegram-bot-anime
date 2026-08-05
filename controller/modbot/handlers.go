@@ -455,6 +455,13 @@ func handleCommand(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		}
 		sendMessage(bot, chatID, msg)
 
+	case "configglobalkeyboard":
+		if !IsGlobalAdmin(userID) {
+			sendMessage(bot, chatID, "❌ Only global admins can configure the global DM keyboard.")
+			return
+		}
+		sendGlobalKeyboardConfigMenu(bot, chatID)
+
 	case "modsettings":
 		sendSettingsMenu(bot, chatID, settings)
 	}
@@ -472,20 +479,43 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 
 	settings := GetChatSettings(chatID)
 
-	switch callback.Data {
-	case "toggle_block_links":
+	switch {
+	case callback.Data == "toggle_block_links":
 		settings.BlockLinks = !settings.BlockLinks
 		SaveChatSettings(client, settings)
 		updateSettingsMenu(bot, callback.Message, settings)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Settings updated."))
 
-	case "toggle_scam_detection":
+	case callback.Data == "toggle_scam_detection":
 		settings.ScamDetection = !settings.ScamDetection
 		SaveChatSettings(client, settings)
 		updateSettingsMenu(bot, callback.Message, settings)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Settings updated."))
 
-	case "menu_add_rule":
+	case strings.HasPrefix(callback.Data, "toggle_global_keyboard_item:"):
+		if !IsGlobalAdmin(userID) {
+			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, "Only global admins can change the global keyboard configuration."))
+			return
+		}
+		indexText := strings.TrimPrefix(callback.Data, "toggle_global_keyboard_item:")
+		index, err := strconv.Atoi(indexText)
+		if err != nil || index < 0 {
+			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, "Invalid keyboard item."))
+			return
+		}
+
+		triggers := getGlobalRuleTriggers()
+		if index >= len(triggers) {
+			bot.AnswerCallbackQuery(tgbotapi.NewCallbackWithAlert(callback.ID, "Keyboard item no longer exists."))
+			return
+		}
+		trigger := triggers[index]
+		currentEnabled := isGlobalKeyboardItemEnabled(trigger)
+		SetGlobalKeyboardMenuState(client, trigger, !currentEnabled)
+		updateGlobalKeyboardConfigMenu(bot, callback.Message)
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Keyboard menu updated."))
+
+	case callback.Data == "menu_add_rule":
 		// Enter the interactive flow but we already have the response
 		SetInteractiveState(chatID, userID, AddRuleState{Step: 3}) // Step 3 means we are just waiting for the trigger word
 
@@ -498,7 +528,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		delMsg := tgbotapi.NewDeleteMessage(chatID, callback.Message.MessageID)
 		bot.Send(delMsg)
 
-	case "menu_add_scam":
+	case callback.Data == "menu_add_scam":
 		if pendingMsg, ok := GetAndClearPendingRuleMessage(chatID, userID); ok && pendingMsg.Text != "" {
 			keyword := strings.ToLower(strings.TrimSpace(pendingMsg.Text))
 
@@ -523,7 +553,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		delMsg := tgbotapi.NewDeleteMessage(chatID, callback.Message.MessageID)
 		bot.Send(delMsg)
 
-	case "menu_cancel":
+	case callback.Data == "menu_cancel":
 		GetAndClearPendingRuleMessage(chatID, userID) // Clear the pending message
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Cancelled"))
 		delMsg := tgbotapi.NewDeleteMessage(chatID, callback.Message.MessageID)
@@ -539,7 +569,7 @@ func sendSettingsMenu(bot *tgbotapi.BotAPI, chatID int64, settings *ModChatSetti
 }
 
 func sendGlobalRuleMenu(bot *tgbotapi.BotAPI, chatID int64) {
-	triggers := getGlobalRuleTriggers()
+	triggers := getEnabledGlobalKeyboardTriggers(getGlobalRuleTriggers())
 	if len(triggers) == 0 {
 		sendMessage(bot, chatID, "No modbot rule responses are configured yet.")
 		return
@@ -549,6 +579,21 @@ func sendGlobalRuleMenu(bot *tgbotapi.BotAPI, chatID int64) {
 	msg.ReplyMarkup = buildRuleSelectionKeyboardFromTriggers(triggers)
 	if _, err := bot.Send(msg); err != nil {
 		log.Printf("Failed to send rule menu to chat %d: %v", chatID, err)
+	}
+}
+
+func sendGlobalKeyboardConfigMenu(bot *tgbotapi.BotAPI, chatID int64) {
+	triggers := getGlobalRuleTriggers()
+	if len(triggers) == 0 {
+		sendMessage(bot, chatID, "No modbot rule responses are configured yet.")
+		return
+	}
+
+	msg := tgbotapi.NewMessage(chatID, "⚙️ *Global DM Keyboard Configuration*\nSelect which menu items are visible in the private keyboard.")
+	msg.ParseMode = "Markdown"
+	msg.ReplyMarkup = getGlobalKeyboardConfigInlineKeyboard(triggers)
+	if _, err := bot.Send(msg); err != nil {
+		log.Printf("Failed to send global keyboard configuration menu to chat %d: %v", chatID, err)
 	}
 }
 
@@ -642,6 +687,12 @@ func updateSettingsMenu(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, settings *M
 	bot.Send(editMsg)
 }
 
+func updateGlobalKeyboardConfigMenu(bot *tgbotapi.BotAPI, msg *tgbotapi.Message) {
+	triggers := getGlobalRuleTriggers()
+	editMsg := tgbotapi.NewEditMessageReplyMarkup(msg.Chat.ID, msg.MessageID, getGlobalKeyboardConfigInlineKeyboard(triggers))
+	bot.Send(editMsg)
+}
+
 func getSettingsKeyboard(settings *ModChatSettings) tgbotapi.InlineKeyboardMarkup {
 	linkText := "🔴 Block Links: OFF"
 	if settings.BlockLinks {
@@ -661,6 +712,20 @@ func getSettingsKeyboard(settings *ModChatSettings) tgbotapi.InlineKeyboardMarku
 			tgbotapi.NewInlineKeyboardButtonData(scamText, "toggle_scam_detection"),
 		),
 	)
+}
+
+func getGlobalKeyboardConfigInlineKeyboard(triggers []string) tgbotapi.InlineKeyboardMarkup {
+	rows := make([][]tgbotapi.InlineKeyboardButton, 0, len(triggers))
+	for i, trigger := range triggers {
+		label := "✅ " + trigger
+		if !isGlobalKeyboardItemEnabled(trigger) {
+			label = "❌ " + trigger
+		}
+		rows = append(rows, tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData(label, fmt.Sprintf("toggle_global_keyboard_item:%d", i)),
+		))
+	}
+	return tgbotapi.NewInlineKeyboardMarkup(rows...)
 }
 
 func sendMessage(bot *tgbotapi.BotAPI, chatID int64, text string) {
