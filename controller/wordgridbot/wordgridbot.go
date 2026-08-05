@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/repository"
-
+	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/service"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/view"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -288,6 +288,13 @@ func HandleGuess(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.
 	state.UserNames[int64(message.From.ID)] = message.From.FirstName
 
 	go repository.InsertWordleBonusDoc(message.From.ID, message.From.FirstName, chatID, client, "WordGridPoints", pointsEarned)
+
+	// ⚡ Add Progression Integration
+	go func(uID int64, username string) {
+		if client != nil {
+			service.AwardGameResult(client, uID, username, true) // Treating finding a word as a win/participation in WordGrid
+		}
+	}(int64(message.From.ID), message.From.FirstName)
 
 	// Send feedback message
 	go sendWordFoundFeedback(bot, chatID, message.From.ID, message.From.FirstName, guess, pointsEarned, remainingWords, state.MessageID)

@@ -14,6 +14,7 @@ import (
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/wordlebot/image_generator"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/model"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/repository"
+	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/service"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/view"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -592,8 +593,21 @@ func HandleGuess(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.
 		}
 
 		go repository.InsertWordleDoc(message.From.ID, message.From.FirstName, chatID, client, "WordleEn", ws.Attempts)
+
+		go func(uID int64, username string) {
+			if client != nil {
+				service.AwardGameResult(client, uID, username, true) // Winner
+			}
+		}(int64(message.From.ID), message.From.FirstName)
+
 	} else if ws.Attempts >= ws.MaxAttempts {
 		ws.Active = false
+
+		go func(uID int64, username string) {
+			if client != nil {
+				service.AwardGameResult(client, uID, username, false) // Loser, but gets participation
+			}
+		}(int64(message.From.ID), message.From.FirstName)
 
 		buttons := tgbotapi.NewInlineKeyboardMarkup(
 			tgbotapi.NewInlineKeyboardRow(

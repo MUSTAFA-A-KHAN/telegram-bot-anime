@@ -16,6 +16,7 @@ import (
 	"unicode"
 
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/repository"
+	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/service"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/view"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -617,6 +618,9 @@ func HandleGuess(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.
 		points := 5
 		if client != nil {
 			repository.InsertWordleBonusDoc(message.From.ID, message.From.FirstName, chatID, client, "GeographyPoints", points)
+			go func(uID int64, username string) {
+				service.AwardGameResult(client, uID, username, true) // Winner
+			}(int64(message.From.ID), message.From.FirstName)
 		}
 
 		successMsg := fmt.Sprintf("✅ *Correct, %s!*\n\nThe answer was *%s*.\nYou earned %d Geography points! 🌍", message.From.FirstName, correctAnswer, points)

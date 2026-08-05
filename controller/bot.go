@@ -282,6 +282,15 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			aiModeMutex.Unlock()
 			view.SendMessage(bot, chatID, "AI mode has been disabled.")
 			return
+		case "profile":
+			handleProfileCommand(bot, message, client)
+			return
+		case "daily":
+			handleDailyCommand(bot, message, client)
+			return
+		case "weekly":
+			handleWeeklyCommand(bot, message, client)
+			return
 		case "rules":
 			rulesText := "🎮 *Game Rules*\n\n" +
 				"👥 *Players*\n" +
@@ -2160,4 +2169,52 @@ func createMultiButtonKeyboard(buttonsData [][]string) tgbotapi.InlineKeyboardMa
 		rows = append(rows, tgbotapi.NewInlineKeyboardRow(row...))
 	}
 	return tgbotapi.NewInlineKeyboardMarkup(rows...)
+}
+
+func handleProfileCommand(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.Client) {
+	username := message.From.UserName
+	if username == "" {
+		username = message.From.FirstName
+	}
+
+	profile, err := repository.GetUserProfile(client, int64(message.From.ID), username)
+	if err != nil {
+		view.SendMessage(bot, message.Chat.ID, "Error retrieving profile. Please try again later.")
+		return
+	}
+
+	html := service.FormatUserProfile(profile)
+	view.SendMessagehtml(bot, message.Chat.ID, html)
+}
+
+func handleDailyCommand(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.Client) {
+	username := message.From.UserName
+	if username == "" {
+		username = message.From.FirstName
+	}
+
+	xp, coins, err := service.ClaimDailyReward(client, int64(message.From.ID), username)
+	if err != nil {
+		view.SendMessage(bot, message.Chat.ID, "❌ "+err.Error())
+		return
+	}
+
+	msg := fmt.Sprintf("🎁 *Daily Reward Claimed!*\n\nEarned:\n✨ +%d XP\n🪙 +%d Coins", xp, coins)
+	view.SendMessage(bot, message.Chat.ID, msg)
+}
+
+func handleWeeklyCommand(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.Client) {
+	username := message.From.UserName
+	if username == "" {
+		username = message.From.FirstName
+	}
+
+	xp, coins, err := service.ClaimWeeklyReward(client, int64(message.From.ID), username)
+	if err != nil {
+		view.SendMessage(bot, message.Chat.ID, "❌ "+err.Error())
+		return
+	}
+
+	msg := fmt.Sprintf("🎉 *Weekly Reward Claimed!*\n\nEarned:\n✨ +%d XP\n🪙 +%d Coins", xp, coins)
+	view.SendMessage(bot, message.Chat.ID, msg)
 }
