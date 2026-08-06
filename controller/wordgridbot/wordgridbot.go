@@ -19,14 +19,14 @@ func LoadWords() []string {
 	content, err := os.ReadFile("controller/wordgridbot/lib/english_words_gt_10164946_family_safe_v3.txt")
 	if err != nil {
 		log.Printf("Error reading scramy_words.txt: %v", err)
-		return []string{"HELLO", "WORLD", "GAMES", "TELEGRAM"}
+		return []string{"HELLO", "WORLD", "GAMES", "TELEGRAM", "CAT", "DOG", "BAT"}
 	}
 
 	words := strings.Split(string(content), "\n")
 	var valid []string
 	for _, w := range words {
 		w = strings.TrimSpace(w)
-		if len(w) >= 4 && len(w) <= 8 {
+		if len(w) >= 3 && len(w) <= 8 {
 			valid = append(valid, strings.ToUpper(w))
 		}
 	}
@@ -35,13 +35,13 @@ func LoadWords() []string {
 
 var allWords = LoadWords()
 
-func getRandomWords(n int) []string {
+func getRandomWords(n int, minLen int, maxLen int) []string {
 	// Group words by length
 	wordsByLength := make(map[int][]string)
 	for _, word := range allWords {
 		word = strings.ToUpper(word)
 		len := len(word)
-		if len >= 4 && len <= 8 {
+		if len >= minLen && len <= maxLen {
 			wordsByLength[len] = append(wordsByLength[len], word)
 		}
 	}
@@ -49,9 +49,10 @@ func getRandomWords(n int) []string {
 	// Pick words in increasing order of length
 	// Limit words per length to ensure variety
 	var result []string
-	wordsPerLength := (n + 4) / 5 // Distribute words across 5 different lengths (4-8)
+	lengthSpan := maxLen - minLen + 1
+	wordsPerLength := (n + lengthSpan - 1) / lengthSpan // Distribute words across available lengths
 
-	for length := 4; length <= 8 && len(result) < n; length++ {
+	for length := minLen; length <= maxLen && len(result) < n; length++ {
 		words := wordsByLength[length]
 		if len(words) == 0 {
 			continue
@@ -197,7 +198,7 @@ func StartWordGridGame(bot *tgbotapi.BotAPI, chatID int64, client *mongo.Client)
 		return
 	}
 
-	words := getRandomWords(10)
+	words := getRandomWords(10, 4, 8)
 	grid, placedWords, positions := GenerateGrid(words, 10)
 
 	state.Active = true
@@ -207,11 +208,61 @@ func StartWordGridGame(bot *tgbotapi.BotAPI, chatID int64, client *mongo.Client)
 	state.FoundWords = make(map[string]bool)
 	state.UserScores = make(map[int64]int)
 	state.UserNames = make(map[int64]string)
+	state.Mode = "hard"
 	state.Unlock()
 
 	imgBytes, _ := GenerateGridImage(grid, positions, state.FoundWords)
 
 	caption := fmt.Sprintf("🔠 *Word Grid (Hard Mode)*\n\n🔍 *Find These Words:*\n\n%s\n\n♨️ _Find Words, Gain Score Points & Improve Your Leaderboard Rank._", getCluesText(words, state.FoundWords))
+
+	msg := tgbotapi.NewPhotoUpload(chatID, tgbotapi.FileBytes{Name: "wordgrid.png", Bytes: imgBytes})
+	msg.Caption = caption
+	msg.ParseMode = tgbotapi.ModeMarkdown
+
+	sentMsg, err := bot.Send(msg)
+	if err == nil {
+		state.Lock()
+		state.MessageID = sentMsg.MessageID
+		state.Unlock()
+		saveWordGridStateAsync(chatID, state)
+	}
+}
+
+func StartWordGridEasyGame(bot *tgbotapi.BotAPI, chatID int64, client *mongo.Client) {
+	wordGridMutex.Lock()
+	state, exists := wordGridStates[chatID]
+	if !exists {
+		state = &WordGridState{
+			CancelChan: make(chan bool, 1),
+		}
+		wordGridStates[chatID] = state
+	}
+	wordGridMutex.Unlock()
+
+	state.Lock()
+	if state.Active {
+		state.Unlock()
+		msg := tgbotapi.NewMessage(chatID, "A Word Grid game is already active in this chat! Find the remaining words or /cancelwordgrid to start a new one.")
+		bot.Send(msg)
+		return
+	}
+
+	words := getRandomWords(10, 3, 5)
+	grid, placedWords, positions := GenerateGrid(words, 8)
+
+	state.Active = true
+	state.Grid = grid
+	state.Words = placedWords
+	state.WordPositions = positions
+	state.FoundWords = make(map[string]bool)
+	state.UserScores = make(map[int64]int)
+	state.UserNames = make(map[int64]string)
+	state.Mode = "easy"
+	state.Unlock()
+
+	imgBytes, _ := GenerateGridImage(grid, positions, state.FoundWords)
+
+	caption := fmt.Sprintf("🔠 *Word Grid (Easy Mode)*\n\n🔍 *Find These Words:*\n\n%s\n\n♨️ _Find Words, Gain Score Points & Improve Your Leaderboard Rank._", getCluesText(words, state.FoundWords))
 
 	msg := tgbotapi.NewPhotoUpload(chatID, tgbotapi.FileBytes{Name: "wordgrid.png", Bytes: imgBytes})
 	msg.Caption = caption
@@ -280,8 +331,16 @@ func HandleGuess(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.
 
 	// Determine points: bonus if this is the last word
 	pointsEarned := 10
+	if state.Mode == "easy" {
+		pointsEarned = 5
+	}
+
 	if remainingWords == 0 {
-		pointsEarned = 25 // Bonus for finding the last word
+		if state.Mode == "easy" {
+			pointsEarned = 15 // 5 points + 10 bonus for finding the last word
+		} else {
+			pointsEarned = 25 // 10 points + 15 bonus for finding the last word
+		}
 	}
 
 	state.UserScores[int64(message.From.ID)] += pointsEarned
@@ -303,7 +362,12 @@ func HandleGuess(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.
 
 	imgBytes, _ := GenerateGridImage(state.Grid, state.WordPositions, state.FoundWords)
 
-	caption := fmt.Sprintf("🔠 *Word Grid (Hard Mode)*\n\n🔍 *Find These Words:*\n\n%s\n\n♨️ _Find Words, Gain Score Points & Improve Your Leaderboard Rank._", getCluesText(state.Words, state.FoundWords))
+	modeText := "Hard Mode"
+	if state.Mode == "easy" {
+		modeText = "Easy Mode"
+	}
+
+	caption := fmt.Sprintf("🔠 *Word Grid (%s)*\n\n🔍 *Find These Words:*\n\n%s\n\n♨️ _Find Words, Gain Score Points & Improve Your Leaderboard Rank._", modeText, getCluesText(state.Words, state.FoundWords))
 	if !allFound {
 		caption += GetLeaderboardText(state.UserScores, state.UserNames)
 	}
@@ -323,7 +387,8 @@ func HandleGuess(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.
 				tgbotapi.NewInlineKeyboardButtonData("Show Global Leaderboard 🌍", "statsglobal_wordgrid"),
 			),
 			tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonData("Start New Grid 🔠", "wordgrid_start"),
+				tgbotapi.NewInlineKeyboardButtonData("Start Easy Grid 🔠", "wordgrid_start_easy"),
+				tgbotapi.NewInlineKeyboardButtonData("Start Hard Grid 🔠", "wordgrid_start"),
 			),
 		)
 	}
