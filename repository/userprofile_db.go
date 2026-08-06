@@ -20,8 +20,8 @@ func GetUserProfile(client *mongo.Client, userID int64, username string) (*model
 	filter := bson.M{"user_id": userID}
 	update := bson.M{
 		"$setOnInsert": bson.M{
-			"user_id":               userID,
-			"username":              username,
+			"user_id": userID,
+			// "username":              username,
 			"level":                 1,
 			"xp":                    0,
 			"coins":                 0,
