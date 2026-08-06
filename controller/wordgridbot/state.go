@@ -27,6 +27,7 @@ type WordGridState struct {
 	UserScores    map[int64]int
 	UserNames     map[int64]string
 	MessageID     int
+	Mode          string
 	CancelChan    chan bool
 }
 
@@ -41,6 +42,7 @@ type WordGridStateDoc struct {
 	UserScores    map[string]int          `bson:"user_scores"`
 	UserNames     map[string]string       `bson:"user_names"`
 	MessageID     int                     `bson:"message_id"`
+	Mode          string                  `bson:"mode"`
 }
 
 var (
@@ -72,6 +74,7 @@ func saveWordGridStateAsync(chatID int64, state *WordGridState) {
 		UserScores:    userScoresStr,
 		UserNames:     userNamesStr,
 		MessageID:     state.MessageID,
+		Mode:          state.Mode,
 	}
 	state.RUnlock()
 
@@ -105,6 +108,7 @@ func LoadSavedStates(client *mongo.Client) {
 			UserScores:    make(map[int64]int),
 			UserNames:     make(map[int64]string),
 			MessageID:     doc.MessageID,
+			Mode:          doc.Mode,
 			CancelChan:    make(chan bool, 1),
 		}
 

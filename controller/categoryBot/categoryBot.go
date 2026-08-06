@@ -423,6 +423,9 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		case "wordgrid":
 			wordgridbot.StartWordGridGame(bot, chatID, client)
 			return
+		case "grideasy":
+			wordgridbot.StartWordGridEasyGame(bot, chatID, client)
+			return
 		case "anime":
 			animebot.HandleAnimeCommand(bot, chatID, client)
 			return
@@ -925,6 +928,9 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		return
 	case "wordgrid":
 		wordgridbot.StartWordGridGame(bot, chatID, client)
+		return
+	case "grideasy":
+		wordgridbot.StartWordGridEasyGame(bot, chatID, client)
 		return
 	case "anime":
 		animebot.HandleAnimeCommand(bot, chatID, client)
@@ -2187,6 +2193,10 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 	case "wordgrid_start":
 		wordgridbot.StartWordGridGame(bot, chatID, client)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Word Grid Started!"))
+		return
+	case "wordgrid_start_easy":
+		wordgridbot.StartWordGridEasyGame(bot, chatID, client)
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "Word Grid Easy Started!"))
 		return
 	case "cancel_new_wordle":
 		if wordlebot.CancelPendingGame(bot, chatID, callback.From.FirstName) {
