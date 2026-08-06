@@ -122,6 +122,10 @@ func handleCommand(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		// sendMessage(bot, chatID, "Use this command in a private chat with the bot to open the response menu.")
 		return
 
+	case "helpmod":
+		sendModBotHelp(bot, chatID)
+		return
+
 	case "addrule":
 		// Usage: /addrule <trigger_word> <response_text> OR /addrule <trigger_word> (as a reply to media)
 		args := message.CommandArguments()
@@ -325,6 +329,29 @@ func handleCommand(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		} else {
 			sendMessage(bot, chatID, "Domain not found in allowed list.")
 		}
+
+	case "purge", "delete":
+		args := strings.TrimSpace(message.CommandArguments())
+		if args == "" {
+			sendMessage(bot, chatID, "Usage: `/purge <count>`\nDeletes the last <count> messages before this command.")
+			return
+		}
+
+		count, err := strconv.Atoi(args)
+		if err != nil || count <= 0 {
+			sendMessage(bot, chatID, "Please provide a valid number greater than 0. Example: `/purge 5`")
+			return
+		}
+
+		if count > 100 {
+			count = 100
+		}
+
+		deletedCount := purgeLastMessages(bot, chatID, message.MessageID, count)
+		sendMessage(bot, chatID, fmt.Sprintf("✅ Deleted %d message(s).", deletedCount))
+		// Optionally remove the command message itself
+		commandDelete := tgbotapi.NewDeleteMessage(chatID, message.MessageID)
+		bot.DeleteMessage(commandDelete)
 
 	// Global admin only commands
 	// globalban - only group admins can execute, globalunban - only global admins
@@ -735,6 +762,39 @@ func sendMessage(bot *tgbotapi.BotAPI, chatID int64, text string) {
 	if err != nil {
 		log.Printf("Failed to send message: %v", err)
 	}
+}
+
+func purgeLastMessages(bot *tgbotapi.BotAPI, chatID int64, commandMessageID, count int) int {
+	deleted := 0
+	for i := 1; i <= count; i++ {
+		msgID := commandMessageID - i
+		if msgID <= 0 {
+			break
+		}
+
+		deleteMsg := tgbotapi.NewDeleteMessage(chatID, msgID)
+		if _, err := bot.DeleteMessage(deleteMsg); err == nil {
+			deleted++
+		}
+	}
+	return deleted
+}
+
+func sendModBotHelp(bot *tgbotapi.BotAPI, chatID int64) {
+	msgText := "*ModBot Commands*\n" +
+		"`/addrule <word> <response>` - add keyword auto-response\n" +
+		"`/addrule <word>` (reply to media) - add media response\n" +
+		"`/delrule <word>` - remove a keyword response\n" +
+		"`/addscamword <phrase>` - add a scam keyword\n" +
+		"`/delscamword <phrase>` - remove a scam keyword\n" +
+		"`/adddomain <domain>` - allow a domain\n" +
+		"`/deldomain <domain>` - remove an allowed domain\n" +
+		"`/purge <count>` - delete the last <count> messages before the command\n" +
+		"`/globalban` / `/globalunban` / `/addglobaladmin` / `/removeglobaladmin` - global moderation commands\n"
+
+	msg := tgbotapi.NewMessage(chatID, msgText)
+	msg.ParseMode = "Markdown"
+	bot.Send(msg)
 }
 
 // parseTargetAndReason extracts the target user ID and reason from a command message.
