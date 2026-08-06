@@ -15,6 +15,7 @@ var App Config
 func Load(token string) {
 	App = Config{
 		CatTelegramToken: token,
+		DatabaseName:     "Telegram",
 	}
 
 	if App.CatTelegramToken == "" {
