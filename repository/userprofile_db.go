@@ -15,7 +15,11 @@ const userProfilesCollection = "UserProfiles"
 
 // GetUserProfile fetches a user profile by ID, creating one if it doesn't exist.
 func GetUserProfile(client *mongo.Client, userID int64, username string) (*model.UserProfile, error) {
-	collection := client.Database(config.App.DatabaseName).Collection(userProfilesCollection)
+	dbName := config.App.DatabaseName
+	if dbName == "" {
+		dbName = "Telegram" // Fallback to hardcoded database name if not configured
+	}
+	collection := client.Database(dbName).Collection(userProfilesCollection)
 
 	filter := bson.M{"user_id": userID}
 	update := bson.M{
@@ -49,7 +53,11 @@ func GetUserProfile(client *mongo.Client, userID int64, username string) (*model
 
 // UpdateUserProfile updates an existing user profile.
 func UpdateUserProfile(client *mongo.Client, profile *model.UserProfile) error {
-	collection := client.Database(config.App.DatabaseName).Collection(userProfilesCollection)
+	dbName := config.App.DatabaseName
+	if dbName == "" {
+		dbName = "Telegram"
+	}
+	collection := client.Database(dbName).Collection(userProfilesCollection)
 
 	profile.UpdatedAt = time.Now()
 	filter := bson.M{"user_id": profile.UserID}
@@ -61,7 +69,11 @@ func UpdateUserProfile(client *mongo.Client, profile *model.UserProfile) error {
 
 // UpdateUserProfileFields updates specific fields of a user profile.
 func UpdateUserProfileFields(client *mongo.Client, userID int64, updateFields bson.M) error {
-	collection := client.Database(config.App.DatabaseName).Collection(userProfilesCollection)
+	dbName := config.App.DatabaseName
+	if dbName == "" {
+		dbName = "Telegram"
+	}
+	collection := client.Database(dbName).Collection(userProfilesCollection)
 
 	updateFields["updated_at"] = time.Now()
 	filter := bson.M{"user_id": userID}
@@ -73,7 +85,11 @@ func UpdateUserProfileFields(client *mongo.Client, userID int64, updateFields bs
 
 // IncrementUserProfileStats increments numerical fields like XP, Coins, etc.
 func IncrementUserProfileStats(client *mongo.Client, userID int64, incFields bson.M) error {
-	collection := client.Database(config.App.DatabaseName).Collection(userProfilesCollection)
+	dbName := config.App.DatabaseName
+	if dbName == "" {
+		dbName = "Telegram"
+	}
+	collection := client.Database(dbName).Collection(userProfilesCollection)
 
 	filter := bson.M{"user_id": userID}
 	update := bson.M{
