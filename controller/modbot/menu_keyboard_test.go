@@ -48,6 +48,28 @@ func TestBuildRuleSelectionKeyboard_IncludesConfiguredTriggers(t *testing.T) {
 	}
 }
 
+func TestGetGlobalRuleForTrigger_HonorsGlobalKeyboardToggle(t *testing.T) {
+	previousConfigCache := globalKeyboardConfigCache
+	previousSettingsCache := settingsCache
+	globalKeyboardConfigCache = map[string]bool{"hello": false}
+	settingsCache = map[int64]*ModChatSettings{
+		123: {
+			ChatID: 123,
+			Rules: map[string]ModRuleDoc{
+				"hello": {TriggerWord: "hello", ResponseType: "text", ResponseText: "hi"},
+			},
+		},
+	}
+	defer func() {
+		globalKeyboardConfigCache = previousConfigCache
+		settingsCache = previousSettingsCache
+	}()
+
+	if _, ok := GetGlobalRuleForTrigger("hello"); ok {
+		t.Fatal("expected disabled global keyboard rule to be ignored")
+	}
+}
+
 func TestGetEnabledGlobalKeyboardTriggers_FiltersDisabledItems(t *testing.T) {
 	globalKeyboardConfigCache = map[string]bool{
 		"hello": true,

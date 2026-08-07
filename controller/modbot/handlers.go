@@ -81,7 +81,8 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, dbClient int
 		}
 	}
 
-	if message.Chat != nil && message.Chat.ID > 0 {
+	if message.Chat != nil {
+		// && message.Chat.ID > 0 {
 		trigger := strings.ToLower(strings.TrimSpace(message.Text))
 		if rule, ok := GetGlobalRuleForTrigger(trigger); ok {
 			sendRuleResponse(bot, message.Chat.ID, 0, rule)
@@ -656,9 +657,16 @@ func GetGlobalRuleForTrigger(trigger string) (ModRuleDoc, bool) {
 
 	normalizedTrigger := normalizeRuleTrigger(trigger)
 	for _, settings := range settingsCache {
-		if ruleKey, ok := findRuleKeyByNormalizedTrigger(settings, normalizedTrigger); ok {
-			return settings.Rules[ruleKey], true
+		ruleKey, ok := findRuleKeyByNormalizedTrigger(settings, normalizedTrigger)
+		if !ok {
+			continue
 		}
+
+		if !isGlobalKeyboardItemEnabled(ruleKey) {
+			continue
+		}
+
+		return settings.Rules[ruleKey], true
 	}
 	return ModRuleDoc{}, false
 }
