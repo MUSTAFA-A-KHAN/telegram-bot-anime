@@ -766,8 +766,12 @@ func sendMessage(bot *tgbotapi.BotAPI, chatID int64, text string) {
 
 func purgeLastMessages(bot *tgbotapi.BotAPI, chatID int64, commandMessageID, count int) int {
 	deleted := 0
-	for i := 1; i <= count; i++ {
+	maxScan := count * 5 // or any reasonable limit
+
+	for i := 1; deleted <= count && i <= maxScan; i++ {
 		msgID := commandMessageID - i
+		// if(isAdmin(bot,chatID, msgID)) {
+		// }
 		if msgID <= 0 {
 			break
 		}
