@@ -84,9 +84,9 @@ var wordColors = []color.RGBA{
 }
 
 func GenerateGridImage(grid [][]string, positions map[string]WordPosition, foundWords map[string]bool) ([]byte, error) {
-	cellSize := 60
+	cellSize := 80
 	gridSize := len(grid)
-	padding := 30
+	padding := 40
 
 	width := gridSize*cellSize + 2*padding
 	height := gridSize*cellSize + 2*padding
@@ -135,7 +135,7 @@ func GenerateGridImage(grid [][]string, positions map[string]WordPosition, found
 	if err != nil {
 		return nil, fmt.Errorf("failed to load font: %w", err)
 	}
-	face := truetype.NewFace(f, &truetype.Options{Size: 30})
+	face := truetype.NewFace(f, &truetype.Options{Size: 40})
 	dc.SetFontFace(face)
 
 	for r := 0; r < gridSize; r++ {
