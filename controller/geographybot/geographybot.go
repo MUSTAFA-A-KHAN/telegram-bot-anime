@@ -8,6 +8,7 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -19,6 +20,7 @@ import (
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/service"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/view"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	tgbotapiv5Ovy "github.com/OvyFlash/telegram-bot-api"
 	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/text/runes"
 	"golang.org/x/text/transform"
@@ -38,6 +40,8 @@ type GeographyStateDoc struct {
 	PendingNewGame    bool           `bson:"pending_new_game"`
 	LastHintTimestamp time.Time      `bson:"last_hint_timestamp"`
 	LastHintTypeSent  int            `bson:"last_hint_type_sent"`
+	CarouselImageURLs []string       `bson:"carousel_image_urls,omitempty"`
+	CarouselIndex     int            `bson:"carousel_index,omitempty"`
 }
 
 // GeographyState holds the state for a Geography game in a specific chat.
@@ -54,6 +58,8 @@ type GeographyState struct {
 	CancelChan        chan bool
 	LastHintTimestamp time.Time
 	LastHintTypeSent  int
+	CarouselImageURLs []string
+	CarouselIndex     int
 }
 
 var (
@@ -81,6 +87,8 @@ func saveGeographyStateAsync(chatID int64, state *GeographyState) {
 		PendingNewGame:    state.PendingNewGame,
 		LastHintTimestamp: state.LastHintTimestamp,
 		LastHintTypeSent:  state.LastHintTypeSent,
+		CarouselImageURLs: state.CarouselImageURLs,
+		CarouselIndex:     state.CarouselIndex,
 	}
 	state.RUnlock()
 
@@ -124,6 +132,8 @@ func LoadSavedStates(client *mongo.Client) {
 			CancelChan:        make(chan bool, 1),
 			LastHintTimestamp: doc.LastHintTimestamp,
 			LastHintTypeSent:  doc.LastHintTypeSent,
+			CarouselImageURLs: doc.CarouselImageURLs,
+			CarouselIndex:     doc.CarouselIndex,
 		}
 		geographyStates[doc.ChatID] = gs
 	}
@@ -190,6 +200,72 @@ func LoadGeographyData() error {
 
 	log.Printf("Loaded %d valid countries for Geography mode", len(countryData))
 	return nil
+}
+
+// stripMarkdown removes common markdown formatting characters for plain-text display.
+func stripMarkdown(s string) string {
+	s = strings.ReplaceAll(s, "*", "")
+	s = strings.ReplaceAll(s, "_", "")
+	s = strings.ReplaceAll(s, "`", "")
+	return s
+}
+
+// ===================== Carousel Mode Helpers =====================
+
+// flagEmojiToCountryCode converts a flag emoji (e.g. "🇺🇸") to a 2-letter ISO country code (e.g. "US").
+// Returns empty string if conversion fails.
+func flagEmojiToCountryCode(flagEmoji string) string {
+	// Flag emojis are Regional Indicator Symbols: each letter A-Z maps to U+1F1E6..U+1F1FF
+	// So a flag emoji is two runes in this range.
+	runesArr := []rune(flagEmoji)
+	if len(runesArr) != 2 {
+		return ""
+	}
+	code1 := int(runesArr[0] - 0x1F1E6)
+	code2 := int(runesArr[1] - 0x1F1E6)
+	if code1 < 0 || code1 > 25 || code2 < 0 || code2 > 25 {
+		return ""
+	}
+	return string([]byte{byte('A' + code1), byte('A' + code2)})
+}
+
+// buildFlagImageURLs takes a Country and returns reliable flag image URLs for carousel display.
+// Uses flagcdn.com which is a free, reliable CDN for all country flags.
+func buildFlagImageURLs(target Country) []string {
+	code := flagEmojiToCountryCode(target.Flag)
+	if code == "" {
+		return nil
+	}
+	codeLower := strings.ToLower(code)
+	urls := make([]string, 0, 3)
+	// 4:3 aspect ratio flag (w480 is well-sized for chat)
+	urls = append(urls, fmt.Sprintf("https://flagcdn.com/w480/%s.png", codeLower))
+	// 1:1 aspect flag (square - different perspective)
+	urls = append(urls, fmt.Sprintf("https://flagcdn.com/h240/%s.png", codeLower))
+	return urls
+}
+
+// buildCarouselBlocks builds an InputRichBlockSlideshow with the given image URLs.
+// Skips URLs that fail to load (Telegram handles lazy loading).
+func buildCarouselBlocks(imageURLs []string) tgbotapiv5Ovy.InputRichBlock {
+	var photoBlocks []tgbotapiv5Ovy.InputRichBlock
+	for _, url := range imageURLs {
+		if url == "" {
+			continue
+		}
+		photoMedia := tgbotapiv5Ovy.NewInputMediaPhoto(tgbotapiv5Ovy.FileURL(url))
+		photoBlocks = append(photoBlocks, tgbotapiv5Ovy.InputRichBlockPhoto{
+			Type:  "photo",
+			Photo: photoMedia,
+		})
+	}
+	if len(photoBlocks) == 0 {
+		return nil
+	}
+	return tgbotapiv5Ovy.InputRichBlockSlideshow{
+		Type:   "slideshow",
+		Blocks: photoBlocks,
+	}
 }
 
 // IsGeographyActive returns true if there is an active game in the chat
@@ -276,10 +352,12 @@ func startNewRound(bot *tgbotapi.BotAPI, chatID int64, client *mongo.Client) {
 	var options []string
 	var targetCountryName string
 	var targetImageBytes []byte
+	var targetLandmark Landmark
+	var targetIndex int
 
 	// Pick target and generate distractors
 	if qType == "landmark" || qType == "landmark_name" {
-		targetLandmark := landmarkData[rand.Intn(len(landmarkData))]
+		targetLandmark = landmarkData[rand.Intn(len(landmarkData))]
 		targetCountryName = targetLandmark.Country
 
 		if qType == "landmark" {
@@ -311,7 +389,7 @@ func startNewRound(bot *tgbotapi.BotAPI, chatID int64, client *mongo.Client) {
 	}
 
 	if qType != "landmark" && qType != "landmark_name" {
-		targetIndex := rand.Intn(len(countryData))
+		targetIndex = rand.Intn(len(countryData))
 		target := countryData[targetIndex]
 		targetCountryName = target.Name
 
@@ -400,6 +478,8 @@ func startNewRound(bot *tgbotapi.BotAPI, chatID int64, client *mongo.Client) {
 	state.QuestionType = qType
 	state.Options = options
 	state.UserAttempts = make(map[int64]int)
+	state.CarouselImageURLs = nil
+	state.CarouselIndex = 0
 	if isTextMode {
 		state.MaxAttempts = 5 // 5 attempts for text mode
 	} else {
@@ -417,6 +497,79 @@ func startNewRound(bot *tgbotapi.BotAPI, chatID int64, client *mongo.Client) {
 
 	startTimer(bot, chatID, state)
 
+	// ===================== Carousel Mode =====================
+	isCarouselMode := settings.GeographyMode == "carousel"
+
+	if isCarouselMode && (qType == "flag" || qType == "landmark" || qType == "landmark_name") {
+		var carouselURLs []string
+		if qType == "flag" {
+			target := countryData[targetIndex]
+			carouselURLs = buildFlagImageURLs(target)
+		} else {
+			// Landmark carousel: target image + other landmarks from same country
+			carouselURLs = append(carouselURLs, targetLandmark.ImageURL)
+			for _, lm := range landmarkData {
+				if len(carouselURLs) >= 5 {
+					break
+				}
+				if lm.ImageURL != targetLandmark.ImageURL && strings.EqualFold(lm.Country, targetLandmark.Country) {
+					carouselURLs = append(carouselURLs, lm.ImageURL)
+				}
+			}
+		}
+
+		if len(carouselURLs) > 0 {
+			state.Lock()
+			state.CarouselImageURLs = carouselURLs
+			state.CarouselIndex = 0
+			state.Unlock()
+			saveGeographyStateAsync(chatID, state)
+
+			// Build rich message with carousel slideshow
+			carouselBlock := buildCarouselBlocks(carouselURLs)
+			if carouselBlock != nil {
+				var blocks []tgbotapiv5Ovy.InputRichBlock
+				blocks = append(blocks, tgbotapiv5Ovy.InputRichBlockParagraph{
+					Type: "paragraph",
+					Text: stripMarkdown(question),
+				})
+				blocks = append(blocks, carouselBlock)
+
+				richMessage := tgbotapiv5Ovy.NewInputRichMessageBlocks(blocks...)
+
+				if !isTextMode {
+					// Build MCQ buttons for carousel
+					var keyboardRows [][]tgbotapi.InlineKeyboardButton
+					for i := 0; i < len(options); i += 2 {
+						var row []tgbotapi.InlineKeyboardButton
+						btn1 := tgbotapi.NewInlineKeyboardButtonData(options[i], "geo_ans_"+options[i])
+						row = append(row, btn1)
+						if i+1 < len(options) {
+							btn2 := tgbotapi.NewInlineKeyboardButtonData(options[i+1], "geo_ans_"+options[i+1])
+							row = append(row, btn2)
+						}
+						keyboardRows = append(keyboardRows, row)
+					}
+					if len(keyboardRows) > 0 {
+						markup := tgbotapi.InlineKeyboardMarkup{InlineKeyboard: keyboardRows}
+						ovyKeyboard := view.ConvertToOvyKeyboard(markup)
+						err := view.SendRichMessageWithButtons(bot.Token, chatID, richMessage, ovyKeyboard)
+						if err != nil {
+							log.Printf("Failed to send carousel rich message: %v. Falling back.", err)
+							view.SendMessageWithButtons(bot, chatID, question, markup)
+						}
+					} else {
+						view.SendRichMessageWithButtons(bot.Token, chatID, richMessage, nil)
+					}
+				} else {
+					view.SendRichMessageWithButtons(bot.Token, chatID, richMessage, nil)
+				}
+				return
+			}
+		}
+	}
+
+	// ===================== Standard (non-carousel) Mode =====================
 	// Send Question with Inline Buttons if MCQ, otherwise just text
 	var markup tgbotapi.InlineKeyboardMarkup
 	if !isTextMode {
@@ -776,9 +929,9 @@ func HandleGeographyHint(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client
 	}
 
 	settings := GetChatSettings(chatID, client)
-	if settings.GeographyMode != "text" {
+	if settings.GeographyMode != "text" && settings.GeographyMode != "carousel" {
 		state.Unlock()
-		view.SendMessage(bot, chatID, "Hints are only available in text mode.")
+		view.SendMessage(bot, chatID, "Hints are only available in text mode and carousel mode.")
 		return
 	}
 
