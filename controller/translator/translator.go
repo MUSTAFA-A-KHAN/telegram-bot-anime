@@ -448,7 +448,7 @@ func (t *TextTranslator) TranslateToEnglish(text string) string {
 	url := NvidiaBaseURL + "/chat/completions"
 
 	payload := map[string]interface{}{
-		"model": "meta/llama-3.1-70b-instruct",
+		"model": "codestral-latest",
 		"messages": []map[string]string{
 			{"role": "user", "content": fmt.Sprintf("Translate the following text to English and just reply with the translated text: %s", text)},
 		},
@@ -509,7 +509,7 @@ func (t *TextTranslator) TranslateToRussian(text string) string {
 	url := NvidiaBaseURL + "/chat/completions"
 
 	payload := map[string]interface{}{
-		"model": "meta/llama-3.1-70b-instruct",
+		"model": "codestral-latest",
 		"messages": []map[string]string{
 			{"role": "user", "content": fmt.Sprintf("Translate the following text to Russian and just reply with the translated text: %s", text)},
 		},
@@ -570,7 +570,7 @@ func (t *TextTranslator) TranslateToFrench(text string) string {
 	url := NvidiaBaseURL + "/chat/completions"
 
 	payload := map[string]interface{}{
-		"model": "meta/llama-3.1-70b-instruct",
+		"model": "codestral-latest",
 		"messages": []map[string]string{
 			{"role": "user", "content": fmt.Sprintf("Translate the following text to French and just reply with the translated text: %s", text)},
 		},
@@ -631,7 +631,7 @@ func (t *TextTranslator) TranslateToArabic(text string) string {
 	url := NvidiaBaseURL + "/chat/completions"
 
 	payload := map[string]interface{}{
-		"model": "meta/llama-3.1-70b-instruct",
+		"model": "codestral-latest",
 		"messages": []map[string]string{
 			{"role": "user", "content": fmt.Sprintf("Translate the following text to Arabic and just reply with the translated text: %s", text)},
 		},
@@ -692,7 +692,7 @@ func (t *TextTranslator) GetSynonyms(text string) string {
 	url := NvidiaBaseURL + "/chat/completions"
 
 	payload := map[string]interface{}{
-		"model": "meta/llama-3.1-70b-instruct",
+		"model": "codestral-latest",
 		"messages": []map[string]string{
 			{"role": "user", "content": fmt.Sprintf("Give me synonyms for the word and please just give me synonyms nothing else it has to be atleast 30 synonyms of the word: %s", text)},
 		},
@@ -753,7 +753,7 @@ func (t *TextTranslator) GetAntonyms(text string) string {
 	url := NvidiaBaseURL + "/chat/completions"
 
 	payload := map[string]interface{}{
-		"model": "meta/llama-3.1-70b-instruct",
+		"model": "codestral-latest",
 		"messages": []map[string]string{
 			{"role": "user", "content": fmt.Sprintf("Give me synonyms for the word and please just give me antonyms nothing else it has to be atleast 30 antonyms of the word: %s", text)},
 		},
@@ -814,7 +814,7 @@ func (t *TextTranslator) GetDefinition(text string) string {
 	url := NvidiaBaseURL + "/chat/completions"
 
 	payload := map[string]interface{}{
-		"model": "meta/llama-3.1-70b-instruct",
+		"model": "codestral-latest",
 		"messages": []map[string]string{
 			{"role": "user", "content": fmt.Sprintf("Provide a clear and concise definition of the word/phrase/idiom %s. Include its meaning, common usage, and any variations or related terms", text)},
 		},
@@ -875,7 +875,7 @@ func (t *TextTranslator) CorrectGrammar(text string) string {
 	url := NvidiaBaseURL + "/chat/completions"
 
 	payload := map[string]interface{}{
-		"model": "meta/llama-3.1-70b-instruct",
+		"model": "codestral-latest",
 		"messages": []map[string]string{
 			{
 				"role": "system",
@@ -952,7 +952,7 @@ func (t *TextTranslator) RewriteStatement(text string) string {
 	url := NvidiaBaseURL + "/chat/completions"
 
 	payload := map[string]interface{}{
-		"model": "meta/llama-3.1-70b-instruct",
+		"model": "codestral-latest",
 		"messages": []map[string]string{
 			{"role": "user", "content": fmt.Sprintf("Rewrite the following statement to make it clearer, more natural, and better worded. Preserve the original meaning, tone, and language. Reply only with the rewritten statement, without explanations or quotation marks: %s", text)},
 		},
@@ -1013,7 +1013,7 @@ func (t *TextTranslator) GetAbbreviation(text string) string {
 	url := NvidiaBaseURL + "/chat/completions"
 
 	payload := map[string]interface{}{
-		"model": "meta/llama-3.1-70b-instruct",
+		"model": "codestral-latest",
 		"messages": []map[string]string{
 			{"role": "user", "content": fmt.Sprintf("Convert the word/phrase %s into its commonly used abbreviation or acronym. If multiple abbreviations exist, provide the most widely accepted ones.", text)},
 		},
@@ -1084,7 +1084,7 @@ func (t *TextTranslator) WriteImage(text string, imagePath string) string {
 	url := NvidiaBaseURL + "/chat/completions"
 
 	payload := map[string]interface{}{
-		"model": "meta/llama-3.1-70b-instruct",
+		"model": "codestral-latest",
 		"messages": []map[string]interface{}{
 			{
 				"role": "user",
@@ -1368,7 +1368,7 @@ func (t *TextTranslator) GetHintForGeography(text string) string {
 	url := NvidiaBaseURL + "/chat/completions"
 
 	payload := map[string]interface{}{
-		"model": "meta/llama-3.1-70b-instruct",
+		"model": "codestral-latest",
 		"messages": []map[string]string{
 			{"role": "user", "content": fmt.Sprintf("Give me a fun, short, and interesting geographical fact or clue about the following answer, without revealing the answer itself: %s", text)},
 		},
