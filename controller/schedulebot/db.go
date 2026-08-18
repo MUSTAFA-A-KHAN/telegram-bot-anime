@@ -3,7 +3,6 @@ package schedulebot
 import (
 	"context"
 
-	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/config"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -23,7 +22,7 @@ type ScheduledMessage struct {
 }
 
 func GetCollection(client *mongo.Client) *mongo.Collection {
-	return client.Database(config.App.DatabaseName).Collection("ScheduledMessages")
+	return client.Database("Telegram").Collection("ScheduledMessages")
 }
 
 func saveSchedule(client *mongo.Client, msg ScheduledMessage) (*mongo.InsertOneResult, error) {
