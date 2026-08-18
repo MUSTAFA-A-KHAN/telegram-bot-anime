@@ -10,6 +10,7 @@ import (
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/fontbot"
 	instagrambot "github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/instagramBot"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/modbot"
+	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/schedulebot"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/translator"
 )
 
@@ -21,11 +22,13 @@ func main() {
 	instagram := "7995903003:AAEcvtxq1Swak9W_uuMwQ-Jv-YXKOp_i-pw"
 	fontbotToken := "YOUR_FONT_BOT_TOKEN_HERE" // Replace with your actual font bot token
 	modbotToken := os.Getenv("MOD_BOT_TOKEN")  // Token for the moderator bot
+	scheduleBotToken := os.Getenv("SCHEDULE_BOT_TOKEN")
+
 	// WaitGroup to wait for all goroutines to finish
 	var wg sync.WaitGroup
 
-	// Add six tasks to the WaitGroup
-	wg.Add(6)
+	// Add seven tasks to the WaitGroup
+	wg.Add(7)
 
 	// Start bots in separate goroutines
 	go runWordBot(charades, &wg)
@@ -34,6 +37,7 @@ func main() {
 	go runTranslatorBot(&wg)
 	go runFontBot(fontbotToken, &wg)
 	go runModBot(modbotToken, &wg)
+	go runScheduleBot(scheduleBotToken, &wg)
 
 	// Wait for goroutines to complete
 	wg.Wait()
@@ -109,5 +113,20 @@ func runModBot(botToken string, wg *sync.WaitGroup) {
 	err := modbot.StartModBot(botToken)
 	if err != nil {
 		log.Printf("Error starting mod bot with token %s: %v\n", botToken, err)
+	}
+}
+
+// Function to start the schedule bot with error handling
+func runScheduleBot(botToken string, wg *sync.WaitGroup) {
+	defer wg.Done() // Decrement the wait group counter when this goroutine completes
+
+	if botToken == "" {
+		log.Println("SCHEDULE_BOT_TOKEN is empty. Skipping ScheduleBot startup.")
+		return
+	}
+
+	err := schedulebot.StartScheduleBot(botToken)
+	if err != nil {
+		log.Printf("Error starting schedule bot with token %s: %v\n", botToken, err)
 	}
 }
