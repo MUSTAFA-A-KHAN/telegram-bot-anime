@@ -4,7 +4,7 @@ import (
 	"log"
 
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/repository"
-	"github.com/go-telegram-bot-api/telegram-bot-api"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/robfig/cron/v3"
 )
 
