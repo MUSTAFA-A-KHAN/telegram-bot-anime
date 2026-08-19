@@ -334,6 +334,7 @@ var ephemeralRequests = make(map[int64]ephemeralRequest)
 var ephemeralRequestMutex = &sync.Mutex{}
 var knownUserIDs = make(map[string]int64)
 var knownUserMutex = &sync.RWMutex{}
+
 // A whisper that could not be delivered as an ephemeral message (for example
 // because the bot is not an administrator in the chat). It is stored and later
 // retrieved by the intended recipient when they run /ephemeral.
@@ -407,7 +408,7 @@ func deliverStoredWhispers(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 		}
 		// Last resort: send it as an ordinary private message via the user's DM.
 		if !delivered {
-			if _, err := view.SendMessage(bot, userID, "You received a stored whisper:\n\n" + w.text); err == nil {
+			if _, err := view.SendMessage(bot, userID, "You received a stored whisper:\n\n"+w.text); err == nil {
 				delivered = true
 			}
 		}
@@ -442,7 +443,7 @@ func handleEphemeralReply(bot *tgbotapi.BotAPI, message *tgbotapi.Message) bool 
 
 	parts := strings.Fields(message.Text)
 	if len(parts) < 2 || (!strings.HasPrefix(parts[0], "@") && !isNumericUserID(parts[0])) {
-		view.SendMessage(bot, message.Chat.ID, "Invalid format. Reply with @username or user ID followed by the message, or use /cancel.")
+		view.SendEphemeralMessage(request.chatID, "Include the ID of the user", message.From.ID, message.EphemeralMessageID, false, false)
 		return true
 	}
 
