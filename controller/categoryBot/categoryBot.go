@@ -6,6 +6,7 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -324,10 +325,125 @@ var aiModeMutex = &sync.Mutex{}
 var customWordState = make(map[int64]int64)
 var customWordMutex = &sync.Mutex{}
 
+type ephemeralRequest struct {
+	chatID         int64
+	ephemeralMsgID int
+}
+
+var ephemeralRequests = make(map[int64]ephemeralRequest)
+var ephemeralRequestMutex = &sync.Mutex{}
+var knownUserIDs = make(map[string]int64)
+var knownUserMutex = &sync.RWMutex{}
+
+func rememberUser(message *tgbotapi.Message) {
+	if message.From == nil || message.From.UserName == "" {
+		return
+	}
+
+	knownUserMutex.Lock()
+	knownUserIDs[strings.ToLower(message.From.UserName)] = int64(message.From.ID)
+	knownUserMutex.Unlock()
+}
+
+func sendEphemeralPrompt(message *tgbotapi.Message) {
+	ephemeralBot, err := tgbotapiv5Ovy.NewBotAPI(config.App.CatTelegramToken)
+	if err != nil {
+		log.Printf("Failed to create ephemeral bot: %v", err)
+		return
+	}
+
+	prompt := tgbotapiv5Ovy.NewMessage(message.Chat.ID, "Please reply to this message starting with @username or user ID, followed by the message you want to deliver.")
+	prompt.ReceiverUserID = int64(message.From.ID)
+	prompt.ReplyMarkup = tgbotapiv5Ovy.ForceReply{ForceReply: true}
+	sent, err := ephemeralBot.Send(prompt)
+	if err != nil {
+		log.Printf("Failed to send ephemeral prompt: %v", err)
+		return
+	}
+
+	ephemeralRequestMutex.Lock()
+	ephemeralRequests[int64(message.From.ID)] = ephemeralRequest{
+		chatID:         message.Chat.ID,
+		ephemeralMsgID: sent.EphemeralMessageID,
+	}
+	ephemeralRequestMutex.Unlock()
+}
+
+func handleEphemeralReply(bot *tgbotapi.BotAPI, message *tgbotapi.Message) bool {
+	ephemeralRequestMutex.Lock()
+	request, pending := ephemeralRequests[int64(message.From.ID)]
+	if pending {
+		delete(ephemeralRequests, int64(message.From.ID))
+	}
+	ephemeralRequestMutex.Unlock()
+	if !pending {
+		return false
+	}
+
+	if message.Command() == "cancel" {
+		view.SendMessage(bot, message.Chat.ID, "Ephemeral message cancelled.")
+		return true
+	}
+
+	parts := strings.Fields(message.Text)
+	if len(parts) < 2 || (!strings.HasPrefix(parts[0], "@") && !isNumericUserID(parts[0])) {
+		view.SendMessage(bot, message.Chat.ID, "Invalid format. Reply with @username or user ID followed by the message, or use /cancel.")
+		return true
+	}
+
+	recipientID, ok := resolveEphemeralRecipient(parts[0])
+	if !ok {
+		view.SendMessage(bot, message.Chat.ID, "I do not know that username yet. Use the recipient's numeric user ID instead.")
+		return true
+	}
+
+	deliveryBot, err := tgbotapiv5Ovy.NewBotAPI(config.App.CatTelegramToken)
+	if err != nil {
+		log.Printf("Failed to create ephemeral delivery bot: %v", err)
+		return true
+	}
+	delivery := tgbotapiv5Ovy.NewMessage(request.chatID, strings.Join(parts[1:], " "))
+	delivery.ReceiverUserID = recipientID
+	delivery.ReplyParameters.EphemeralMessageID = request.ephemeralMsgID
+	if _, err := deliveryBot.Send(delivery); err != nil {
+		log.Printf("Failed to deliver ephemeral message: %v", err)
+		view.SendMessage(bot, message.Chat.ID, "I could not deliver that message. Please check the recipient ID and try again.")
+		return true
+	}
+
+	view.SendMessage(bot, message.Chat.ID, "Ephemeral message delivered.")
+	return true
+}
+
+func isNumericUserID(value string) bool {
+	_, err := strconv.ParseInt(value, 10, 64)
+	return err == nil
+}
+
+func resolveEphemeralRecipient(value string) (int64, bool) {
+	if userID, err := strconv.ParseInt(value, 10, 64); err == nil {
+		return userID, true
+	}
+
+	username := strings.ToLower(strings.TrimPrefix(value, "@"))
+	knownUserMutex.RLock()
+	userID, ok := knownUserIDs[username]
+	knownUserMutex.RUnlock()
+	return userID, ok
+}
+
 // handleMessage processes incoming messages and handles commands and guesses.
 func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.Client) {
 	chatID := message.Chat.ID
 	adminID := int64(1006461736)
+	rememberUser(message)
+	if message.Command() == "ephemeral" {
+		sendEphemeralPrompt(message)
+		return
+	}
+	if handleEphemeralReply(bot, message) {
+		return
+	}
 
 	chatState := getOrCreateChatState(chatID)
 
