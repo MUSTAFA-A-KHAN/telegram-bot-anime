@@ -392,26 +392,13 @@ func handleEphemeralReply(bot *tgbotapi.BotAPI, message *tgbotapi.Message) bool 
 	}
 
 	recipientID, ok := resolveEphemeralRecipient(parts[0])
+	// log.Fatal(recipientID)
 	if !ok {
 		view.SendMessage(bot, message.Chat.ID, "I do not know that username yet. Use the recipient's numeric user ID instead.")
 		return true
 	}
-
-	deliveryBot, err := tgbotapiv5Ovy.NewBotAPI(config.App.CatTelegramToken)
-	if err != nil {
-		log.Printf("Failed to create ephemeral delivery bot: %v", err)
-		return true
-	}
-	delivery := tgbotapiv5Ovy.NewMessage(request.chatID, strings.Join(parts[1:], " "))
-	delivery.ReceiverUserID = recipientID
-	delivery.ReplyParameters.EphemeralMessageID = request.ephemeralMsgID
-	if _, err := deliveryBot.Send(delivery); err != nil {
-		log.Printf("Failed to deliver ephemeral message: %v", err)
-		view.SendMessage(bot, message.Chat.ID, "I could not deliver that message. Please check the recipient ID and try again.")
-		return true
-	}
-
-	view.SendMessage(bot, message.Chat.ID, "Ephemeral message delivered.")
+	view.SendEphemeralMessage(request.chatID, message.Text, int(recipientID), message.From.ID)
+	view.SendEphemeralMessage(request.chatID, "Whisper Sent:"+message.Text, message.From.ID, int(recipientID))
 	return true
 }
 
