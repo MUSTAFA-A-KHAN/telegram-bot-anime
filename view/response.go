@@ -136,6 +136,59 @@ func SendEphemeralMessage(chatID int64, text string, usrid int, msgID int, force
 	log.Print("Error:", err)
 	return err, sent
 }
+// SendEphemeralMediaMessage sends an ephemeral media message (photo, video,
+// animation, audio, document or voice) that is tied to an ephemeral message and
+// visible only to the targeted user. Passing usrid = 0 and msgID = 0 sends an
+// ordinary (non-ephemeral) media message to the chat.
+func SendEphemeralMediaMessage(chatID int64, mediaType, fileID, caption string, usrid int, msgID int) (error, tgbotapiv5Ovy.Message) {
+	file := tgbotapiv5Ovy.FileID(fileID)
+	var c tgbotapiv5Ovy.Chattable
+
+	switch mediaType {
+	case "photo":
+		m := tgbotapiv5Ovy.NewPhoto(chatID, file)
+		m.Caption = caption
+		m.ReceiverUserID = int64(usrid)
+		m.ReplyParameters.EphemeralMessageID = msgID
+		c = m
+	case "video":
+		m := tgbotapiv5Ovy.NewVideo(chatID, file)
+		m.Caption = caption
+		m.ReceiverUserID = int64(usrid)
+		m.ReplyParameters.EphemeralMessageID = msgID
+		c = m
+	case "animation":
+		m := tgbotapiv5Ovy.NewAnimation(chatID, file)
+		m.Caption = caption
+		m.ReceiverUserID = int64(usrid)
+		m.ReplyParameters.EphemeralMessageID = msgID
+		c = m
+	case "audio":
+		m := tgbotapiv5Ovy.NewAudio(chatID, file)
+		m.Caption = caption
+		m.ReceiverUserID = int64(usrid)
+		m.ReplyParameters.EphemeralMessageID = msgID
+		c = m
+	case "document":
+		m := tgbotapiv5Ovy.NewDocument(chatID, file)
+		m.Caption = caption
+		m.ReceiverUserID = int64(usrid)
+		m.ReplyParameters.EphemeralMessageID = msgID
+		c = m
+	case "voice":
+		m := tgbotapiv5Ovy.NewVoice(chatID, file)
+		m.ReceiverUserID = int64(usrid)
+		m.ReplyParameters.EphemeralMessageID = msgID
+		c = m
+	default:
+		return fmt.Errorf("unsupported media type: %s", mediaType), tgbotapiv5Ovy.Message{}
+	}
+
+	bot, _ := tgbotapiv5Ovy.NewBotAPI(config.App.CatTelegramToken)
+	sent, err := bot.Send(c)
+	return err, sent
+}
+
 
 // SendRichMessage sends a rich message using the OvyFlash library with blocks (paragraphs, tables, images, etc.).
 // Uses the configured CatTelegramToken and no buttons.
