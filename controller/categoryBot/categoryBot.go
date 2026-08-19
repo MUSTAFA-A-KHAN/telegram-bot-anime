@@ -464,7 +464,7 @@ func handleEphemeralReply(bot *tgbotapi.BotAPI, message *tgbotapi.Message) bool 
 			storedWhispers[recipientID] = []storedWhisper{{chatID: request.chatID, text: message.Text}}
 		}
 		storedWhispersMutex.Unlock()
-		view.SendMessage(bot, message.Chat.ID, "ℹ️ I couldn't deliver that whisper as an ephemeral message (the bot needs to be an admin here). I've stored it — the recipient can run /ephemeral to retrieve it.")
+		// view.SendMessage(bot, message.Chat.ID, "ℹ️ I couldn't deliver that whisper as an ephemeral message (the bot needs to be an admin here). I've stored it — the recipient can run /ephemeral to retrieve it.")
 	}
 	view.SendEphemeralMessage(request.chatID, "Whisper Sent:"+message.Text, message.From.ID, message.EphemeralMessageID, false, false)
 	return true
