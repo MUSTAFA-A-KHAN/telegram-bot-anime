@@ -334,6 +334,16 @@ var ephemeralRequests = make(map[int64]ephemeralRequest)
 var ephemeralRequestMutex = &sync.Mutex{}
 var knownUserIDs = make(map[string]int64)
 var knownUserMutex = &sync.RWMutex{}
+// A whisper that could not be delivered as an ephemeral message (for example
+// because the bot is not an administrator in the chat). It is stored and later
+// retrieved by the intended recipient when they run /ephemeral.
+type storedWhisper struct {
+	chatID int64
+	text   string
+}
+
+var storedWhispers = make(map[int64][]storedWhisper)
+var storedWhispersMutex = &sync.Mutex{}
 
 func rememberUser(message *tgbotapi.Message) {
 	if message.From == nil || message.From.UserName == "" {
@@ -346,20 +356,22 @@ func rememberUser(message *tgbotapi.Message) {
 }
 
 func sendEphemeralPrompt(message *tgbotapi.Message) {
-	ephemeralBot, err := tgbotapiv5Ovy.NewBotAPI(config.App.CatTelegramToken)
-	if err != nil {
-		log.Printf("Failed to create ephemeral bot: %v", err)
-		return
-	}
+	// ephemeralBot, err := tgbotapiv5Ovy.NewBotAPI(config.App.CatTelegramToken)
+	// if err != nil {
+	// 	log.Printf("Failed to create ephemeral bot: %v", err)
+	// 	return
+	// }
+	_, sent := view.SendEphemeralMessage(message.Chat.ID, "Please reply to this message starting with @username or user ID, followed by the message you want to deliver.", message.From.ID, message.EphemeralMessageID, true, false)
+	// prompt := tgbotapiv5Ovy.NewMessage(message.Chat.ID, "Please reply to this message starting with @username or user ID, followed by the message you want to deliver.")
+	// prompt.ReceiverUserID = int64(message.From.ID)
+	// prompt.ReplyMarkup = tgbotapiv5Ovy.ForceReply{ForceReply: true}
+	// prompt.ReplyParameters.EphemeralMessageID = message.MessageID
+	// sent, err := ephemeralBot.Send(prompt)
+	// if err != nil {
+	// 	log.Printf("Failed to send ephemeral prompt: %v", err)
 
-	prompt := tgbotapiv5Ovy.NewMessage(message.Chat.ID, "Please reply to this message starting with @username or user ID, followed by the message you want to deliver.")
-	prompt.ReceiverUserID = int64(message.From.ID)
-	prompt.ReplyMarkup = tgbotapiv5Ovy.ForceReply{ForceReply: true}
-	sent, err := ephemeralBot.Send(prompt)
-	if err != nil {
-		log.Printf("Failed to send ephemeral prompt: %v", err)
-		return
-	}
+	// 	return
+	// }
 
 	ephemeralRequestMutex.Lock()
 	ephemeralRequests[int64(message.From.ID)] = ephemeralRequest{
@@ -367,6 +379,49 @@ func sendEphemeralPrompt(message *tgbotapi.Message) {
 		ephemeralMsgID: sent.EphemeralMessageID,
 	}
 	ephemeralRequestMutex.Unlock()
+}
+func deliverStoredWhispers(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
+	userID := int64(message.From.ID)
+	storedWhispersMutex.Lock()
+	whispers, ok := storedWhispers[userID]
+	if ok {
+		delete(storedWhispers, userID)
+	}
+	storedWhispersMutex.Unlock()
+	if !ok {
+		return
+	}
+
+	var undelivered []storedWhisper
+	for _, w := range whispers {
+		delivered := false
+		// Prefer delivering as an ephemeral, like the original whisper.
+		if err, _ := view.SendEphemeralMessage(w.chatID, w.text, message.From.ID, message.EphemeralMessageID, false, false); err == nil {
+			delivered = true
+		}
+		// Otherwise try in the chat where the user ran /ephemeral.
+		if !delivered {
+			if err, _ := view.SendEphemeralMessage(message.Chat.ID, w.text, message.From.ID, message.EphemeralMessageID, false, false); err == nil {
+				delivered = true
+			}
+		}
+		// Last resort: send it as an ordinary private message via the user's DM.
+		if !delivered {
+			if _, err := view.SendMessage(bot, userID, "You received a stored whisper:\n\n" + w.text); err == nil {
+				delivered = true
+			}
+		}
+		if !delivered {
+			undelivered = append(undelivered, w)
+		}
+	}
+
+	if len(undelivered) > 0 {
+		storedWhispersMutex.Lock()
+		storedWhispers[userID] = undelivered
+		storedWhispersMutex.Unlock()
+		view.SendMessage(bot, message.Chat.ID, "⚠️ Some of your stored whispers could not be delivered yet. Please open a private chat with the bot and try /ephemeral again.")
+	}
 }
 
 func handleEphemeralReply(bot *tgbotapi.BotAPI, message *tgbotapi.Message) bool {
@@ -397,8 +452,21 @@ func handleEphemeralReply(bot *tgbotapi.BotAPI, message *tgbotapi.Message) bool 
 		view.SendMessage(bot, message.Chat.ID, "I do not know that username yet. Use the recipient's numeric user ID instead.")
 		return true
 	}
-	view.SendEphemeralMessage(request.chatID, message.Text, int(recipientID), message.From.ID)
-	view.SendEphemeralMessage(request.chatID, "Whisper Sent:"+message.Text, message.From.ID, int(recipientID))
+	err, _ := view.SendEphemeralMessage(request.chatID, message.Text, int(recipientID), message.EphemeralMessageID, false, false)
+	if err != nil {
+		// The bot is probably not an admin in this chat, so ephemeral delivery failed.
+		// Store the whisper and let the recipient retrieve it with /ephemeral.
+		storedWhispersMutex.Lock()
+		if list, exists := storedWhispers[recipientID]; exists {
+			list = append(list, storedWhisper{chatID: request.chatID, text: message.Text})
+			storedWhispers[recipientID] = list
+		} else {
+			storedWhispers[recipientID] = []storedWhisper{{chatID: request.chatID, text: message.Text}}
+		}
+		storedWhispersMutex.Unlock()
+		view.SendMessage(bot, message.Chat.ID, "ℹ️ I couldn't deliver that whisper as an ephemeral message (the bot needs to be an admin here). I've stored it — the recipient can run /ephemeral to retrieve it.")
+	}
+	view.SendEphemeralMessage(request.chatID, "Whisper Sent:"+message.Text, message.From.ID, message.EphemeralMessageID, false, false)
 	return true
 }
 
@@ -425,6 +493,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 	adminID := int64(1006461736)
 	rememberUser(message)
 	if message.Command() == "ephemeral" {
+		deliverStoredWhispers(bot, message)
 		sendEphemeralPrompt(message)
 		return
 	}

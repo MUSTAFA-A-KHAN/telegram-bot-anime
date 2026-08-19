@@ -116,21 +116,25 @@ func SendMessageWithButtonsV2(chatID int64, text string, buttons tgbotapi.Inline
 }
 
 // SendMessageWithButtons sends a message with inline keyboard buttons to the user
-func SendEphemeralMessage(chatID int64, text string, usrid int, msgID int) error {
+func SendEphemeralMessage(chatID int64, text string, usrid int, msgID int, forceReply bool, replyTo bool) (error, tgbotapiv5Ovy.Message) {
 	// usrid = 5551056335
 	msg := tgbotapiv5Ovy.NewMessage(chatID, text)
 	msg.ParseMode = tgbotapiv5Ovy.ModeMarkdown
 	msg.ReceiverUserID = int64(usrid)
-	// msg.ReplyParameters.EphemeralMessageID = msgID
+	msg.ReplyParameters.EphemeralMessageID = msgID
+	if forceReply {
+		msg.ReplyMarkup = tgbotapiv5Ovy.ForceReply{ForceReply: true}
+		msg.ReplyParameters.EphemeralMessageID = msgID
+	}
 	// if len(buttons.InlineKeyboard) > 0 {
 	// 	msg.ReplyMarkup = buttons
 	// }
 	bot, _ := tgbotapiv5Ovy.NewBotAPI(config.App.CatTelegramToken)
-	_, err := bot.Send(msg)
+	sent, err := bot.Send(msg)
 	// update, err := bot.HandleUpdate(nil)
 	// update.Message
 	log.Print("Error:", err)
-	return err
+	return err, sent
 }
 
 // SendRichMessage sends a rich message using the OvyFlash library with blocks (paragraphs, tables, images, etc.).
