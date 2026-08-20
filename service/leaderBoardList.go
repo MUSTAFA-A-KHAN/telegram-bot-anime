@@ -82,7 +82,7 @@ func GetUserStatsByID(client *mongo.Client, userID int) string {
 
 		count, _ := result["count"].(int32)
 
-		stats = fmt.Sprintf("📊 <b>Word Guess Stats</b>\n<blockquote>\n👤 <b>Player:</b> %s\n\n🎯 <b>Correct Guesses:</b> %d", html.EscapeString(name), count)
+		stats = fmt.Sprintf("📊 <b>Word Guess Stats</b>\n<blockquote expandable>\n👤 <b>Player:</b> %s\n\n🎯 <b>Correct Guesses:</b> %d", html.EscapeString(name), count)
 		isBlockquoteOpen = true
 	}
 
@@ -98,7 +98,7 @@ func GetUserStatsByID(client *mongo.Client, userID int) string {
 	count, _ := result["count"].(int32)
 
 	if !isBlockquoteOpen {
-		stats += "\n<blockquote>"
+		stats += "\n<blockquote expandable>"
 	}
 	stats += fmt.Sprintf("\n\n👑 <b>Times Leaded:</b> %d\n</blockquote>", count)
 	return stats
@@ -130,7 +130,7 @@ func GetWordleUserStatsByID(client *mongo.Client, userID int) string {
 			}
 		}
 
-		stats = fmt.Sprintf("📊 <b>Wordle Stats</b>\n<blockquote>\n👤 <b>Player:</b> %s\n\n🪙 <b>Points:</b> %d\n</blockquote>", html.EscapeString(name), count)
+		stats = fmt.Sprintf("📊 <b>Wordle Stats</b>\n<blockquote expandable>\n👤 <b>Player:</b> %s\n\n🪙 <b>Points:</b> %d\n</blockquote>", html.EscapeString(name), count)
 	}
 
 	return stats
@@ -155,7 +155,7 @@ func GetScramyUserStatsByID(client *mongo.Client, userID int) string {
 			}
 		}
 
-		stats = fmt.Sprintf("📊 <b>Scramy Stats</b>\n<blockquote>\n👤 <b>Player:</b> %s\n\n💎 <b>Points:</b> %d\n</blockquote>", html.EscapeString(name), count)
+		stats = fmt.Sprintf("📊 <b>Scramy Stats</b>\n<blockquote expandable>\n👤 <b>Player:</b> %s\n\n💎 <b>Points:</b> %d\n</blockquote>", html.EscapeString(name), count)
 	}
 	return stats
 }
