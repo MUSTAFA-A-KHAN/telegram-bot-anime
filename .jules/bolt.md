@@ -56,3 +56,7 @@
 ## 2025-02-23 - Avoid unsafe type casts on IDs
 **Learning:** Casting Telegram User IDs (`int64`) to `int` before using `strconv.Itoa` poses a truncation risk on 32-bit systems where `int` maxes out at 2.1 billion.
 **Action:** When converting 64-bit identifiers to strings, always use `strconv.FormatInt(userID, 10)` rather than downcasting to `int` for `strconv.Itoa`.
+
+## 2025-02-23 - Avoid map[rune]bool for small ASCII character existence checks in Translator constraints
+**Learning:** Using `map[rune]bool` to track `present` and `excluded` characters while parsing constraints in `controller/translator/eordle.go` introduces heap allocations and hash overhead within the hot path of the Wordle solver.
+**Action:** Replace `map[rune]bool` with stack-allocated fixed-size arrays `var present [256]bool` and `var excluded [256]bool`. Protect writes with `if ch < 256` logic and iterate directly using `for ch := 0; ch < 256; ch++` to eliminate allocations and provide O(1) lookups.
