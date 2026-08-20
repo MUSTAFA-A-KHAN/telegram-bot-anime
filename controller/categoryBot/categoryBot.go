@@ -339,11 +339,14 @@ var knownUserMutex = &sync.RWMutex{}
 // because the bot is not an administrator in the chat). It is stored and later
 // retrieved by the intended recipient when they run /ephemeral.
 type storedWhisper struct {
-	chatID    int64
-	mediaType string
-	fileID    string
-	caption   string
-	text      string
+	chatID         int64
+	mediaType      string
+	fileID         string
+	caption        string
+	text           string
+	senderID       int64
+	senderUsername string
+	senderName     string
 }
 
 var storedWhispers = make(map[int64][]storedWhisper)
@@ -385,21 +388,55 @@ func sendEphemeralPrompt(message *tgbotapi.Message) {
 	}
 	ephemeralRequestMutex.Unlock()
 }
-func sendWhisperEphemeral(chatID int64, usrid int, msgID int, w storedWhisper) error {
+// senderDisplayPrefix builds a "From <name>:" line used to tell a whisper
+// recipient who sent the message. The name is a clickable link to the sender's
+// profile (same tg://user mention style the Crocodile bot uses for leaders).
+func senderDisplayPrefix(w storedWhisper) string {
+	display := ""
+	if w.senderName != "" {
+		display = w.senderName
+	} else if w.senderUsername != "" {
+		display = "@" + w.senderUsername
+	}
+	if display == "" {
+		return ""
+	}
+	if w.senderID != 0 {
+		return fmt.Sprintf("From [%s](tg://user?id=%s):\n", display, strconv.FormatInt(w.senderID, 10))
+	}
+	return "From " + display + ":\n"
+}
+
+// whisperDisplayBody returns the text/caption to send for the whisper, optionally
+// prepending the sender's details so the recipient knows who whispered them.
+func whisperDisplayBody(w storedWhisper, includeSender bool) string {
+	body := w.text
 	if w.mediaType != "" && w.mediaType != "text" {
-		err, _ := view.SendEphemeralMediaMessage(chatID, w.mediaType, w.fileID, w.caption, usrid, msgID)
+		body = w.caption
+	}
+	if !includeSender {
+		return body
+	}
+	return senderDisplayPrefix(w) + body
+}
+
+func sendWhisperEphemeral(chatID int64, usrid int, msgID int, w storedWhisper, includeSender bool) error {
+	body := whisperDisplayBody(w, includeSender)
+	if w.mediaType != "" && w.mediaType != "text" {
+		err, _ := view.SendEphemeralMediaMessage(chatID, w.mediaType, w.fileID, body, usrid, msgID)
 		return err
 	}
-	err, _ := view.SendEphemeralMessage(chatID, w.text, usrid, msgID, false, false)
+	err, _ := view.SendEphemeralMessage(chatID, body, usrid, msgID, false, false)
 	return err
 }
 
-func sendWhisperDM(bot *tgbotapi.BotAPI, userID int64, w storedWhisper) error {
+func sendWhisperDM(bot *tgbotapi.BotAPI, userID int64, w storedWhisper, includeSender bool) error {
+	body := whisperDisplayBody(w, includeSender)
 	if w.mediaType != "" && w.mediaType != "text" {
-		err, _ := view.SendEphemeralMediaMessage(userID, w.mediaType, w.fileID, w.caption, 0, 0)
+		err, _ := view.SendEphemeralMediaMessage(userID, w.mediaType, w.fileID, body, 0, 0)
 		return err
 	}
-	_, err := view.SendMessage(bot, userID, w.text)
+	_, err := view.SendMessage(bot, userID, body)
 	return err
 }
 
@@ -419,18 +456,18 @@ func deliverStoredWhispers(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 	for _, w := range whispers {
 		delivered := false
 		// Prefer delivering as an ephemeral, like the original whisper.
-		if err := sendWhisperEphemeral(w.chatID, message.From.ID, message.EphemeralMessageID, w); err == nil {
+		if err := sendWhisperEphemeral(w.chatID, message.From.ID, message.EphemeralMessageID, w, true); err == nil {
 			delivered = true
 		}
 		// Otherwise try in the chat where the user ran /ephemeral.
 		if !delivered {
-			if err := sendWhisperEphemeral(message.Chat.ID, message.From.ID, message.EphemeralMessageID, w); err == nil {
+			if err := sendWhisperEphemeral(message.Chat.ID, message.From.ID, message.EphemeralMessageID, w, true); err == nil {
 				delivered = true
 			}
 		}
 		// Last resort: send it as an ordinary private message via the user's DM.
 		if !delivered {
-			if err := sendWhisperDM(bot, userID, w); err == nil {
+			if err := sendWhisperDM(bot, userID, w, true); err == nil {
 				delivered = true
 			}
 		}
@@ -508,19 +545,33 @@ func handleEphemeralReply(bot *tgbotapi.BotAPI, message *tgbotapi.Message) bool 
 	}
 
 	whisperText := strings.TrimSpace(strings.TrimPrefix(content, parts[0]))
-	whisper := storedWhisper{
-		chatID:    request.chatID,
-		mediaType: mediaType,
-		fileID:    fileID,
-		caption:   whisperText,
-		text:      whisperText,
+
+	senderID := int64(0)
+	senderUsername := ""
+	senderName := ""
+	if message.From != nil {
+		senderID = int64(message.From.ID)
+		senderUsername = message.From.UserName
+		senderName = message.From.FirstName
 	}
 
-	// Send the recipient their own fresh ephemeral message. We must NOT pass the
+	whisper := storedWhisper{
+		chatID:         request.chatID,
+		mediaType:      mediaType,
+		fileID:         fileID,
+		caption:        whisperText,
+		text:           whisperText,
+		senderID:       senderID,
+		senderUsername: senderUsername,
+		senderName:     senderName,
+	}
+
+	// Send the recipient their own fresh ephemeral message, including the sender's
+	// details so the recipient knows who whispered them. We must NOT pass the
 	// sender's ephemeral message ID as the reply target here — the recipient cannot
 	// reply to another user's ephemeral message, so Telegram rejects the whisper
 	// with REPLY_TO_INVALID (even when the bot is an admin).
-	err := sendWhisperEphemeral(request.chatID, int(recipientID), 0, whisper)
+	err := sendWhisperEphemeral(request.chatID, int(recipientID), 0, whisper, true)
 	if err != nil {
 		// The bot is probably not an admin in this chat, so ephemeral delivery failed.
 		// Store the whisper and let the recipient retrieve it with /ephemeral.
@@ -535,13 +586,14 @@ func handleEphemeralReply(bot *tgbotapi.BotAPI, message *tgbotapi.Message) bool 
 		// view.SendMessage(bot, message.Chat.ID, "ℹ️ I couldn't deliver that whisper as an ephemeral message (the bot needs to be an admin here). I've stored it — the recipient can run /ephemeral to retrieve it.")
 	}
 
-	// Confirmation sent back to the whisper's sender.
+	// Confirmation sent back to the whisper's sender (no "From" prefix — it is
+	// their own message).
 	conf := whisper
 	conf.text = "Whisper Sent:\n" + whisperText
 	if mediaType != "" && mediaType != "text" {
 		conf.caption = "Whisper Sent:\n" + whisperText
 	}
-	sendWhisperEphemeral(request.chatID, message.From.ID, message.EphemeralMessageID, conf)
+	sendWhisperEphemeral(request.chatID, message.From.ID, message.EphemeralMessageID, conf, false)
 	return true
 }
 

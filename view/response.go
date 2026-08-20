@@ -148,35 +148,42 @@ func SendEphemeralMediaMessage(chatID int64, mediaType, fileID, caption string, 
 	case "photo":
 		m := tgbotapiv5Ovy.NewPhoto(chatID, file)
 		m.Caption = caption
+		m.ParseMode = tgbotapiv5Ovy.ModeMarkdown
 		m.ReceiverUserID = int64(usrid)
 		m.ReplyParameters.EphemeralMessageID = msgID
 		c = m
 	case "video":
 		m := tgbotapiv5Ovy.NewVideo(chatID, file)
 		m.Caption = caption
+		m.ParseMode = tgbotapiv5Ovy.ModeMarkdown
 		m.ReceiverUserID = int64(usrid)
 		m.ReplyParameters.EphemeralMessageID = msgID
 		c = m
 	case "animation":
 		m := tgbotapiv5Ovy.NewAnimation(chatID, file)
 		m.Caption = caption
+		m.ParseMode = tgbotapiv5Ovy.ModeMarkdown
 		m.ReceiverUserID = int64(usrid)
 		m.ReplyParameters.EphemeralMessageID = msgID
 		c = m
 	case "audio":
 		m := tgbotapiv5Ovy.NewAudio(chatID, file)
 		m.Caption = caption
+		m.ParseMode = tgbotapiv5Ovy.ModeMarkdown
 		m.ReceiverUserID = int64(usrid)
 		m.ReplyParameters.EphemeralMessageID = msgID
 		c = m
 	case "document":
 		m := tgbotapiv5Ovy.NewDocument(chatID, file)
 		m.Caption = caption
+		m.ParseMode = tgbotapiv5Ovy.ModeMarkdown
 		m.ReceiverUserID = int64(usrid)
 		m.ReplyParameters.EphemeralMessageID = msgID
 		c = m
 	case "voice":
 		m := tgbotapiv5Ovy.NewVoice(chatID, file)
+		m.Caption = caption
+		m.ParseMode = tgbotapiv5Ovy.ModeMarkdown
 		m.ReceiverUserID = int64(usrid)
 		m.ReplyParameters.EphemeralMessageID = msgID
 		c = m
