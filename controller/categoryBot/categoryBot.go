@@ -339,18 +339,59 @@ var knownUserMutex = &sync.RWMutex{}
 // because the bot is not an administrator in the chat). It is stored and later
 // retrieved by the intended recipient when they run /ephemeral.
 type storedWhisper struct {
-	chatID         int64
-	mediaType      string
-	fileID         string
-	caption        string
-	text           string
-	senderID       int64
-	senderUsername string
-	senderName     string
+	chatID            int64
+	mediaType         string
+	fileID            string
+	mediaLength       int
+	caption           string
+	text              string
+	senderID          int64
+	senderUsername    string
+	senderName        string
+	senderEphemeralID int64
 }
 
 var storedWhispers = make(map[int64][]storedWhisper)
 var storedWhispersMutex = &sync.Mutex{}
+
+// Tracks every ephemeral whisper message we deliver to a user so that, when that
+// user directly replies to it, we know who originally sent it and can forward the
+// reply back to them as an ephemeral message. Keyed by the delivered message's
+// ephemeral_message_id.
+type ephemeralSource struct {
+	senderID          int64
+	senderUsername    string
+	senderName        string
+	senderEphemeralID int64
+}
+
+var whisperEphemeralSources = make(map[int64]ephemeralSource)
+var whisperEphemeralSourcesMutex = &sync.Mutex{}
+
+// latestUserEphemeral tracks the most recent ephemeral_message_id the bot has
+// delivered to (or for) each user — i.e. the user's currently open ephemeral
+// thread. This is preferred as a reply target when forwarding a whisper reply
+// back to the original sender, because it is more likely to be still live (e.g.
+// if the sender re-opened /ephemeral, or received a confirmation/reply) than
+// the prompt ephemeral captured at whisper-send time.
+var latestUserEphemeral = make(map[int64]int64)
+var latestUserEphemeralMutex = &sync.Mutex{}
+
+func setLatestUserEphemeral(userID int64, ephemeralMessageID int64) {
+	if userID == 0 || ephemeralMessageID == 0 {
+		return
+	}
+	latestUserEphemeralMutex.Lock()
+	latestUserEphemeral[userID] = ephemeralMessageID
+	latestUserEphemeralMutex.Unlock()
+}
+
+func getLatestUserEphemeral(userID int64) int64 {
+	latestUserEphemeralMutex.Lock()
+	id := latestUserEphemeral[userID]
+	latestUserEphemeralMutex.Unlock()
+	return id
+}
 
 func rememberUser(message *tgbotapi.Message) {
 	if message.From == nil || message.From.UserName == "" {
@@ -387,7 +428,12 @@ func sendEphemeralPrompt(message *tgbotapi.Message) {
 		ephemeralMsgID: sent.EphemeralMessageID,
 	}
 	ephemeralRequestMutex.Unlock()
+
+	// The prompt is the user's currently-open ephemeral thread; remember it so a
+	// whisper reply can be chained back to it even if the bot isn't an admin.
+	setLatestUserEphemeral(int64(message.From.ID), int64(sent.EphemeralMessageID))
 }
+
 // senderDisplayPrefix builds a "From <name>:" line used to tell a whisper
 // recipient who sent the message. The name is a clickable link to the sender's
 // profile (same tg://user mention style the Crocodile bot uses for leaders).
@@ -423,7 +469,7 @@ func whisperDisplayBody(w storedWhisper, includeSender bool) string {
 func sendWhisperEphemeral(chatID int64, usrid int, msgID int, w storedWhisper, includeSender bool) error {
 	body := whisperDisplayBody(w, includeSender)
 	if w.mediaType != "" && w.mediaType != "text" {
-		err, _ := view.SendEphemeralMediaMessage(chatID, w.mediaType, w.fileID, body, usrid, msgID)
+		err, _ := view.SendEphemeralMediaMessage(chatID, w.mediaType, w.fileID, body, w.mediaLength, usrid, msgID)
 		return err
 	}
 	err, _ := view.SendEphemeralMessage(chatID, body, usrid, msgID, false, false)
@@ -433,76 +479,20 @@ func sendWhisperEphemeral(chatID int64, usrid int, msgID int, w storedWhisper, i
 func sendWhisperDM(bot *tgbotapi.BotAPI, userID int64, w storedWhisper, includeSender bool) error {
 	body := whisperDisplayBody(w, includeSender)
 	if w.mediaType != "" && w.mediaType != "text" {
-		err, _ := view.SendEphemeralMediaMessage(userID, w.mediaType, w.fileID, body, 0, 0)
+		err, _ := view.SendEphemeralMediaMessage(userID, w.mediaType, w.fileID, body, w.mediaLength, 0, 0)
 		return err
 	}
 	_, err := view.SendMessage(bot, userID, body)
 	return err
 }
 
-func deliverStoredWhispers(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
-	userID := int64(message.From.ID)
-	storedWhispersMutex.Lock()
-	whispers, ok := storedWhispers[userID]
-	if ok {
-		delete(storedWhispers, userID)
-	}
-	storedWhispersMutex.Unlock()
-	if !ok {
-		return
-	}
-
-	var undelivered []storedWhisper
-	for _, w := range whispers {
-		delivered := false
-		// Prefer delivering as an ephemeral, like the original whisper.
-		if err := sendWhisperEphemeral(w.chatID, message.From.ID, message.EphemeralMessageID, w, true); err == nil {
-			delivered = true
-		}
-		// Otherwise try in the chat where the user ran /ephemeral.
-		if !delivered {
-			if err := sendWhisperEphemeral(message.Chat.ID, message.From.ID, message.EphemeralMessageID, w, true); err == nil {
-				delivered = true
-			}
-		}
-		// Last resort: send it as an ordinary private message via the user's DM.
-		if !delivered {
-			if err := sendWhisperDM(bot, userID, w, true); err == nil {
-				delivered = true
-			}
-		}
-		if !delivered {
-			undelivered = append(undelivered, w)
-		}
-	}
-
-	if len(undelivered) > 0 {
-		storedWhispersMutex.Lock()
-		storedWhispers[userID] = undelivered
-		storedWhispersMutex.Unlock()
-		view.SendMessage(bot, message.Chat.ID, "⚠️ Some of your stored whispers could not be delivered yet. Please open a private chat with the bot and try /ephemeral again.")
-	}
-}
-
-func handleEphemeralReply(bot *tgbotapi.BotAPI, message *tgbotapi.Message) bool {
-	ephemeralRequestMutex.Lock()
-	request, pending := ephemeralRequests[int64(message.From.ID)]
-	if pending {
-		delete(ephemeralRequests, int64(message.From.ID))
-	}
-	ephemeralRequestMutex.Unlock()
-	if !pending {
-		return false
-	}
-
-	if message.Command() == "cancel" {
-		view.SendMessage(bot, message.Chat.ID, "Ephemeral message cancelled.")
-		return true
-	}
-
-	content := message.Text
-	mediaType := "text"
-	var fileID string
+// extractMediaContent pulls the text (or media caption) and, if present, the
+// media type, file id and media-specific length of any media attached.
+func extractMediaContent(message *tgbotapi.Message) (content string, mediaType string, fileID string, mediaLength int) {
+	content = message.Text
+	mediaType = "text"
+	fileID = ""
+	mediaLength = 0
 	switch {
 	case message.Photo != nil && len(*message.Photo) > 0:
 		mediaType = "photo"
@@ -529,7 +519,220 @@ func handleEphemeralReply(bot *tgbotapi.BotAPI, message *tgbotapi.Message) bool 
 		mediaType = "voice"
 		fileID = message.Voice.FileID
 		content = message.Caption
+	case message.VideoNote != nil:
+		mediaType = "video_note"
+		fileID = message.VideoNote.FileID
+		mediaLength = message.VideoNote.Length
+		content = ""
+	case message.Sticker != nil:
+		mediaType = "sticker"
+		fileID = message.Sticker.FileID
+		content = ""
 	}
+	return content, mediaType, fileID, mediaLength
+}
+
+// sendWhisperEphemeralReturn is like sendWhisperEphemeral but also returns the
+// delivered message so callers can read its assigned ephemeral_message_id.
+func sendWhisperEphemeralReturn(chatID int64, usrid int, msgID int, w storedWhisper, includeSender bool) (tgbotapiv5Ovy.Message, error) {
+	body := whisperDisplayBody(w, includeSender)
+	if w.mediaType != "" && w.mediaType != "text" {
+		err, sent := view.SendEphemeralMediaMessage(chatID, w.mediaType, w.fileID, body, w.mediaLength, usrid, msgID)
+		return sent, err
+	}
+	err, sent := view.SendEphemeralMessage(chatID, body, usrid, msgID, false, false)
+	return sent, err
+}
+
+// recordEphemeralSource remembers which of our delivered ephemeral messages
+// belongs to which original sender, so a direct reply can be routed back.
+func recordEphemeralSource(sent tgbotapiv5Ovy.Message, w storedWhisper) {
+	if sent.EphemeralMessageID == 0 {
+		return
+	}
+	whisperEphemeralSourcesMutex.Lock()
+	whisperEphemeralSources[int64(sent.EphemeralMessageID)] = ephemeralSource{
+		senderID:          w.senderID,
+		senderUsername:    w.senderUsername,
+		senderName:        w.senderName,
+		senderEphemeralID: w.senderEphemeralID,
+	}
+	whisperEphemeralSourcesMutex.Unlock()
+}
+
+func deliverStoredWhispers(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
+	userID := int64(message.From.ID)
+	storedWhispersMutex.Lock()
+	whispers, ok := storedWhispers[userID]
+	if ok {
+		delete(storedWhispers, userID)
+	}
+	storedWhispersMutex.Unlock()
+	if !ok {
+		return
+	}
+
+	var undelivered []storedWhisper
+	for _, w := range whispers {
+		delivered := false
+		if sent, err := sendWhisperEphemeralReturn(w.chatID, message.From.ID, message.EphemeralMessageID, w, true); err == nil {
+			recordEphemeralSource(sent, w)
+			setLatestUserEphemeral(int64(message.From.ID), int64(sent.EphemeralMessageID))
+			delivered = true
+		}
+		// Otherwise try in the chat where the user ran /ephemeral.
+		if !delivered {
+			if sent, err := sendWhisperEphemeralReturn(message.Chat.ID, message.From.ID, message.EphemeralMessageID, w, true); err == nil {
+				recordEphemeralSource(sent, w)
+				setLatestUserEphemeral(int64(message.From.ID), int64(sent.EphemeralMessageID))
+				delivered = true
+			}
+		}
+		// Last resort: send it as an ordinary private message via the user's DM.
+		if !delivered {
+			if err := sendWhisperDM(bot, userID, w, true); err == nil {
+				delivered = true
+			}
+		}
+		if !delivered {
+			undelivered = append(undelivered, w)
+		}
+	}
+
+	if len(undelivered) > 0 {
+		storedWhispersMutex.Lock()
+		storedWhispers[userID] = undelivered
+		storedWhispersMutex.Unlock()
+		view.SendMessage(bot, message.Chat.ID, "⚠️ Some of your stored whispers could not be delivered yet. Please open a private chat with the bot and try /ephemeral again.")
+	}
+}
+
+// handleReplyToReceivedWhisper catches a user directly replying to an ephemeral
+// whisper we delivered to them, and forwards that reply back to the original
+// whisper sender as a fresh ephemeral message.
+func handleReplyToReceivedWhisper(bot *tgbotapi.BotAPI, message *tgbotapi.Message) bool {
+	if message.ReplyToMessage == nil {
+		return false
+	}
+	replyToEphemeralID := int64(message.ReplyToMessage.EphemeralMessageID)
+	if replyToEphemeralID == 0 {
+		return false
+	}
+
+	whisperEphemeralSourcesMutex.Lock()
+	origin, ok := whisperEphemeralSources[replyToEphemeralID]
+	if ok {
+		delete(whisperEphemeralSources, replyToEphemeralID)
+	}
+	whisperEphemeralSourcesMutex.Unlock()
+	if !ok {
+		return false
+	}
+
+	if message.From == nil {
+		return true
+	}
+
+	content, mediaType, fileID, mediaLength := extractMediaContent(message)
+	// A meaningful reply must carry text OR some media. A media message (photo,
+	// video, sticker, voice, etc.) is a valid reply even without a caption.
+	if mediaType == "text" || mediaType == "" {
+		if strings.TrimSpace(content) == "" {
+			return true
+		}
+	}
+
+	reply := storedWhisper{
+		chatID:            message.Chat.ID,
+		mediaType:         mediaType,
+		fileID:            fileID,
+		mediaLength:       mediaLength,
+		caption:           content,
+		text:              content,
+		senderID:          int64(message.From.ID),
+		senderUsername:    message.From.UserName,
+		senderName:        message.From.FirstName,
+		senderEphemeralID: int64(message.EphemeralMessageID),
+	}
+
+	// Relay the reply to the original whisper sender as a fresh ephemeral.
+	sent, err := sendWhisperEphemeralReturn(message.Chat.ID, int(origin.senderID), 0, reply, true)
+	if err != nil {
+		log.Printf("[whisper] fresh-ephemeral reply to sender %d failed: %v (originSenderEphemeralID=%d, latestSenderEphemeral=%d)",
+			origin.senderID, err, origin.senderEphemeralID, getLatestUserEphemeral(origin.senderID))
+		// The bot likely isn't an admin here, so it can't send a brand-new
+		// ephemeral. If the original sender's ephemeral message is still open,
+		// deliver the failed reply by re-targeting it as a reply to that very
+		// ephemeral — the sender will then see it inside their own ephemeral
+		// thread. Replying to the sender's own ephemeral works even when the bot
+		// is not an admin.
+		// Prefer the sender's latest known ephemeral (most likely still live);
+		// fall back to the prompt ephemeral captured when the whisper was sent.
+		target := getLatestUserEphemeral(origin.senderID)
+		if target == 0 {
+			target = origin.senderEphemeralID
+		}
+		if target != 0 {
+			if sent, err = sendWhisperEphemeralReturn(message.Chat.ID, int(origin.senderID), int(target), reply, true); err == nil {
+				return finishWhisperReply(bot, message.Chat.ID, origin.senderID, sent, reply, true)
+			}
+			log.Printf("[whisper] retry-as-reply-to-sender-ephemeral(%d) failed: %v",
+				target, err)
+		}
+		// Couldn't deliver immediately — store it like any other undelivered
+		// whisper so the sender can retrieve it with /ephemeral.
+		storedWhispersMutex.Lock()
+		if list, exists := storedWhispers[origin.senderID]; exists {
+			list = append(list, reply)
+			storedWhispers[origin.senderID] = list
+		} else {
+			storedWhispers[origin.senderID] = []storedWhisper{reply}
+		}
+		storedWhispersMutex.Unlock()
+		// view.SendMessage(bot, message.Chat.ID, "ℹ️ Couldn't deliver that reply as an ephemeral message (the bot likely isn't an admin or the sender's ephemeral expired too). I've stored it — the sender can run /ephemeral to retrieve it.")
+		return true
+	}
+
+	return finishWhisperReply(bot, message.Chat.ID, origin.senderID, sent, reply, true)
+}
+
+// finishWhisperReply records the delivered reply as a replyable ephemeral (for a
+// continuing conversation) and acknowledges to the replier. receiverID is the
+// user the reply was delivered to (the original whisper sender).
+func finishWhisperReply(bot *tgbotapi.BotAPI, chatID int64, receiverID int64, sent tgbotapiv5Ovy.Message, reply storedWhisper, notify bool) bool {
+	if sent.EphemeralMessageID != 0 {
+		setLatestUserEphemeral(receiverID, int64(sent.EphemeralMessageID))
+		whisperEphemeralSourcesMutex.Lock()
+		whisperEphemeralSources[int64(sent.EphemeralMessageID)] = ephemeralSource{
+			senderID:          reply.senderID,
+			senderUsername:    reply.senderUsername,
+			senderName:        reply.senderName,
+			senderEphemeralID: reply.senderEphemeralID,
+		}
+		whisperEphemeralSourcesMutex.Unlock()
+	}
+	if notify {
+		view.SendMessage(bot, chatID, "Whisper reply sent.")
+	}
+	return true
+}
+func handleEphemeralReply(bot *tgbotapi.BotAPI, message *tgbotapi.Message) bool {
+	ephemeralRequestMutex.Lock()
+	request, pending := ephemeralRequests[int64(message.From.ID)]
+	if pending {
+		delete(ephemeralRequests, int64(message.From.ID))
+	}
+	ephemeralRequestMutex.Unlock()
+	if !pending {
+		return false
+	}
+
+	if message.Command() == "cancel" {
+		view.SendMessage(bot, message.Chat.ID, "Ephemeral message cancelled.")
+		return true
+	}
+
+	content, mediaType, fileID, mediaLength := extractMediaContent(message)
 
 	parts := strings.Fields(content)
 	if len(parts) < 1 || (!strings.HasPrefix(parts[0], "@") && !isNumericUserID(parts[0])) {
@@ -540,7 +743,8 @@ func handleEphemeralReply(bot *tgbotapi.BotAPI, message *tgbotapi.Message) bool 
 	recipientID, ok := resolveEphemeralRecipient(parts[0])
 	// log.Fatal(recipientID)
 	if !ok {
-		view.SendMessage(bot, message.Chat.ID, "I do not know that username yet. Use the recipient's numeric user ID instead.")
+		view.SendEphemeralMessage(request.chatID, "I do not know that username yet. Use the recipient's numeric user ID instead.", message.From.ID, message.EphemeralMessageID, false, false)
+		// view.SendMessage(bot, message.Chat.ID, )
 		return true
 	}
 
@@ -556,14 +760,16 @@ func handleEphemeralReply(bot *tgbotapi.BotAPI, message *tgbotapi.Message) bool 
 	}
 
 	whisper := storedWhisper{
-		chatID:         request.chatID,
-		mediaType:      mediaType,
-		fileID:         fileID,
-		caption:        whisperText,
-		text:           whisperText,
-		senderID:       senderID,
-		senderUsername: senderUsername,
-		senderName:     senderName,
+		chatID:            request.chatID,
+		mediaType:         mediaType,
+		fileID:            fileID,
+		mediaLength:       mediaLength,
+		caption:           whisperText,
+		text:              whisperText,
+		senderID:          senderID,
+		senderUsername:    senderUsername,
+		senderName:        senderName,
+		senderEphemeralID: int64(request.ephemeralMsgID),
 	}
 
 	// Send the recipient their own fresh ephemeral message, including the sender's
@@ -571,7 +777,7 @@ func handleEphemeralReply(bot *tgbotapi.BotAPI, message *tgbotapi.Message) bool 
 	// sender's ephemeral message ID as the reply target here — the recipient cannot
 	// reply to another user's ephemeral message, so Telegram rejects the whisper
 	// with REPLY_TO_INVALID (even when the bot is an admin).
-	err := sendWhisperEphemeral(request.chatID, int(recipientID), 0, whisper, true)
+	sentToRecipient, err := sendWhisperEphemeralReturn(request.chatID, int(recipientID), 0, whisper, true)
 	if err != nil {
 		// The bot is probably not an admin in this chat, so ephemeral delivery failed.
 		// Store the whisper and let the recipient retrieve it with /ephemeral.
@@ -584,6 +790,20 @@ func handleEphemeralReply(bot *tgbotapi.BotAPI, message *tgbotapi.Message) bool 
 		}
 		storedWhispersMutex.Unlock()
 		// view.SendMessage(bot, message.Chat.ID, "ℹ️ I couldn't deliver that whisper as an ephemeral message (the bot needs to be an admin here). I've stored it — the recipient can run /ephemeral to retrieve it.")
+	} else if sentToRecipient.EphemeralMessageID != 0 {
+		// Remember who sent this delivered ephemeral so that a direct reply from
+		// the recipient can be forwarded back to sender (the user who ran /ephemeral).
+		whisperEphemeralSourcesMutex.Lock()
+		whisperEphemeralSources[int64(sentToRecipient.EphemeralMessageID)] = ephemeralSource{
+			senderID:          senderID,
+			senderUsername:    senderUsername,
+			senderName:        senderName,
+			senderEphemeralID: int64(request.ephemeralMsgID),
+		}
+		whisperEphemeralSourcesMutex.Unlock()
+		// The recipient's freshly delivered whisper is now their open ephemeral
+		// thread, so prefer it as a reply target in future.
+		setLatestUserEphemeral(int64(recipientID), int64(sentToRecipient.EphemeralMessageID))
 	}
 
 	// Confirmation sent back to the whisper's sender (no "From" prefix — it is
@@ -622,6 +842,11 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 	if message.Command() == "ephemeral" {
 		deliverStoredWhispers(bot, message)
 		sendEphemeralPrompt(message)
+		return
+	}
+	// A direct reply to an ephemeral whisper gets forwarded back to its original
+	// sender before the usual pending-request logic runs.
+	if handleReplyToReceivedWhisper(bot, message) {
 		return
 	}
 	if handleEphemeralReply(bot, message) {

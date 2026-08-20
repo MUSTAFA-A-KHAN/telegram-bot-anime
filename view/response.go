@@ -136,11 +136,12 @@ func SendEphemeralMessage(chatID int64, text string, usrid int, msgID int, force
 	log.Print("Error:", err)
 	return err, sent
 }
+
 // SendEphemeralMediaMessage sends an ephemeral media message (photo, video,
 // animation, audio, document or voice) that is tied to an ephemeral message and
 // visible only to the targeted user. Passing usrid = 0 and msgID = 0 sends an
 // ordinary (non-ephemeral) media message to the chat.
-func SendEphemeralMediaMessage(chatID int64, mediaType, fileID, caption string, usrid int, msgID int) (error, tgbotapiv5Ovy.Message) {
+func SendEphemeralMediaMessage(chatID int64, mediaType, fileID, caption string, mediaLength int, usrid int, msgID int) (error, tgbotapiv5Ovy.Message) {
 	file := tgbotapiv5Ovy.FileID(fileID)
 	var c tgbotapiv5Ovy.Chattable
 
@@ -187,6 +188,16 @@ func SendEphemeralMediaMessage(chatID int64, mediaType, fileID, caption string, 
 		m.ReceiverUserID = int64(usrid)
 		m.ReplyParameters.EphemeralMessageID = msgID
 		c = m
+	case "sticker":
+		m := tgbotapiv5Ovy.NewSticker(chatID, file)
+		m.ReceiverUserID = int64(usrid)
+		m.ReplyParameters.EphemeralMessageID = msgID
+		c = m
+	case "video_note":
+		m := tgbotapiv5Ovy.NewVideoNote(chatID, mediaLength, file)
+		m.ReceiverUserID = int64(usrid)
+		m.ReplyParameters.EphemeralMessageID = msgID
+		c = m
 	default:
 		return fmt.Errorf("unsupported media type: %s", mediaType), tgbotapiv5Ovy.Message{}
 	}
@@ -195,7 +206,6 @@ func SendEphemeralMediaMessage(chatID int64, mediaType, fileID, caption string, 
 	sent, err := bot.Send(c)
 	return err, sent
 }
-
 
 // SendRichMessage sends a rich message using the OvyFlash library with blocks (paragraphs, tables, images, etc.).
 // Uses the configured CatTelegramToken and no buttons.
