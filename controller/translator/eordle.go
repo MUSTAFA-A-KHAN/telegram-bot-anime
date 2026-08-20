@@ -138,8 +138,8 @@ func (t *TextTranslator) SolveWordle(puzzle string) string {
 func parseConstraints(puzzle string) (string, []rune, []rune, [5][256]bool) {
 	lines := strings.Split(strings.TrimSpace(puzzle), "\n")
 	pattern := []rune{'_', '_', '_', '_', '_'}
-	presentMap := make(map[rune]bool)
-	excludedMap := make(map[rune]bool)
+	var presentMap [256]bool
+	var excludedMap [256]bool
 	// per-position not-in constraints from 🟨 feedback
 	var notIn [5][256]bool
 
@@ -176,20 +176,18 @@ func parseConstraints(puzzle string) (string, []rune, []rune, [5][256]bool) {
 			switch fb {
 			case '🟩':
 				pattern[i] = ch
-				presentMap[ch] = true
-				if excludedMap[ch] {
-					delete(excludedMap, ch)
+				if ch < 256 {
+					presentMap[ch] = true
+					excludedMap[ch] = false
 				}
 			case '🟨':
-				presentMap[ch] = true
 				if ch < 256 {
+					presentMap[ch] = true
 					notIn[i][ch] = true
-				}
-				if excludedMap[ch] {
-					delete(excludedMap, ch)
+					excludedMap[ch] = false
 				}
 			case '🟥', '⬛', '⬜':
-				if !presentMap[ch] {
+				if ch < 256 && !presentMap[ch] {
 					excludedMap[ch] = true
 				}
 			}
@@ -197,18 +195,22 @@ func parseConstraints(puzzle string) (string, []rune, []rune, [5][256]bool) {
 	}
 
 	// remove any excluded that are present
-	for ch := range presentMap {
-		if excludedMap[ch] {
-			delete(excludedMap, ch)
+	for ch := 0; ch < 256; ch++ {
+		if presentMap[ch] {
+			excludedMap[ch] = false
 		}
 	}
-	pres := make([]rune, 0, len(presentMap))
-	for ch := range presentMap {
-		pres = append(pres, ch)
+	pres := make([]rune, 0, 26)
+	for ch := 0; ch < 256; ch++ {
+		if presentMap[ch] {
+			pres = append(pres, rune(ch))
+		}
 	}
-	excl := make([]rune, 0, len(excludedMap))
-	for ch := range excludedMap {
-		excl = append(excl, ch)
+	excl := make([]rune, 0, 26)
+	for ch := 0; ch < 256; ch++ {
+		if excludedMap[ch] {
+			excl = append(excl, rune(ch))
+		}
 	}
 	// build pattern string
 	pat := make([]string, 5)
@@ -419,8 +421,8 @@ func (t *TextTranslator) AnalyzeEordle(puzzle string) string {
 	lines := strings.Split(strings.TrimSpace(puzzle), "\n")
 	// pattern holds confirmed greens (underscore for unknowns)
 	pattern := []rune{'_', '_', '_', '_', '_'}
-	present := make(map[rune]bool)
-	excluded := make(map[rune]bool)
+	var present [256]bool
+	var excluded [256]bool
 
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
@@ -460,14 +462,18 @@ func (t *TextTranslator) AnalyzeEordle(puzzle string) string {
 			switch fb {
 			case '🟩':
 				pattern[i] = ch
-				present[ch] = true
-				delete(excluded, ch)
+				if ch < 256 {
+					present[ch] = true
+					excluded[ch] = false
+				}
 			case '🟨':
-				present[ch] = true
-				delete(excluded, ch)
+				if ch < 256 {
+					present[ch] = true
+					excluded[ch] = false
+				}
 			case '🟥', '⬛', '⬜':
 				// tentatively excluded; we'll remove if seen as present/green later
-				if !present[ch] {
+				if ch < 256 && !present[ch] {
 					excluded[ch] = true
 				}
 			}
@@ -475,8 +481,10 @@ func (t *TextTranslator) AnalyzeEordle(puzzle string) string {
 	}
 
 	// ensure excluded doesn't contain any present letters
-	for ch := range present {
-		delete(excluded, ch)
+	for ch := 0; ch < 256; ch++ {
+		if present[ch] {
+			excluded[ch] = false
+		}
 	}
 
 	// build pattern string
@@ -490,14 +498,18 @@ func (t *TextTranslator) AnalyzeEordle(puzzle string) string {
 	}
 
 	// lists
-	pres := make([]string, 0, len(present))
-	for ch := range present {
-		pres = append(pres, strings.ToUpper(string(ch)))
+	pres := make([]string, 0, 26)
+	for ch := 0; ch < 256; ch++ {
+		if present[ch] {
+			pres = append(pres, strings.ToUpper(string(rune(ch))))
+		}
 	}
 	sort.Strings(pres)
-	excl := make([]string, 0, len(excluded))
-	for ch := range excluded {
-		excl = append(excl, strings.ToUpper(string(ch)))
+	excl := make([]string, 0, 26)
+	for ch := 0; ch < 256; ch++ {
+		if excluded[ch] {
+			excl = append(excl, strings.ToUpper(string(rune(ch))))
+		}
 	}
 	sort.Strings(excl)
 
