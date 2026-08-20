@@ -1447,8 +1447,11 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			tgbotapi.NewInlineKeyboardRow(
 				tgbotapi.NewInlineKeyboardButtonData("Text Guess Mode", "setting_geo_mode_text"),
 			),
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("🖼️ Carousel Mode (Images)", "setting_geo_mode_carousel"),
+			),
 		)
-		view.SendMessageWithButtons(bot, message.Chat.ID, "⚙️ *Geography Mode*\nChoose how you want to play Geography:\n- *MCQ Mode*: Buttons to select the answer.\n- *Text Guess Mode*: Type out your guess (5 attempts).", buttons)
+		view.SendMessageWithButtons(bot, message.Chat.ID, "⚙️ *Geography Mode*\nChoose how you want to play Geography:\n- *MCQ Mode*: Buttons to select the answer.\n- *Text Guess Mode*: Type out your guess (5 attempts).\n- *Carousel Mode*: Scroll through flag/landmark images in a slideshow!", buttons)
 		return
 	case "wordle":
 		wordlebot.HandleWordleCommand(bot, chatID, message.From.FirstName, client)
@@ -2306,10 +2309,13 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 				tgbotapi.NewInlineKeyboardButtonData("Text Guess Mode", "setting_geo_mode_text"),
 			),
 			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("🖼️ Carousel Mode (Images)", "setting_geo_mode_carousel"),
+			),
+			tgbotapi.NewInlineKeyboardRow(
 				tgbotapi.NewInlineKeyboardButtonData("🔙 Back", "setting_geography_main"),
 			),
 		)
-		editMsg := tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, "⚙️ *Geography Mode*\nChoose how you want to play Geography:\n- *MCQ Mode*: Buttons to select the answer.\n- *Text Guess Mode*: Type out your guess (5 attempts).")
+		editMsg := tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, "⚙️ *Geography Mode*\nChoose how you want to play Geography:\n- *MCQ Mode*: Buttons to select the answer.\n- *Text Guess Mode*: Type out your guess (5 attempts).\n- *Carousel Mode*: Scroll through flag/landmark images in a slideshow!")
 		editMsg.ReplyMarkup = &buttons
 		editMsg.ParseMode = tgbotapi.ModeMarkdown
 		bot.Send(editMsg)
@@ -2349,10 +2355,12 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		bot.Send(editMsg)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
 		return
-	case "setting_geo_mode_mcq", "setting_geo_mode_text":
+	case "setting_geo_mode_mcq", "setting_geo_mode_text", "setting_geo_mode_carousel":
 		mode := "mcq"
 		if callback.Data == "setting_geo_mode_text" {
 			mode = "text"
+		} else if callback.Data == "setting_geo_mode_carousel" {
+			mode = "carousel"
 		}
 		err := geographybot.UpdateGeographyMode(chatID, mode, client)
 		if err != nil {
@@ -2363,6 +2371,8 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		modeStr := "MCQ Mode"
 		if mode == "text" {
 			modeStr = "Text Guess Mode"
+		} else if mode == "carousel" {
+			modeStr = "🖼️ Carousel Mode"
 		}
 
 		buttons := tgbotapi.NewInlineKeyboardMarkup(
