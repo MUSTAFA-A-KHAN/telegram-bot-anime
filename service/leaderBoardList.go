@@ -159,3 +159,75 @@ func GetScramyUserStatsByID(client *mongo.Client, userID int) string {
 	}
 	return stats
 }
+
+func GetAnimeUserStatsByID(client *mongo.Client, userID int) string {
+	result, err := repository.GetUserStatsByID(client, "AnimePoints", userID)
+	stats := "something went wrong"
+	if err != nil {
+		stats = "No winning stats found"
+	} else {
+		name, _ := result["Name"].(string)
+		count := 0
+		if val, ok := result["count"]; ok {
+			switch v := val.(type) {
+			case int32:
+				count = int(v)
+			case int64:
+				count = int(v)
+			case int:
+				count = v
+			}
+		}
+
+		stats = fmt.Sprintf("📊 <b>Anime Stats</b>\n<blockquote>\n👤 <b>Player:</b> %s\n\n🎌 <b>Points:</b> %d\n</blockquote>", html.EscapeString(name), count)
+	}
+	return stats
+}
+
+func GetGeographyUserStatsByID(client *mongo.Client, userID int) string {
+	result, err := repository.GetUserStatsByID(client, "GeographyPoints", userID)
+	stats := "something went wrong"
+	if err != nil {
+		stats = "No winning stats found"
+	} else {
+		name, _ := result["Name"].(string)
+		count := 0
+		if val, ok := result["count"]; ok {
+			switch v := val.(type) {
+			case int32:
+				count = int(v)
+			case int64:
+				count = int(v)
+			case int:
+				count = v
+			}
+		}
+
+		stats = fmt.Sprintf("📊 <b>Geography Stats</b>\n<blockquote>\n👤 <b>Player:</b> %s\n\n🌍 <b>Points:</b> %d\n</blockquote>", html.EscapeString(name), count)
+	}
+	return stats
+}
+
+func GetWordGridUserStatsByID(client *mongo.Client, userID int) string {
+	result, err := repository.GetUserStatsByID(client, "WordGridPoints", userID)
+	stats := "something went wrong"
+	if err != nil {
+		stats = "No winning stats found"
+	} else {
+		name, _ := result["Name"].(string)
+		count := 0
+		if val, ok := result["count"]; ok {
+			switch v := val.(type) {
+			case int32:
+				count = int(v)
+			case int64:
+				count = int(v)
+			case int:
+				count = v
+			}
+		}
+
+		stats = fmt.Sprintf("📊 <b>Word Grid Stats</b>\n<blockquote>\n👤 <b>Player:</b> %s\n\n🔠 <b>Points:</b> %d\n</blockquote>", html.EscapeString(name), count)
+	}
+	return stats
+}
