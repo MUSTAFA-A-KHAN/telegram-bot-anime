@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-telegram-bot-api/telegram-bot-api"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/robfig/cron/v3"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -238,6 +238,45 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 
 	command := message.Command()
 
+	if command == "start" {
+
+		if message.Chat.Type == "private" {
+			sendMessage(bot, chatID, "Hello! I am Rofyg. I can help you schedule your reminders in groups and channels.\n\nUse /help to see how to use me.")
+			return
+		}
+		if !isAdmin(bot, chatID, userID) {
+			// sendMessage(bot, chatID, "❌ You must be an admin to use this command.")
+			return
+		}
+		sendMessage(bot, chatID, "Hello! I am ScheduleBot. I can help you schedule messages in groups and channels.\n\nUse /help to see how to use me.")
+	}
+
+	if command == "help" {
+		if !isAdmin(bot, chatID, userID) {
+			// sendMessage(bot, chatID, "❌ You must be an admin to use this command.")
+			return
+		}
+		helpText := "📋 *ScheduleBot Help*\n\n" +
+			"*How it works:*\n" +
+			"1. Send `/schedule <cron_expression>` to start scheduling a message.\n" +
+			"2. Cron uses standard format: `minute hour day month weekday`.\n" +
+			"3. After the cron is accepted, send the message (text, photo, video, document, audio, voice, animation) you want to schedule.\n" +
+			"4. The bot saves it and posts automatically at the scheduled time.\n\n" +
+			"*Commands:*\n" +
+			"`/schedule <cron>` — Create a new scheduled message (admin only in groups/channels).\n" +
+			"`/listschedules` — List all active scheduled messages in this chat (admin only in groups/channels).\n" +
+			"`/cancelschedule <id>` — Cancel a scheduled message by its ID (admin only in groups/channels).\n" +
+			"`/help` — Show this help message.\n\n" +
+			"*Examples:*\n" +
+			"`/schedule 0 10 * * *` — Every day at 10:00 AM.\n" +
+			"`/schedule */2 * * * *` — Every 2 minutes.\n" +
+			"`/schedule 0 9 * * 1` — Every Monday at 9:00 AM.\n\n" +
+			"*Media types supported:* text, photo, video, animation, audio, document, voice.\n" +
+			"*Tip:* In channels, send the command directly in the channel after adding the bot as an admin with Post Messages permission."
+		sendMessage(bot, chatID, helpText)
+		return
+	}
+
 	// Only admins can manage schedules
 	if command == "schedule" || command == "listschedules" || command == "cancelschedule" {
 		if !isAdmin(bot, chatID, userID) {
@@ -261,21 +300,21 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			return
 		}
 
-	// Save state
-	stateMutex.Lock()
-	if addingState[chatID] == nil {
-		addingState[chatID] = make(map[int]string)
-	}
-	addingState[chatID][userID] = args
-	stateMutex.Unlock()
+		// Save state
+		stateMutex.Lock()
+		if addingState[chatID] == nil {
+			addingState[chatID] = make(map[int]string)
+		}
+		addingState[chatID][userID] = args
+		stateMutex.Unlock()
 
-	if message.Chat.Type == "channel" {
-		sendMessage(bot, chatID, "✅ Cron expression accepted! Now send the message (text, photo, document, etc.) you want to schedule.")
-	} else {
-		msg := tgbotapi.NewMessage(chatID, "Cron expression accepted! Now send the message (text, photo, document, etc.) you want to schedule.")
-		msg.ReplyMarkup = tgbotapi.ForceReply{ForceReply: true, Selective: true}
-		bot.Send(msg)
-	}
+		if message.Chat.Type == "channel" {
+			sendMessage(bot, chatID, "✅ Cron expression accepted! Now send the message (text, photo, document, etc.) you want to schedule.")
+		} else {
+			msg := tgbotapi.NewMessage(chatID, "Cron expression accepted! Now send the message (text, photo, document, etc.) you want to schedule.")
+			msg.ReplyMarkup = tgbotapi.ForceReply{ForceReply: true, Selective: true}
+			bot.Send(msg)
+		}
 
 	case "listschedules":
 		schedules, err := getSchedules(client, chatID)
