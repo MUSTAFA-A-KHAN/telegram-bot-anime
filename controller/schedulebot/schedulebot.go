@@ -49,6 +49,9 @@ func StartScheduleBot(token string) error {
 		if update.Message != nil {
 			go handleMessage(bot, update.Message, client)
 		}
+		if update.ChannelPost != nil {
+			go handleMessage(bot, update.ChannelPost, client)
+		}
 	}
 
 	return nil

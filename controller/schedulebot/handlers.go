@@ -31,9 +31,13 @@ var (
 	cronJobsMu sync.RWMutex
 )
 
-// isAdmin checks if the user is an administrator in the group.
+// isAdmin checks if the user is an administrator in the group or channel.
 func isAdmin(bot *tgbotapi.BotAPI, chatID int64, userID int) bool {
 	if chatID > 0 { // Private chat
+		return true
+	}
+
+	if userID == 0 {
 		return true
 	}
 
@@ -150,7 +154,13 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 	}
 
 	chatID := message.Chat.ID
-	userID := message.From.ID
+
+	userID := 0
+	if message.From != nil {
+		userID = message.From.ID
+	} else if message.Chat.Type != "channel" {
+		return
+	}
 
 	// Check if user is in adding state
 	stateMutex.RLock()
@@ -251,17 +261,21 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			return
 		}
 
-		// Save state
-		stateMutex.Lock()
-		if addingState[chatID] == nil {
-			addingState[chatID] = make(map[int]string)
-		}
-		addingState[chatID][userID] = args
-		stateMutex.Unlock()
+	// Save state
+	stateMutex.Lock()
+	if addingState[chatID] == nil {
+		addingState[chatID] = make(map[int]string)
+	}
+	addingState[chatID][userID] = args
+	stateMutex.Unlock()
 
+	if message.Chat.Type == "channel" {
+		sendMessage(bot, chatID, "✅ Cron expression accepted! Now send the message (text, photo, document, etc.) you want to schedule.")
+	} else {
 		msg := tgbotapi.NewMessage(chatID, "Cron expression accepted! Now send the message (text, photo, document, etc.) you want to schedule.")
 		msg.ReplyMarkup = tgbotapi.ForceReply{ForceReply: true, Selective: true}
 		bot.Send(msg)
+	}
 
 	case "listschedules":
 		schedules, err := getSchedules(client, chatID)
