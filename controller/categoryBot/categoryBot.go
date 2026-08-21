@@ -560,7 +560,7 @@ func recordEphemeralSource(sent tgbotapiv5Ovy.Message, w storedWhisper) {
 	whisperEphemeralSourcesMutex.Unlock()
 }
 
-func deliverStoredWhispers(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
+func deliverStoredWhispers(bot *tgbotapi.BotAPI, message *tgbotapi.Message) bool {
 	userID := int64(message.From.ID)
 	storedWhispersMutex.Lock()
 	whispers, ok := storedWhispers[userID]
@@ -569,7 +569,7 @@ func deliverStoredWhispers(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 	}
 	storedWhispersMutex.Unlock()
 	if !ok {
-		return
+		return false
 	}
 
 	var undelivered []storedWhisper
@@ -580,7 +580,6 @@ func deliverStoredWhispers(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 			setLatestUserEphemeral(int64(message.From.ID), int64(sent.EphemeralMessageID))
 			delivered = true
 		}
-		// Otherwise try in the chat where the user ran /ephemeral.
 		if !delivered {
 			if sent, err := sendWhisperEphemeralReturn(message.Chat.ID, message.From.ID, message.EphemeralMessageID, w, true); err == nil {
 				recordEphemeralSource(sent, w)
@@ -588,7 +587,6 @@ func deliverStoredWhispers(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 				delivered = true
 			}
 		}
-		// Last resort: send it as an ordinary private message via the user's DM.
 		if !delivered {
 			if err := sendWhisperDM(bot, userID, w, true); err == nil {
 				delivered = true
@@ -605,6 +603,7 @@ func deliverStoredWhispers(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 		storedWhispersMutex.Unlock()
 		view.SendMessage(bot, message.Chat.ID, "⚠️ Some of your stored whispers could not be delivered yet. Please open a private chat with the bot and try /ephemeral again.")
 	}
+	return true
 }
 
 // handleReplyToReceivedWhisper catches a user directly replying to an ephemeral
@@ -840,8 +839,10 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 	adminID := int64(1006461736)
 	rememberUser(message)
 	if message.Command() == "ephemeral" {
-		deliverStoredWhispers(bot, message)
-		sendEphemeralPrompt(message)
+		hadStored := deliverStoredWhispers(bot, message)
+		if !hadStored {
+			sendEphemeralPrompt(message)
+		}
 		return
 	}
 	// A direct reply to an ephemeral whisper gets forwarded back to its original
