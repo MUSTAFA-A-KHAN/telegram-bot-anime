@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"html"
 
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/model"
 )
@@ -23,20 +24,26 @@ func FormatUserProfile(profile *model.UserProfile) string {
 		winRate = float64(profile.Wins) / float64(profile.GamesPlayed) * 100
 	}
 
-	html := fmt.Sprintf(`<b>👤 %s's Profile</b>
+	escapedUsername := html.EscapeString(profile.Username)
 
+	htmlStr := fmt.Sprintf(`<b>👤 %s's Profile</b>
+<blockquote>
 <b>%s %s</b>
-Level: <b>%d</b>
-XP: <b>%d</b>
-Coins: <b>%d</b>
+
+⭐ <b>Level:</b> %d
+✨ <b>XP:</b> %d
+🪙 <b>Coins:</b> %d
+</blockquote>
 
 <b>📊 Stats</b>
-Games Played: <b>%d</b>
-Wins: <b>%d</b>
-Win Rate: <b>%.1f%%</b>
-Current Streak: <b>%d</b>`,
-		profile.Username, badge, title, profile.Level, profile.XP, profile.Coins,
+<blockquote>
+🎮 <b>Games Played:</b> %d
+🏆 <b>Wins:</b> %d
+📈 <b>Win Rate:</b> %.1f%%
+🔥 <b>Current Streak:</b> %d
+</blockquote>`,
+		escapedUsername, badge, title, profile.Level, profile.XP, profile.Coins,
 		profile.GamesPlayed, profile.Wins, winRate, profile.CurrentStreak)
 
-	return html
+	return htmlStr
 }
