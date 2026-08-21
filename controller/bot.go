@@ -437,6 +437,11 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 				),
 				tgbotapi.NewInlineKeyboardRow(
 					tgbotapi.NewInlineKeyboardButtonData("Scramy", "stats_scramy"),
+					tgbotapi.NewInlineKeyboardButtonData("Geography", "stats_geography"),
+				),
+				tgbotapi.NewInlineKeyboardRow(
+					tgbotapi.NewInlineKeyboardButtonData("Anime", "stats_anime"),
+					tgbotapi.NewInlineKeyboardButtonData("Word Grid", "stats_wordgrid"),
 				),
 			)
 			view.SendMessageWithButtons(bot, chatID, "🐊🇮🇳\n📊 Choose game stats to view:", buttons)
@@ -835,6 +840,11 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			),
 			tgbotapi.NewInlineKeyboardRow(
 				tgbotapi.NewInlineKeyboardButtonData("Scramy", "stats_scramy"),
+				tgbotapi.NewInlineKeyboardButtonData("Geography", "stats_geography"),
+			),
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("Anime", "stats_anime"),
+				tgbotapi.NewInlineKeyboardButtonData("Word Grid", "stats_wordgrid"),
 			),
 		)
 		view.SendMessageWithButtons(bot, chatID, "🐊🇮🇳\n📊 Choose game stats to view:", buttons)
@@ -1416,7 +1426,11 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 			),
 			tgbotapi.NewInlineKeyboardRow(
 				tgbotapi.NewInlineKeyboardButtonData("Scramy", "stats_scramy"),
-				tgbotapi.NewInlineKeyboardButtonData("Anime", "statsglobal_anime"),
+				tgbotapi.NewInlineKeyboardButtonData("Geography", "stats_geography"),
+			),
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("Anime", "stats_anime"),
+				tgbotapi.NewInlineKeyboardButtonData("Word Grid", "stats_wordgrid"),
 			),
 		)
 		editMsg := tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, "🐊🇮🇳\n📊 Choose game stats to view:")
@@ -1643,6 +1657,33 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		return
 	case "stats_scramy":
 		result := service.GetScramyUserStatsByID(client, callback.From.ID)
+		buttons := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("🔙 Back", "mystats_main")))
+		editMsg := tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, result)
+		editMsg.ReplyMarkup = &buttons
+		editMsg.ParseMode = tgbotapi.ModeHTML
+		bot.Send(editMsg)
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
+		return
+	case "stats_anime":
+		result := service.GetAnimeUserStatsByID(client, callback.From.ID)
+		buttons := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("🔙 Back", "mystats_main")))
+		editMsg := tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, result)
+		editMsg.ReplyMarkup = &buttons
+		editMsg.ParseMode = tgbotapi.ModeHTML
+		bot.Send(editMsg)
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
+		return
+	case "stats_geography":
+		result := service.GetGeographyUserStatsByID(client, callback.From.ID)
+		buttons := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("🔙 Back", "mystats_main")))
+		editMsg := tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, result)
+		editMsg.ReplyMarkup = &buttons
+		editMsg.ParseMode = tgbotapi.ModeHTML
+		bot.Send(editMsg)
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
+		return
+	case "stats_wordgrid":
+		result := service.GetWordGridUserStatsByID(client, callback.From.ID)
 		buttons := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("🔙 Back", "mystats_main")))
 		editMsg := tgbotapi.NewEditMessageText(chatID, callback.Message.MessageID, result)
 		editMsg.ReplyMarkup = &buttons
