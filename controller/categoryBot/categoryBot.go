@@ -838,6 +838,10 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 	chatID := message.Chat.ID
 	adminID := int64(1006461736)
 	rememberUser(message)
+	if message.Command() == "receive" {
+		deliverStoredWhispers(bot, message)
+		return
+	}
 	if message.Command() == "ephemeral" {
 		hadStored := deliverStoredWhispers(bot, message)
 		if !hadStored {
@@ -2759,6 +2763,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		}
 		return
 	case "ai_hint":
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "feature under maintenance."))
 		aiResponseMutex.RLock()
 		aiResponseMutex.RUnlock()
 		word := chatState.Word
