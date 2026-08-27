@@ -822,23 +822,23 @@ func Bot() {
 							log.Printf("Error sending translation: %v", err)
 						}
 					}
-				case "test":
-					// Prepare image file for upload
-					photo := message.ReplyToMessage.Photo
-					fmt.Println("-------------------------------", photo)
-					imagePath, err := utilities.SaveImage(bot, chatID, photo[len(photo)-1])
-					if err != nil {
-						log.Printf("Error saving image: %v", err)
-						break
-					}
-					imgToTxt := utilities.ImageToText(imagePath, APINinjas)
-					fmt.Println(imgToTxt)
-					fmt.Println(imagePath)
-					msg := tgbotapi.NewMessage(chatID, imgToTxt)
-					msg.ReplyToMessageID = message.MessageID
-					if err := sendMarkdownMessage(bot, msg); err != nil {
-						log.Printf("Error sending translation: %v", err)
-					}
+				// case "test":
+				// 	// Prepare image file for upload
+				// 	photo := message.ReplyToMessage.Photo
+				// 	fmt.Println("-------------------------------", photo)
+				// 	imagePath, err := utilities.SaveImage(bot, chatID, photo[len(photo)-1])
+				// 	if err != nil {
+				// 		log.Printf("Error saving image: %v", err)
+				// 		break
+				// 	}
+				// 	imgToTxt := utilities.ImageToText(imagePath, APINinjas)
+				// 	fmt.Println(imgToTxt)
+				// 	fmt.Println(imagePath)
+				// 	msg := tgbotapi.NewMessage(chatID, imgToTxt)
+				// 	msg.ReplyToMessageID = message.MessageID
+				// 	if err := sendMarkdownMessage(bot, msg); err != nil {
+				// 		log.Printf("Error sending translation: %v", err)
+				// 	}
 				case "eordle":
 					text = ""
 					if message.ReplyToMessage != nil {
