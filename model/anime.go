@@ -66,6 +66,7 @@ var meaningCache = struct {
 
 // fetchMeaningFromAPI fetches the meaning of a word from a dictionary API (OwlBot API used here as example).
 func fetchMeaningFromAPI(word string) (string, error) {
+	return "", nil // Placeholder for actual API call
 	dict := dictionaries.NewEnglishDictionary()
 	result, err := dict.Search(word)
 	if err != nil {
