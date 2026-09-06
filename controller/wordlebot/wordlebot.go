@@ -560,7 +560,7 @@ func HandleGuess(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.
 
 	if guess == ws.Word {
 		ws.Active = false
-		points := 25 - ws.Attempts + 1
+		points := 35 - ws.Attempts + 1
 		if points < 1 {
 			points = 1 // Ensure minimum 1 point for winning
 		}
