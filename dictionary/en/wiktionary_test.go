@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"unicode/utf8"
 
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/dictionary"
 )
@@ -71,7 +72,7 @@ func TestGetMeaning_Success(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	want := "Noun:\nA domesticated feline.\nA spiteful woman.\nVerb:\nTo hoist the anchor.\n"
+	want := "Noun:\n1. A domesticated feline.\n2. A spiteful woman.\nVerb:\n1. To hoist the anchor."
 	if got != want {
 		t.Errorf("GetMeaning() = %q, want %q", got, want)
 	}
@@ -104,8 +105,115 @@ func TestGetMeaning_DefinitionsWithoutPartOfSpeech(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if got != "only a definition\n" {
+	if got != "1. only a definition" {
 		t.Errorf("GetMeaning() = %q", got)
+	}
+}
+
+func TestCleanDefinition(t *testing.T) {
+	tests := []struct {
+		name string
+		in   string
+		want string
+	}{
+		{name: "plain text", in: "A fruit.", want: "A fruit."},
+		{
+			name: "wiki links and spans",
+			in:   `A <a rel="mw:WikiLink" href="/wiki/round" title="round">round</a> <span class="biota"><i>Malus</i></span>.`,
+			want: "A round Malus.",
+		},
+		{
+			name: "html entities",
+			in:   `noun sense<span typeof="mw:Entity">&nbsp;</span>1.1 &amp; more &quot;x&quot;`,
+			want: `noun sense 1.1 & more "x"`,
+		},
+		{
+			name: "style blocks removed",
+			in:   `Eating. <style data-mw-deduplicate="x" typeof="mw:Extension/templatestyles">.mw-parser-output .defdate{font-size:smaller}</style>`,
+			want: "Eating.",
+		},
+		{
+			name: "self-closing link tag removed",
+			in:   `Forbidden fruit. <link rel="mw-deduplicated-inline-style" href="mw-data:TemplateStyles:r1">`,
+			want: "Forbidden fruit.",
+		},
+		{
+			name: "nested sub-sense list dropped",
+			in:   "Something round.\n\n<ol><li>Ellipsis of Adam's apple.</li>\n<li>Ellipsis of apple-green.",
+			want: "Something round.",
+		},
+		{
+			name: "only a nested list",
+			in:   `<span class="usage-label-sense"></span><ol><li>A person.</li></ol>`,
+			want: "",
+		},
+		{name: "backticks replaced", in: "use `code` here", want: "use 'code' here"},
+		{name: "whitespace collapsed", in: "  a \n\t b  ", want: "a b"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := cleanDefinition(tt.in); got != tt.want {
+				t.Errorf("cleanDefinition() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestFormatMeanings_DedupesAndLimitsPerPOS(t *testing.T) {
+	entries := []Entry{
+		{PartOfSpeech: "Noun", Definitions: []Definition{
+			{Definition: "<b>One</b>."},
+			{Definition: "One."}, // duplicate after cleaning
+			{Definition: `<ol><li>nested</li></ol>`},
+			{Definition: "Two."},
+			{Definition: "Three."},
+			{Definition: "Four."}, // over the per-POS limit
+		}},
+		{PartOfSpeech: "Adjective", Definitions: []Definition{{Definition: "<i></i>"}}}, // nothing left, section skipped
+		{PartOfSpeech: "Verb", Definitions: []Definition{{Definition: "One."}, {Definition: "Act."}}},
+	}
+
+	got := formatMeanings(entries)
+	want := "Noun:\n1. One.\n2. Two.\n3. Three.\nVerb:\n1. Act."
+	if got != want {
+		t.Errorf("formatMeanings() = %q, want %q", got, want)
+	}
+}
+
+func TestFormatMeanings_RespectsMaxLength(t *testing.T) {
+	long := strings.Repeat("word ", 50) // ~250 runes per definition
+	var entries []Entry
+	for _, pos := range []string{"Noun", "Verb", "Adjective", "Adverb"} {
+		entries = append(entries, Entry{PartOfSpeech: pos, Definitions: []Definition{
+			{Definition: pos + " " + long},
+			{Definition: pos + " again " + long},
+		}})
+	}
+
+	got := formatMeanings(entries)
+	if n := utf8.RuneCountInString(got); n > maxMeaningLength {
+		t.Fatalf("length = %d runes, want <= %d", n, maxMeaningLength)
+	}
+	if !strings.HasPrefix(got, "Noun:\n1. ") {
+		t.Errorf("expected first section to be kept, got %q", got)
+	}
+	if strings.Contains(got, "Adverb:") {
+		t.Errorf("expected later sections to be dropped once limit reached, got %q", got)
+	}
+}
+
+func TestFormatMeanings_TruncatesSingleHugeDefinition(t *testing.T) {
+	entries := []Entry{{PartOfSpeech: "Noun", Definitions: []Definition{
+		{Definition: strings.Repeat("é", maxMeaningLength*2)},
+	}}}
+
+	got := formatMeanings(entries)
+	if n := utf8.RuneCountInString(got); n != maxMeaningLength {
+		t.Errorf("length = %d runes, want %d", n, maxMeaningLength)
+	}
+	if !strings.HasSuffix(got, "…") {
+		t.Errorf("expected ellipsis suffix, got %q", got)
 	}
 }
 
@@ -213,6 +321,12 @@ func TestGetMeaning_RealAPI(t *testing.T) {
 		}
 		if !strings.Contains(got, "Noun:") {
 			t.Errorf("expected a Noun section, got %q", got)
+		}
+		if strings.ContainsAny(got, "<>`") {
+			t.Errorf("expected plain text without HTML or backticks, got %q", got)
+		}
+		if n := utf8.RuneCountInString(got); n > maxMeaningLength {
+			t.Errorf("length = %d runes, want <= %d", n, maxMeaningLength)
 		}
 		t.Logf("apple:\n%s", got)
 	})
