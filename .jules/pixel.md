@@ -1,17 +1,22 @@
-## 2024-06-08 - Clean User Stats Formatting
+## 2024-06-09 - Avoid Preformatted Tables in Telegram Mobile
+**Learning:** Fixed-width tables using `<pre>` tags render poorly on mobile Telegram clients and break alignment completely when user-equipped Unicode emojis are present in the table.
+**Action:** Use an inline, clean HTML structure like `<b>[rank]</b> [name] — [score]` and rely on emoji-based bullets for hierarchical display.
 
-**Learning:** When displaying multiple statistics for a user, using basic text with line breaks (`\n`) creates a dense, unstructured view. Switching to HTML formatting with `<b>` tags for labels, using emojis for visual hierarchy, and creating empty lines as section separators significantly improves scannability and presentation.
+## 2024-06-11 - Use Blockquotes for Statistics Cards
+**Learning:** Dense plain text dumps of user statistics are hard to read and lack visual hierarchy in Telegram messages.
+**Action:** When displaying user statistics or multi-field data, format them as structured cards using `<blockquote>` tags and empty lines to separate sections. Always escape user inputs with `html.EscapeString` to prevent HTML parsing errors.
+## 2026-06-13 - Improve Visual Hierarchy for Help Screens
 
-**Action:** Whenever sending statistics or multi-field data, format it as a structured card utilizing emojis and bold text via HTML or Markdown instead of plain text dumps.
+**Learning:** Dense text blocks with standard numbered lists are hard to scan on mobile devices and increase cognitive load. Breaking text into distinct groups with bold, emoji-prefixed headers and bullet points significantly improves readability.
 
-## 2024-06-20 - Telegram Markdown Bolding
+**Action:** When creating or modifying long textual outputs (like  or  commands), structure the text into clear sections using emojis for hierarchy and bullet points () for lists.
 
-**Learning:** Telegram's simple `Markdown` mode is not identical to standard web Markdown. While standard Markdown uses double asterisks (`**bold**`) for bold text, Telegram's parser only recognizes single asterisks (`*bold*`) for bolding. Using double asterisks results in them being rendered literally as text (e.g., `**Settings**`), adding visual clutter and confusing users.
+## 2024-06-12 - Improve Visual Hierarchy for Help Screens
 
-**Action:** When sending messages using `tgbotapi.ModeMarkdown` (or just `"Markdown"`), strictly use single asterisks (`*`) for bold styling and avoid double asterisks (`**`). Use `ModeMarkdownV2` if more complex formatting features are necessary, but simple `ModeMarkdown` requires the simpler syntax.
+**Learning:** Dense text blocks with standard numbered lists are hard to scan on mobile devices and increase cognitive load. Breaking text into distinct groups with bold, emoji-prefixed headers and bullet points significantly improves readability.
 
-## 2025-02-13 - Improve Visual Hierarchy for Profile Cards
+**Action:** When creating or modifying long textual outputs (like `/rules` or `/help` commands), structure the text into clear sections using emojis for hierarchy and bullet points (`•`) for lists.
 
-**Learning:** When displaying multi-section profile data, standard lines of text with plain labels run together, making them difficult to read. By using HTML `<blockquote>` tags to enclose thematic blocks (e.g., identity and stats) and prepending descriptive emojis to each field, the UI becomes significantly more scannable and pleasant on mobile screens.
-
-**Action:** Whenever generating multi-section player cards or stat summaries, wrap groups in `<blockquote>` and pair each label with a relevant emoji.
+## 2024-06-14 - Improve Welcome Messages
+**Learning:** Plain text welcome messages like "Welcome! Type /word to start a new game." are easily missed and don't provide a good first impression.
+**Action:** Structure welcome messages using emojis, clear greetings, and bulleted lists of quick actions to improve visual hierarchy and make onboarding more engaging.

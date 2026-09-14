@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/controller/wordlebot/image_generator"
-	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/model"
+	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/dictionary/en"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/repository"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/service"
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/view"
@@ -573,7 +573,7 @@ func HandleGuess(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.
 		)
 
 		if isImage {
-			meaning := model.GetWordMeaning(ws.Word)
+			meaning, _ := en.NewWiktionary().GetMeaning(ws.Word)
 			if meaning != "" {
 				meaning = "\n\n```Meaning\n" + meaning + "\n```"
 			}
@@ -582,7 +582,7 @@ func HandleGuess(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.
 				strings.ToUpper(ws.Word), points, message.From.FirstName, message.From.ID, ws.Attempts, meaning)
 			view.ReplyToMessageWithPhotoAndButtons(bot, message.MessageID, chatID, imgData, msg, buttons)
 		} else {
-			meaning := model.GetWordMeaning(ws.Word)
+			meaning, _ := en.NewWiktionary().GetMeaning(ws.Word)
 			if meaning != "" {
 				meaning = "\n\n```Meaning\n" + meaning + "\n```"
 			}
@@ -617,7 +617,7 @@ func HandleGuess(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.
 		)
 
 		if isImage {
-			meaning := model.GetWordMeaning(ws.Word)
+			meaning, _ := en.NewWiktionary().GetMeaning(ws.Word)
 			if meaning != "" {
 				meaning = "\n\n```Meaning\n" + meaning + "\n```"
 			}
@@ -625,7 +625,7 @@ func HandleGuess(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.
 			msg := fmt.Sprintf("❌ Out of attempts! The word was %s.%s", strings.ToUpper(ws.Word), meaning)
 			view.ReplyToMessageWithPhotoAndButtons(bot, message.MessageID, chatID, imgData, msg, buttons)
 		} else {
-			meaning := model.GetWordMeaning(ws.Word)
+			meaning, _ := en.NewWiktionary().GetMeaning(ws.Word)
 			if meaning != "" {
 				meaning = "\n\n```Meaning\n" + meaning + "\n```"
 			}
