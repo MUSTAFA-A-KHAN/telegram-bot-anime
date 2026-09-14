@@ -2802,7 +2802,16 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 			bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "No pending game request to cancel."))
 		}
 		return
+
 	case "ai_hint":
+		aiResponseMutex.RLock()
+		aiResponseMutex.RUnlock()
+		word := chatState.Word
+		hint := translator.NewTextTranslator().GetDefinition(word)
+
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, hint))
+		return
+	case "ai_hint_old":
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, "feature under maintenance."))
 		aiResponseMutex.RLock()
 		aiResponseMutex.RUnlock()
