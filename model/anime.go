@@ -97,7 +97,8 @@ func GenerateMeaningHint(word string) string {
 		return "ⓘ Hint: " + cachedMeaning
 	}
 
-	meaning, err := fetchMeaningFromAPI(word)
+	// meaning, err := fetchMeaningFromAPI(word)
+	meaning, err := en.NewWiktionary().GetMeaning(word)
 	meaning = strings.ReplaceAll(meaning, word, "_")
 	if err != nil {
 		// fallback to placeholder
