@@ -10,6 +10,7 @@ require (
 	github.com/go-telegram-bot-api/telegram-bot-api v4.6.4+incompatible
 	github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.5.1
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0
+	github.com/robfig/cron/v3 v3.0.1
 	github.com/texttheater/golang-levenshtein/levenshtein v0.0.0-20200805054039-cae8b0eaed6c
 	go.mongodb.org/mongo-driver v1.17.1
 	golang.org/x/image v0.41.0
@@ -20,7 +21,6 @@ require (
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/klauspost/compress v1.13.6 // indirect
 	github.com/montanaflynn/stats v0.7.1 // indirect
-	github.com/robfig/cron/v3 v3.0.1 // indirect
 	github.com/technoweenie/multipartstreamer v1.0.1 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
 	github.com/xdg-go/scram v1.1.2 // indirect
@@ -31,4 +31,4 @@ require (
 )
 
 //replace github.com/go-telegram-bot-api/telegram-bot-api => github.com/Intelora-Skyth/telegram-bot-api v1.0.0
-replace github.com/go-telegram-bot-api/telegram-bot-api => github.com/MUSTAFA-A-KHAN/telegram-bot-api v1.0.1
+replace github.com/go-telegram-bot-api/telegram-bot-api => github.com/MUSTAFA-A-KHAN/telegram-bot-api v1.0.2

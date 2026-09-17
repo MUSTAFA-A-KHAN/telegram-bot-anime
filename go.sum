@@ -1,7 +1,7 @@
 bou.ke/monkey v1.0.2 h1:kWcnsrCNUatbxncxR/ThdYqbytgOIArtYWqcQLQzKLI=
 bou.ke/monkey v1.0.2/go.mod h1:OqickVX3tNx6t33n1xvtTtu85YN5s6cKwVug+oHMaIA=
-github.com/MUSTAFA-A-KHAN/telegram-bot-api v1.0.1 h1:fTEGIxpIocsZa30s5Z5dXUoFhIvSkidEbmw2Ch//4Ec=
-github.com/MUSTAFA-A-KHAN/telegram-bot-api v1.0.1/go.mod h1:So8r5zUT+mgiDceg3czgsDM+fyJkBN3PyuFt/6fVFPU=
+github.com/MUSTAFA-A-KHAN/telegram-bot-api v1.0.2 h1:b6DxtpGaoO2xnfB4yTBwhyoWjX3cFBeXmP5l83qYjYc=
+github.com/MUSTAFA-A-KHAN/telegram-bot-api v1.0.2/go.mod h1:rYssSkFbyyh4ZMaqubk9gOYJjQFKrwhzV9FxnNlt38E=
 github.com/OvyFlash/telegram-bot-api v0.0.0-20260715235732-aca8bf3898bb h1:MvKVOrwsx25AOMkMTGilUTqjFJ4S/OR3nyNq1PsEwTE=
 github.com/OvyFlash/telegram-bot-api v0.0.0-20260715235732-aca8bf3898bb/go.mod h1:2nRUdsKyWhvezqW/rBGWEQdcTQeTtnbSNd2dgx76WYA=
 github.com/STRockefeller/collection v0.0.0-20230411030518-1f27f4c0c6c3 h1:csYRCqeISYzml69MnKikZpCUDVOazoAXhZJThLSYCqk=

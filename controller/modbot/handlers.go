@@ -85,7 +85,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, dbClient int
 		// && message.Chat.ID > 0 {
 		trigger := strings.ToLower(strings.TrimSpace(message.Text))
 		if rule, ok := GetGlobalRuleForTrigger(trigger); ok {
-			sendRuleResponse(bot, message.Chat.ID, 0, rule)
+			sendRuleResponse(bot, message.Chat.ID, messageThreadID(message), 0, rule)
 			return
 		}
 	}
@@ -97,6 +97,11 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, dbClient int
 func handleCommand(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.Client) {
 	chatID := message.Chat.ID
 
+	// In forum supergroups, every response must be posted into the topic
+	// the command was issued from (message_thread_id), otherwise Telegram
+	// sends it to the General topic instead.
+	threadID := messageThreadID(message)
+
 	// Messages from GroupAnonymousBot (anonymous admins) should not be processed.
 	if message.From == nil || message.From.ID == groupAnonymousBotID {
 		return
@@ -107,7 +112,7 @@ func handleCommand(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 	// Admins only
 	if !isAdmin(bot, chatID, userID) {
 		if message.Command() == "addrule" || message.Command() == "delrule" || message.Command() == "modsettings" {
-			sendMessage(bot, chatID, "You must be an admin to use this command.")
+			sendMessage(bot, chatID, threadID, "You must be an admin to use this command.")
 		}
 		return
 	}
@@ -117,14 +122,14 @@ func handleCommand(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 	switch message.Command() {
 	case "start", "menu":
 		if chatID > 0 {
-			sendGlobalRuleMenu(bot, chatID)
+			sendGlobalRuleMenu(bot, chatID, 0)
 			return
 		}
 		// sendMessage(bot, chatID, "Use this command in a private chat with the bot to open the response menu.")
 		return
 
 	case "helpmod":
-		sendModBotHelp(bot, chatID)
+		sendModBotHelp(bot, chatID, threadID)
 		return
 
 	case "addrule":
@@ -133,7 +138,7 @@ func handleCommand(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		parts := strings.SplitN(args, " ", 2)
 
 		if len(parts) == 0 || parts[0] == "" {
-			sendMessage(bot, chatID, "Usage:\n- `/addrule <word> <response>`\n- `/addrule <word>` (replying to a file/image)")
+			sendMessage(bot, chatID, threadID, "Usage:\n- `/addrule <word> <response>`\n- `/addrule <word>` (replying to a file/image)")
 			return
 		}
 
@@ -144,6 +149,7 @@ func handleCommand(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			SetInteractiveState(chatID, userID, AddRuleState{Step: 1})
 
 			msg := tgbotapi.NewMessage(chatID, "Please send the keyword for the new rule.")
+			msg.MessageThreadID = threadID
 			msg.ReplyMarkup = tgbotapi.ForceReply{ForceReply: true, Selective: true}
 			bot.Send(msg)
 			return
@@ -174,7 +180,7 @@ func handleCommand(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 				rule.ResponseType = "text"
 				rule.ResponseText = message.ReplyToMessage.Text
 			} else {
-				sendMessage(bot, chatID, "Unsupported media type for rule.")
+				sendMessage(bot, chatID, threadID, "Unsupported media type for rule.")
 				return
 			}
 		} else if message.Caption != "" {
@@ -196,7 +202,7 @@ func handleCommand(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 				rule.ResponseType = "animation"
 				rule.ResponseFileID = message.Animation.FileID
 			} else {
-				sendMessage(bot, chatID, "Unsupported media type for rule in caption.")
+				sendMessage(bot, chatID, threadID, "Unsupported media type for rule in caption.")
 				return
 			}
 		} else if len(parts) > 1 {
@@ -208,6 +214,7 @@ func handleCommand(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			SetInteractiveState(chatID, userID, AddRuleState{Step: 2, TriggerWord: trigger})
 
 			msg := tgbotapi.NewMessage(chatID, fmt.Sprintf("Great! Now send the text or media that should be sent when someone says `%s`.", trigger))
+			msg.MessageThreadID = threadID
 			msg.ParseMode = "Markdown"
 			msg.ReplyMarkup = tgbotapi.ForceReply{ForceReply: true, Selective: true}
 			bot.Send(msg)
@@ -216,21 +223,21 @@ func handleCommand(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 
 		settings.Rules[trigger] = rule
 		SaveChatSettings(client, settings)
-		sendMessage(bot, chatID, fmt.Sprintf("✅ Rule added for keyword: `%s`", trigger))
+		sendMessage(bot, chatID, threadID, fmt.Sprintf("✅ Rule added for keyword: `%s`", trigger))
 
 	case "delrule":
 		args := normalizeRuleTrigger(message.CommandArguments())
 		if args == "" {
-			sendMessage(bot, chatID, "Usage: `/delrule <word>`")
+			sendMessage(bot, chatID, threadID, "Usage: `/delrule <word>`")
 			return
 		}
 
 		if chatID > 0 && IsGlobalAdmin(userID) {
 			removed := deleteRuleGlobally(client, args)
 			if removed > 0 {
-				sendMessage(bot, chatID, fmt.Sprintf("✅ Removed rule `%s` from all cached chats.", args))
+				sendMessage(bot, chatID, threadID, fmt.Sprintf("✅ Removed rule `%s` from all cached chats.", args))
 			} else {
-				sendMessage(bot, chatID, fmt.Sprintf("Rule not found for: `%s`", args))
+				sendMessage(bot, chatID, threadID, fmt.Sprintf("Rule not found for: `%s`", args))
 			}
 			return
 		}
@@ -239,34 +246,34 @@ func handleCommand(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		if exists {
 			delete(settings.Rules, ruleKey)
 			SaveChatSettings(client, settings)
-			sendMessage(bot, chatID, fmt.Sprintf("✅ Rule removed for keyword: `%s`", args))
+			sendMessage(bot, chatID, threadID, fmt.Sprintf("✅ Rule removed for keyword: `%s`", args))
 		} else {
-			sendMessage(bot, chatID, fmt.Sprintf("Rule not found for: `%s`", args))
+			sendMessage(bot, chatID, threadID, fmt.Sprintf("Rule not found for: `%s`", args))
 		}
 
 	case "addscamword":
 		args := strings.ToLower(strings.TrimSpace(message.CommandArguments()))
 		if args == "" {
-			sendMessage(bot, chatID, "Usage: `/addscamword <phrase>`")
+			sendMessage(bot, chatID, threadID, "Usage: `/addscamword <phrase>`")
 			return
 		}
 
 		// Check if already exists
 		for _, w := range settings.ScamKeywords {
 			if w == args {
-				sendMessage(bot, chatID, "Phrase is already in the scam filter.")
+				sendMessage(bot, chatID, threadID, "Phrase is already in the scam filter.")
 				return
 			}
 		}
 
 		settings.ScamKeywords = append(settings.ScamKeywords, args)
 		SaveChatSettings(client, settings)
-		sendMessage(bot, chatID, fmt.Sprintf("✅ Added `%s` to scam filter.", args))
+		sendMessage(bot, chatID, threadID, fmt.Sprintf("✅ Added `%s` to scam filter.", args))
 
 	case "delscamword":
 		args := strings.ToLower(strings.TrimSpace(message.CommandArguments()))
 		if args == "" {
-			sendMessage(bot, chatID, "Usage: `/delscamword <phrase>`")
+			sendMessage(bot, chatID, threadID, "Usage: `/delscamword <phrase>`")
 			return
 		}
 
@@ -283,33 +290,33 @@ func handleCommand(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		if found {
 			settings.ScamKeywords = newWords
 			SaveChatSettings(client, settings)
-			sendMessage(bot, chatID, fmt.Sprintf("✅ Removed `%s` from scam filter.", args))
+			sendMessage(bot, chatID, threadID, fmt.Sprintf("✅ Removed `%s` from scam filter.", args))
 		} else {
-			sendMessage(bot, chatID, "Phrase not found in the scam filter.")
+			sendMessage(bot, chatID, threadID, "Phrase not found in the scam filter.")
 		}
 
 	case "adddomain":
 		args := strings.ToLower(strings.TrimSpace(message.CommandArguments()))
 		if args == "" {
-			sendMessage(bot, chatID, "Usage: `/adddomain <domain>` (e.g. google.com)")
+			sendMessage(bot, chatID, threadID, "Usage: `/adddomain <domain>` (e.g. google.com)")
 			return
 		}
 
 		for _, d := range settings.AllowedDomains {
 			if d == args {
-				sendMessage(bot, chatID, "Domain is already allowed.")
+				sendMessage(bot, chatID, threadID, "Domain is already allowed.")
 				return
 			}
 		}
 
 		settings.AllowedDomains = append(settings.AllowedDomains, args)
 		SaveChatSettings(client, settings)
-		sendMessage(bot, chatID, fmt.Sprintf("✅ Allowed domain `%s`.", args))
+		sendMessage(bot, chatID, threadID, fmt.Sprintf("✅ Allowed domain `%s`.", args))
 
 	case "deldomain":
 		args := strings.ToLower(strings.TrimSpace(message.CommandArguments()))
 		if args == "" {
-			sendMessage(bot, chatID, "Usage: `/deldomain <domain>`")
+			sendMessage(bot, chatID, threadID, "Usage: `/deldomain <domain>`")
 			return
 		}
 
@@ -326,21 +333,21 @@ func handleCommand(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		if found {
 			settings.AllowedDomains = newDomains
 			SaveChatSettings(client, settings)
-			sendMessage(bot, chatID, fmt.Sprintf("✅ Removed `%s` from allowed domains.", args))
+			sendMessage(bot, chatID, threadID, fmt.Sprintf("✅ Removed `%s` from allowed domains.", args))
 		} else {
-			sendMessage(bot, chatID, "Domain not found in allowed list.")
+			sendMessage(bot, chatID, threadID, "Domain not found in allowed list.")
 		}
 
 	case "purge", "delete":
 		args := strings.TrimSpace(message.CommandArguments())
 		if args == "" {
-			sendMessage(bot, chatID, "Usage: `/purge <count>`\nDeletes the last <count> messages before this command.")
+			sendMessage(bot, chatID, threadID, "Usage: `/purge <count>`\nDeletes the last <count> messages before this command.")
 			return
 		}
 
 		count, err := strconv.Atoi(args)
 		if err != nil || count <= 0 {
-			sendMessage(bot, chatID, "Please provide a valid number greater than 0. Example: `/purge 5`")
+			sendMessage(bot, chatID, threadID, "Please provide a valid number greater than 0. Example: `/purge 5`")
 			return
 		}
 
@@ -349,7 +356,7 @@ func handleCommand(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 		}
 
 		deletedCount := purgeLastMessages(bot, chatID, message.MessageID, count)
-		sendMessage(bot, chatID, fmt.Sprintf("✅ Deleted %d message(s).", deletedCount))
+		sendMessage(bot, chatID, threadID, fmt.Sprintf("✅ Deleted %d message(s).", deletedCount))
 		// Optionally remove the command message itself
 		commandDelete := tgbotapi.NewDeleteMessage(chatID, message.MessageID)
 		bot.DeleteMessage(commandDelete)
@@ -358,19 +365,19 @@ func handleCommand(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 	// globalban - only group admins can execute, globalunban - only global admins
 	case "globalban":
 		if !isAdmin(bot, chatID, userID) {
-			sendMessage(bot, chatID, "You must be an admin to use this command.")
+			sendMessage(bot, chatID, threadID, "You must be an admin to use this command.")
 			return
 		}
 		targetID, reason, err := parseTargetAndReason(message)
 		if err != nil {
-			sendMessage(bot, chatID, fmt.Sprintf("Usage: `/globalban <reason>` (reply to a user) or `/globalban <user_id> <reason>`"))
+			sendMessage(bot, chatID, threadID, fmt.Sprintf("Usage: `/globalban <reason>` (reply to a user) or `/globalban <user_id> <reason>`"))
 			return
 		}
 		if err := GlobalBanUser(client, targetID, reason, userID); err != nil {
-			sendMessage(bot, chatID, fmt.Sprintf("Failed to globally ban user: %v", err))
+			sendMessage(bot, chatID, threadID, fmt.Sprintf("Failed to globally ban user: %v", err))
 			return
 		}
-		sendMessage(bot, chatID, fmt.Sprintf("🚫 User %d has been globally banned. Reason: %s", targetID, reason))
+		sendMessage(bot, chatID, threadID, fmt.Sprintf("🚫 User %d has been globally banned. Reason: %s", targetID, reason))
 
 		// Kick from current chat
 		kickConfig := tgbotapi.KickChatMemberConfig{
@@ -397,107 +404,116 @@ func handleCommand(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 
 	case "globalunban":
 		if !IsGlobalAdmin(userID) {
-			sendMessage(bot, chatID, "❌ Only global admins can use this command.")
+			sendMessage(bot, chatID, threadID, "❌ Only global admins can use this command.")
 			return
 		}
 		targetID, _, err := parseTargetAndReason(message)
 		if err != nil {
-			sendMessage(bot, chatID, "Usage: `/globalunban` (reply to a user) or `/globalunban <user_id>`")
+			sendMessage(bot, chatID, threadID, "Usage: `/globalunban` (reply to a user) or `/globalunban <user_id>`")
 			return
 		}
 		if !IsGloballyBanned(targetID) {
-			sendMessage(bot, chatID, fmt.Sprintf("User %d is not globally banned.", targetID))
+			sendMessage(bot, chatID, threadID, fmt.Sprintf("User %d is not globally banned.", targetID))
 			return
 		}
 		if err := GlobalUnbanUser(client, targetID); err != nil {
-			sendMessage(bot, chatID, fmt.Sprintf("Failed to unban user: %v", err))
+			sendMessage(bot, chatID, threadID, fmt.Sprintf("Failed to unban user: %v", err))
 			return
 		}
-		sendMessage(bot, chatID, fmt.Sprintf("✅ User %d has been globally unbanned.", targetID))
+		sendMessage(bot, chatID, threadID, fmt.Sprintf("✅ User %d has been globally unbanned.", targetID))
 
 	case "globalbannedlist":
 		if !isAdmin(bot, chatID, userID) {
-			sendMessage(bot, chatID, "You must be an admin to use this command.")
+			sendMessage(bot, chatID, threadID, "You must be an admin to use this command.")
 			return
 		}
 		bannedUsers := GetGloballyBannedUsers()
 		if len(bannedUsers) == 0 {
-			sendMessage(bot, chatID, "No globally banned users.")
+			sendMessage(bot, chatID, threadID, "No globally banned users.")
 			return
 		}
 		msg := "🚫 *Globally Banned Users:*\n"
 		for userID, ban := range bannedUsers {
 			msg += fmt.Sprintf("• `%d` - %s (by %d on %s)\n", userID, ban.Reason, ban.BannedBy, ban.BannedAt.Format("2006-01-02"))
 		}
-		sendMessage(bot, chatID, msg)
+		sendMessage(bot, chatID, threadID, msg)
 
 	case "addglobaladmin":
 		if !IsGlobalAdmin(userID) {
-			sendMessage(bot, chatID, "❌ Only global admins can add other global admins.")
+			sendMessage(bot, chatID, threadID, "❌ Only global admins can add other global admins.")
 			return
 		}
 		targetID, _, err := parseTargetAndReason(message)
 		if err != nil {
-			sendMessage(bot, chatID, "Usage: `/addglobaladmin` (reply to a user) or `/addglobaladmin <user_id>`")
+			sendMessage(bot, chatID, threadID, "Usage: `/addglobaladmin` (reply to a user) or `/addglobaladmin <user_id>`")
 			return
 		}
 		if err := AddGlobalAdmin(client, targetID, userID); err != nil {
-			sendMessage(bot, chatID, fmt.Sprintf("Failed to add global admin: %v", err))
+			sendMessage(bot, chatID, threadID, fmt.Sprintf("Failed to add global admin: %v", err))
 			return
 		}
-		sendMessage(bot, chatID, fmt.Sprintf("✅ User %d is now a global admin.", targetID))
+		sendMessage(bot, chatID, threadID, fmt.Sprintf("✅ User %d is now a global admin.", targetID))
 
 	case "removeglobaladmin":
 		if !IsGlobalAdmin(userID) {
-			sendMessage(bot, chatID, "❌ Only global admins can remove global admins.")
+			sendMessage(bot, chatID, threadID, "❌ Only global admins can remove global admins.")
 			return
 		}
 		targetID, _, err := parseTargetAndReason(message)
 		if err != nil {
-			sendMessage(bot, chatID, "Usage: `/removeglobaladmin` (reply to a user) or `/removeglobaladmin <user_id>`")
+			sendMessage(bot, chatID, threadID, "Usage: `/removeglobaladmin` (reply to a user) or `/removeglobaladmin <user_id>`")
 			return
 		}
 		if !IsGlobalAdmin(targetID) {
-			sendMessage(bot, chatID, fmt.Sprintf("User %d is not a global admin.", targetID))
+			sendMessage(bot, chatID, threadID, fmt.Sprintf("User %d is not a global admin.", targetID))
 			return
 		}
 		if err := RemoveGlobalAdmin(client, targetID); err != nil {
-			sendMessage(bot, chatID, fmt.Sprintf("Failed to remove global admin: %v", err))
+			sendMessage(bot, chatID, threadID, fmt.Sprintf("Failed to remove global admin: %v", err))
 			return
 		}
-		sendMessage(bot, chatID, fmt.Sprintf("✅ User %d is no longer a global admin.", targetID))
+		sendMessage(bot, chatID, threadID, fmt.Sprintf("✅ User %d is no longer a global admin.", targetID))
 
 	case "globaladminlist":
 		if !isAdmin(bot, chatID, userID) {
-			sendMessage(bot, chatID, "You must be an admin to use this command.")
+			sendMessage(bot, chatID, threadID, "You must be an admin to use this command.")
 			return
 		}
 		admins := GetGlobalAdmins()
 		if len(admins) == 0 {
-			sendMessage(bot, chatID, "No global admins configured.")
+			sendMessage(bot, chatID, threadID, "No global admins configured.")
 			return
 		}
 		msg := "👑 *Global Admins:*\n"
 		for _, id := range admins {
 			msg += fmt.Sprintf("• `%d`\n", id)
 		}
-		sendMessage(bot, chatID, msg)
+		sendMessage(bot, chatID, threadID, msg)
 
 	case "configglobalkeyboard":
 		if !IsGlobalAdmin(userID) {
-			sendMessage(bot, chatID, "❌ Only global admins can configure the global DM keyboard.")
+			sendMessage(bot, chatID, threadID, "❌ Only global admins can configure the global DM keyboard.")
 			return
 		}
-		sendGlobalKeyboardConfigMenu(bot, chatID)
+		sendGlobalKeyboardConfigMenu(bot, chatID, threadID)
 
 	case "modsettings":
-		sendSettingsMenu(bot, chatID, settings)
+		sendSettingsMenu(bot, chatID, threadID, settings)
 	}
 }
 
 func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery, dbClient interface{}) {
 	client := dbClient.(*mongo.Client)
+
+	// Ignore callbacks that are not attached to a chat message (inline mode).
+	if callback.Message == nil {
+		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
+		return
+	}
+
 	chatID := callback.Message.Chat.ID
+	// Keep responses inside the forum topic the settings menu lives in.
+	threadID := messageThreadID(callback.Message)
 	userID := callback.From.ID
 
 	if !isAdmin(bot, chatID, userID) {
@@ -548,6 +564,7 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 		SetInteractiveState(chatID, userID, AddRuleState{Step: 3}) // Step 3 means we are just waiting for the trigger word
 
 		msg := tgbotapi.NewMessage(chatID, "What keyword should trigger this rule?")
+		msg.MessageThreadID = threadID
 		msg.ReplyMarkup = tgbotapi.ForceReply{ForceReply: true, Selective: true}
 		bot.Send(msg)
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
@@ -572,9 +589,9 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 			if !exists {
 				settings.ScamKeywords = append(settings.ScamKeywords, keyword)
 				SaveChatSettings(client, settings)
-				sendMessage(bot, chatID, fmt.Sprintf("✅ Added `%s` to scam filter.", keyword))
+				sendMessage(bot, chatID, threadID, fmt.Sprintf("✅ Added `%s` to scam filter.", keyword))
 			} else {
-				sendMessage(bot, chatID, "Phrase is already in the scam filter.")
+				sendMessage(bot, chatID, threadID, "Phrase is already in the scam filter.")
 			}
 		}
 		bot.AnswerCallbackQuery(tgbotapi.NewCallback(callback.ID, ""))
@@ -589,36 +606,45 @@ func handleCallbackQuery(bot *tgbotapi.BotAPI, callback *tgbotapi.CallbackQuery,
 	}
 }
 
-func sendSettingsMenu(bot *tgbotapi.BotAPI, chatID int64, settings *ModChatSettings) {
+func sendSettingsMenu(bot *tgbotapi.BotAPI, chatID int64, threadID int, settings *ModChatSettings) {
 	msg := tgbotapi.NewMessage(chatID, "⚙️ *Moderator Bot Settings*")
 	msg.ParseMode = "Markdown"
+	if threadID != 0 {
+		msg.MessageThreadID = threadID
+	}
 	msg.ReplyMarkup = getSettingsKeyboard(settings)
 	bot.Send(msg)
 }
 
-func sendGlobalRuleMenu(bot *tgbotapi.BotAPI, chatID int64) {
+func sendGlobalRuleMenu(bot *tgbotapi.BotAPI, chatID int64, threadID int) {
 	triggers := getEnabledGlobalKeyboardTriggers(getGlobalRuleTriggers())
 	if len(triggers) == 0 {
-		sendMessage(bot, chatID, "No modbot rule responses are configured yet.")
+		sendMessage(bot, chatID, threadID, "No modbot rule responses are configured yet.")
 		return
 	}
 
 	msg := tgbotapi.NewMessage(chatID, "📚 Choose a response from the keyboard:")
+	if threadID != 0 {
+		msg.MessageThreadID = threadID
+	}
 	msg.ReplyMarkup = buildRuleSelectionKeyboardFromTriggers(triggers)
 	if _, err := bot.Send(msg); err != nil {
 		log.Printf("Failed to send rule menu to chat %d: %v", chatID, err)
 	}
 }
 
-func sendGlobalKeyboardConfigMenu(bot *tgbotapi.BotAPI, chatID int64) {
+func sendGlobalKeyboardConfigMenu(bot *tgbotapi.BotAPI, chatID int64, threadID int) {
 	triggers := getGlobalRuleTriggers()
 	if len(triggers) == 0 {
-		sendMessage(bot, chatID, "No modbot rule responses are configured yet.")
+		sendMessage(bot, chatID, threadID, "No modbot rule responses are configured yet.")
 		return
 	}
 
 	msg := tgbotapi.NewMessage(chatID, "⚙️ *Global DM Keyboard Configuration*\nSelect which menu items are visible in the private keyboard.")
 	msg.ParseMode = "Markdown"
+	if threadID != 0 {
+		msg.MessageThreadID = threadID
+	}
 	msg.ReplyMarkup = getGlobalKeyboardConfigInlineKeyboard(triggers)
 	if _, err := bot.Send(msg); err != nil {
 		log.Printf("Failed to send global keyboard configuration menu to chat %d: %v", chatID, err)
@@ -763,9 +789,17 @@ func getGlobalKeyboardConfigInlineKeyboard(triggers []string) tgbotapi.InlineKey
 	return tgbotapi.NewInlineKeyboardMarkup(rows...)
 }
 
-func sendMessage(bot *tgbotapi.BotAPI, chatID int64, text string) {
+// sendMessage sends a Markdown-formatted message to a chat.
+//
+// In forum supergroups (topic-enabled groups) pass the topic id of the
+// originating message (messageThreadID) so the response is posted into the
+// same topic. Pass 0 for private chats and regular (non-forum) groups.
+func sendMessage(bot *tgbotapi.BotAPI, chatID int64, threadID int, text string) {
 	msg := tgbotapi.NewMessage(chatID, text)
 	msg.ParseMode = "Markdown"
+	if threadID != 0 {
+		msg.MessageThreadID = threadID
+	}
 	_, err := bot.Send(msg)
 	if err != nil {
 		log.Printf("Failed to send message: %v", err)
@@ -792,7 +826,7 @@ func purgeLastMessages(bot *tgbotapi.BotAPI, chatID int64, commandMessageID, cou
 	return deleted
 }
 
-func sendModBotHelp(bot *tgbotapi.BotAPI, chatID int64) {
+func sendModBotHelp(bot *tgbotapi.BotAPI, chatID int64, threadID int) {
 	msgText := "*ModBot Commands*\n" +
 		"`/addrule <word> <response>` - add keyword auto-response\n" +
 		"`/addrule <word>` (reply to media) - add media response\n" +
@@ -806,6 +840,9 @@ func sendModBotHelp(bot *tgbotapi.BotAPI, chatID int64) {
 
 	msg := tgbotapi.NewMessage(chatID, msgText)
 	msg.ParseMode = "Markdown"
+	if threadID != 0 {
+		msg.MessageThreadID = threadID
+	}
 	bot.Send(msg)
 }
 

@@ -19,6 +19,8 @@ const groupAnonymousBotID = 1087968824
 
 func handleFilters(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.Client) {
 	chatID := message.Chat.ID
+	// Forum topic (message thread) this message belongs to; 0 for regular chats.
+	threadID := messageThreadID(message)
 
 	// Messages sent via GroupAnonymousBot (anonymous admins) should not be filtered.
 	if message.From == nil || message.From.ID == groupAnonymousBotID {
@@ -75,6 +77,9 @@ func handleFilters(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 			// Show inline menu for this message
 			msg := tgbotapi.NewMessage(chatID, "What would you like to do with the replied message?")
 			msg.ReplyToMessageID = message.MessageID
+			if threadID != 0 {
+				msg.MessageThreadID = threadID
+			}
 
 			var keyboard [][]tgbotapi.InlineKeyboardButton
 
@@ -109,7 +114,7 @@ func handleFilters(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 	// 1. Auto-responder Rule Match (Exact Match)
 	normalizedTrigger := normalizeRuleTrigger(text)
 	if ruleKey, exists := findRuleKeyByNormalizedTrigger(settings, normalizedTrigger); exists {
-		sendRuleResponse(bot, chatID, message.MessageID, settings.Rules[ruleKey])
+		sendRuleResponse(bot, chatID, threadID, message.MessageID, settings.Rules[ruleKey])
 		// We don't return here just in case the message also contained a bad link
 	}
 
@@ -154,33 +159,54 @@ func handleFilters(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 	}
 }
 
-func sendRuleResponse(bot *tgbotapi.BotAPI, chatID int64, replyToMessageID int, rule ModRuleDoc) {
+// sendRuleResponse replies with a rule's configured response. threadID is the
+// forum topic the triggering message came from (0 for regular chats) and must
+// be set so the response is posted into the same topic.
+func sendRuleResponse(bot *tgbotapi.BotAPI, chatID int64, threadID, replyToMessageID int, rule ModRuleDoc) {
 	var msg tgbotapi.Chattable
 
 	switch rule.ResponseType {
 	case "text":
 		textMsg := tgbotapi.NewMessage(chatID, rule.ResponseText)
 		textMsg.ReplyToMessageID = replyToMessageID
+		if threadID != 0 {
+			textMsg.MessageThreadID = threadID
+		}
 		msg = textMsg
 	case "photo":
 		photoMsg := tgbotapi.NewPhotoShare(chatID, rule.ResponseFileID)
 		photoMsg.ReplyToMessageID = replyToMessageID
+		if threadID != 0 {
+			photoMsg.MessageThreadID = threadID
+		}
 		msg = photoMsg
 	case "video":
 		videoMsg := tgbotapi.NewVideoShare(chatID, rule.ResponseFileID)
 		videoMsg.ReplyToMessageID = replyToMessageID
+		if threadID != 0 {
+			videoMsg.MessageThreadID = threadID
+		}
 		msg = videoMsg
 	case "voice":
 		voiceMsg := tgbotapi.NewVoiceShare(chatID, rule.ResponseFileID)
 		voiceMsg.ReplyToMessageID = replyToMessageID
+		if threadID != 0 {
+			voiceMsg.MessageThreadID = threadID
+		}
 		msg = voiceMsg
 	case "document":
 		docMsg := tgbotapi.NewDocumentShare(chatID, rule.ResponseFileID)
 		docMsg.ReplyToMessageID = replyToMessageID
+		if threadID != 0 {
+			docMsg.MessageThreadID = threadID
+		}
 		msg = docMsg
 	case "animation":
 		animMsg := tgbotapi.NewAnimationShare(chatID, rule.ResponseFileID)
 		animMsg.ReplyToMessageID = replyToMessageID
+		if threadID != 0 {
+			animMsg.MessageThreadID = threadID
+		}
 		msg = animMsg
 	default:
 		log.Printf("Unknown rule response type: %s", rule.ResponseType)
@@ -195,6 +221,8 @@ func sendRuleResponse(bot *tgbotapi.BotAPI, chatID int64, replyToMessageID int, 
 
 func handleViolation(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.Client, reason string) {
 	chatID := message.Chat.ID
+	// Keep any in-chat notices in the forum topic of the violating message.
+	threadID := messageThreadID(message)
 
 	// Messages from GroupAnonymousBot (anonymous admins) should not be filtered.
 	if message.From == nil || message.From.ID == groupAnonymousBotID {
@@ -268,7 +296,7 @@ func handleViolation(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mo
 		err := GlobalBanUser(client, userID, reason, 0)
 		if err != nil {
 			log.Printf("Failed to globally ban user %d: %v", userID, err)
-			sendMessage(bot, chatID, fmt.Sprintf("Failed to ban %s globally. Error: %v", username, err))
+			sendMessage(bot, chatID, threadID, fmt.Sprintf("Failed to ban %s globally. Error: %v", username, err))
 			return
 		}
 
@@ -300,7 +328,7 @@ func handleViolation(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mo
 		}
 		settingsMutex.RUnlock()
 
-		sendMessage(bot, chatID, fmt.Sprintf("🚫 %s has been **globally banned** for repeated violations.", username))
+		sendMessage(bot, chatID, threadID, fmt.Sprintf("🚫 %s has been **globally banned** for repeated violations.", username))
 
 		// Update the DM report to reflect the global ban
 		dmReport = fmt.Sprintf("🚨 *GLOBAL BAN*\nUser: %s (ID: %d)\nReason: %s\nViolations: %d\nBanned from all chats.",
@@ -347,18 +375,20 @@ func isAllowedDomain(link string, allowedDomains []string) bool {
 
 func handleInteractiveState(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mongo.Client, settings *ModChatSettings, state AddRuleState) {
 	chatID := message.Chat.ID
+	// Keep the interactive flow inside the forum topic it started in.
+	threadID := messageThreadID(message)
 	userID := message.From.ID
 
 	if message.Text == "/cancel" {
 		ClearInteractiveState(chatID, userID)
-		sendMessage(bot, chatID, "Rule creation cancelled.")
+		sendMessage(bot, chatID, threadID, "Rule creation cancelled.")
 		return
 	}
 
 	if state.Step == 1 {
 		// Expecting trigger word
 		if message.Text == "" {
-			sendMessage(bot, chatID, "Please send a text keyword to trigger the rule, or type /cancel to abort.")
+			sendMessage(bot, chatID, threadID, "Please send a text keyword to trigger the rule, or type /cancel to abort.")
 			return
 		}
 
@@ -366,6 +396,7 @@ func handleInteractiveState(bot *tgbotapi.BotAPI, message *tgbotapi.Message, cli
 		SetInteractiveState(chatID, userID, AddRuleState{Step: 2, TriggerWord: trigger})
 
 		msg := tgbotapi.NewMessage(chatID, fmt.Sprintf("Great! Now send the text or media that should be sent when someone says `%s`.", trigger))
+		msg.MessageThreadID = threadID
 		msg.ParseMode = "Markdown"
 		msg.ReplyMarkup = tgbotapi.ForceReply{ForceReply: true, Selective: true}
 		bot.Send(msg)
@@ -382,14 +413,14 @@ func handleInteractiveState(bot *tgbotapi.BotAPI, message *tgbotapi.Message, cli
 			// We already have the response from the pending rule message
 			// And the current message contains the trigger word
 			if message.Text == "" {
-				sendMessage(bot, chatID, "Please send a text keyword to trigger the rule, or type /cancel to abort.")
+				sendMessage(bot, chatID, threadID, "Please send a text keyword to trigger the rule, or type /cancel to abort.")
 				return
 			}
 			state.TriggerWord = normalizeRuleTrigger(message.Text)
 
 			pendingMsg, exists := GetAndClearPendingRuleMessage(chatID, userID)
 			if !exists || pendingMsg == nil {
-				sendMessage(bot, chatID, "Error: The pending message was lost. Please try again.")
+				sendMessage(bot, chatID, threadID, "Error: The pending message was lost. Please try again.")
 				ClearInteractiveState(chatID, userID)
 				return
 			}
@@ -419,13 +450,13 @@ func handleInteractiveState(bot *tgbotapi.BotAPI, message *tgbotapi.Message, cli
 			rule.ResponseType = "text"
 			rule.ResponseText = msgToProcess.Text
 		} else {
-			sendMessage(bot, chatID, "Unsupported media type. Please send text, photo, video, document, voice, or animation.")
+			sendMessage(bot, chatID, threadID, "Unsupported media type. Please send text, photo, video, document, voice, or animation.")
 			return
 		}
 
 		settings.Rules[state.TriggerWord] = rule
 		SaveChatSettings(client, settings)
 		ClearInteractiveState(chatID, userID)
-		sendMessage(bot, chatID, fmt.Sprintf("✅ Rule added for keyword: `%s`", state.TriggerWord))
+		sendMessage(bot, chatID, threadID, fmt.Sprintf("✅ Rule added for keyword: `%s`", state.TriggerWord))
 	}
 }
