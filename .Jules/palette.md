@@ -24,3 +24,7 @@
 ## 2024-06-15 - Improve Visual Hierarchy for Lists
 **Learning:** Dense text blocks with standard bullet points (`•`) are hard to scan on mobile devices. Using context-relevant emojis combined with em-dashes (`—`) instead of bullet points significantly improves readability and visual hierarchy, making the interface more pleasant to use.
 **Action:** When creating or modifying lists in textual outputs (like `/rules` or introductory messages), replace standard bullet points with context-relevant emojis and em-dashes to enhance scannability.
+
+## 2024-10-24 - Handle empty states gracefully in personal stats dashboard
+**Learning:** When fetching user statistics that depend on previous gameplay (like from WordleEn, AnimePoints, etc), returning "something went wrong" or "No winning stats found" when a user hasn't played yet is confusing and feels like a bug.
+**Action:** Always provide a clear, helpful empty state (e.g., "🤷‍♂️ No stats found yet. Play some games to earn points! 🎮") inside the expected UI layout (like `<blockquote>`) so users know exactly why there's no data and what to do next.
