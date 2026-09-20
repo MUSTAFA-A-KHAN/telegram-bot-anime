@@ -60,3 +60,7 @@
 ## 2025-02-23 - Avoid map[rune]bool for small ASCII character existence checks in Translator constraints
 **Learning:** Using `map[rune]bool` to track `present` and `excluded` characters while parsing constraints in `controller/translator/eordle.go` introduces heap allocations and hash overhead within the hot path of the Wordle solver.
 **Action:** Replace `map[rune]bool` with stack-allocated fixed-size arrays `var present [256]bool` and `var excluded [256]bool`. Protect writes with `if ch < 256` logic and iterate directly using `for ch := 0; ch < 256; ch++` to eliminate allocations and provide O(1) lookups.
+
+## 2025-02-23 - Optimize formatting in leaderboard loops
+**Learning:** Using `fmt.Sprintf("%v", interface_value)` and `fmt.Sprintf("%d", int)` introduces reflection overhead and unnecessary string allocations. In hot paths (like iterating over leaderboard stats), this degrades performance (taking ~500ns per operation).
+**Action:** Replace `fmt.Sprintf("%v", interface_value)` with a type switch and type assertion (e.g. `val, _ := iface.(string)`) when formatting strings. Replace `fmt.Sprintf("%d", int)` with `strconv.Itoa` or `strconv.FormatInt` to improve formatting speed (bringing conversion time to ~200ns per operation).

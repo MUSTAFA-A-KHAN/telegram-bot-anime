@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"html"
 	"log"
+	"strconv"
 	"strings"
 
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/repository"
@@ -27,7 +28,7 @@ func LeaderBoardList(client *mongo.Client, collection string, chatID int64) stri
 
 	for i := 0; i < limit; i++ {
 		count := idCounts[i]
-		name := fmt.Sprintf("%v", count["Name"])
+		name, _ := count["Name"].(string)
 
 		// Fetch and append equipped emojis to the user's name
 		var userID int
@@ -47,11 +48,21 @@ func LeaderBoardList(client *mongo.Client, collection string, chatID int64) stri
 			name += " " + strings.Join(equippedEmojis, "")
 		}
 
-		score := fmt.Sprintf("%v", count["count"])
+		score := ""
+		switch v := count["count"].(type) {
+		case int32:
+			score = strconv.FormatInt(int64(v), 10)
+		case int64:
+			score = strconv.FormatInt(v, 10)
+		case int:
+			score = strconv.Itoa(v)
+		default:
+			score = fmt.Sprintf("%v", v)
+		}
 		if collection == "WordleEn" {
 			score += " 🪙"
 		}
-		rankDisplay := fmt.Sprintf("%d", i+1)
+		rankDisplay := strconv.Itoa(i + 1)
 		if i < 3 {
 			rankDisplay = rankEmojis[i]
 		} else {

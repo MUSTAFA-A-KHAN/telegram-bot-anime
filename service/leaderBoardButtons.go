@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 
 	"github.com/MUSTAFA-A-KHAN/telegram-bot-anime/repository"
@@ -36,7 +37,7 @@ func LeaderBoardListButtons(client *mongo.Client, collection string, chatID int6
 
 	for i := 0; i < limit; i++ {
 		count := idCounts[i]
-		name := fmt.Sprintf("%v", count["Name"])
+		name, _ := count["Name"].(string)
 
 		var userID int
 		if id, ok := count["_id"]; ok {
@@ -55,7 +56,17 @@ func LeaderBoardListButtons(client *mongo.Client, collection string, chatID int6
 			name += " " + strings.Join(equippedEmojis, "")
 		}
 
-		score := fmt.Sprintf("%v", count["count"])
+		score := ""
+		switch v := count["count"].(type) {
+		case int32:
+			score = strconv.FormatInt(int64(v), 10)
+		case int64:
+			score = strconv.FormatInt(v, 10)
+		case int:
+			score = strconv.Itoa(v)
+		default:
+			score = fmt.Sprintf("%v", v)
+		}
 		if collection == "WordleEn" {
 			score += " 🪙"
 		} else if collection == "ScramyEn" {
@@ -66,7 +77,7 @@ func LeaderBoardListButtons(client *mongo.Client, collection string, chatID int6
 			score += " 🔠"
 		}
 
-		rankDisplay := fmt.Sprintf("%d", i+1)
+		rankDisplay := strconv.Itoa(i + 1)
 		style := "primary" // Telegram only supports "primary", "success", "danger"
 		if i < 3 {
 			rankDisplay = rankEmojis[i]
