@@ -17,6 +17,10 @@ func LeaderBoardList(client *mongo.Client, collection string, chatID int64) stri
 	}
 
 	limit := 10
+	if len(idCounts) == 0 {
+		return "🏆 <b>Top 10 Players Leaderboard</b> 🏆\n<blockquote>\n🤷‍♂️ No players found yet.\nBe the first to get on the board! 🎮\n</blockquote>"
+	}
+
 	if len(idCounts) < limit {
 		limit = len(idCounts)
 	}
@@ -71,7 +75,7 @@ func GetUserStatsByID(client *mongo.Client, userID int) string {
 	stats := "something went wrong"
 	isBlockquoteOpen := false
 	if err != nil {
-		stats = "No winning stats found"
+		stats = "📊 <b>Word Guess Stats</b>\n<blockquote>\n🤷‍♂️ No stats found yet.\nPlay some games to earn points! 🎮\n</blockquote>"
 	} else {
 		name, _ := result["Name"].(string)
 
@@ -109,7 +113,7 @@ func GetWordleUserStatsByID(client *mongo.Client, userID int) string {
 	result, err := repository.GetUserStatsByID(client, "WordleEn", userID)
 	stats := "something went wrong"
 	if err != nil {
-		stats = "No winning stats found"
+		stats = "📊 <b>Wordle Stats</b>\n<blockquote>\n🤷‍♂️ No stats found yet.\nPlay some games to earn points! 🎮\n</blockquote>"
 	} else {
 		name, _ := result["Name"].(string)
 
@@ -140,7 +144,7 @@ func GetScramyUserStatsByID(client *mongo.Client, userID int) string {
 	result, err := repository.GetUserStatsByID(client, "ScramyEn", userID)
 	stats := "something went wrong"
 	if err != nil {
-		stats = "No winning stats found"
+		stats = "📊 <b>Scramy Stats</b>\n<blockquote>\n🤷‍♂️ No stats found yet.\nPlay some games to earn points! 🎮\n</blockquote>"
 	} else {
 		name, _ := result["Name"].(string)
 		count := 0
@@ -164,7 +168,7 @@ func GetAnimeUserStatsByID(client *mongo.Client, userID int) string {
 	result, err := repository.GetUserStatsByID(client, "AnimePoints", userID)
 	stats := "something went wrong"
 	if err != nil {
-		stats = "No winning stats found"
+		stats = "📊 <b>Anime Stats</b>\n<blockquote>\n🤷‍♂️ No stats found yet.\nPlay some games to earn points! 🎮\n</blockquote>"
 	} else {
 		name, _ := result["Name"].(string)
 		count := 0
@@ -188,7 +192,7 @@ func GetGeographyUserStatsByID(client *mongo.Client, userID int) string {
 	result, err := repository.GetUserStatsByID(client, "GeographyPoints", userID)
 	stats := "something went wrong"
 	if err != nil {
-		stats = "No winning stats found"
+		stats = "📊 <b>Geography Stats</b>\n<blockquote>\n🤷‍♂️ No stats found yet.\nPlay some games to earn points! 🎮\n</blockquote>"
 	} else {
 		name, _ := result["Name"].(string)
 		count := 0
@@ -212,7 +216,7 @@ func GetWordGridUserStatsByID(client *mongo.Client, userID int) string {
 	result, err := repository.GetUserStatsByID(client, "WordGridPoints", userID)
 	stats := "something went wrong"
 	if err != nil {
-		stats = "No winning stats found"
+		stats = "📊 <b>Word Grid Stats</b>\n<blockquote>\n🤷‍♂️ No stats found yet.\nPlay some games to earn points! 🎮\n</blockquote>"
 	} else {
 		name, _ := result["Name"].(string)
 		count := 0
