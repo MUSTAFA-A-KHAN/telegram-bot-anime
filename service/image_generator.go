@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"image/color"
 	"log"
+	"strconv"
 	"strings"
 
 	"image"
@@ -90,7 +91,7 @@ func GenerateLeaderboardImage(client *mongo.Client, collection string, chatID in
 		for i := 0; i < limit; i++ {
 			y += 50
 			count := idCounts[i]
-			name := fmt.Sprintf("%v", count["Name"])
+			name, _ := count["Name"].(string)
 
 			// Try getting emojis, but `gg` might not render unicode emojis well.
 			// We will try our best.
@@ -111,7 +112,17 @@ func GenerateLeaderboardImage(client *mongo.Client, collection string, chatID in
 				name += " " + strings.Join(equippedEmojis, "")
 			}
 
-			score := fmt.Sprintf("%v", count["count"])
+			score := ""
+			switch v := count["count"].(type) {
+			case int32:
+				score = strconv.FormatInt(int64(v), 10)
+			case int64:
+				score = strconv.FormatInt(v, 10)
+			case int:
+				score = strconv.Itoa(v)
+			default:
+				score = fmt.Sprintf("%v", v)
+			}
 			if collection == "WordleEn" {
 				score += " pts"
 			} else if collection == "ScramyEn" {
@@ -120,7 +131,7 @@ func GenerateLeaderboardImage(client *mongo.Client, collection string, chatID in
 				score += " pts"
 			}
 
-			rankDisplay := fmt.Sprintf("#%d", i+1)
+			rankDisplay := "#" + strconv.Itoa(i+1)
 
 			// Highlight top 3
 			if i == 0 {
@@ -234,7 +245,7 @@ func GenerateCollectibleImage(bot *tgbotapi.BotAPI, item collectible.Item, templ
 	dc.SetFontFace(faceBold)
 
 	// Draw Serial Number overlay (Top Left)
-	serialText := fmt.Sprintf("#%d", item.SerialNumber)
+	serialText := "#" + strconv.Itoa(item.SerialNumber)
 
 	// Draw background box for serial number
 	w, h := dc.MeasureString(serialText)

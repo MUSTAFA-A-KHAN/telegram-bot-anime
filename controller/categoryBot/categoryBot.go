@@ -1568,8 +1568,19 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 
 		for i := 0; i < limit; i++ {
 			count := idCounts[i]
-			name := fmt.Sprintf("%v", count["Name"])
-			score := fmt.Sprintf("%v", count["count"]) + " 💎"
+			name, _ := count["Name"].(string)
+			score := ""
+			switch v := count["count"].(type) {
+			case int32:
+				score = strconv.FormatInt(int64(v), 10)
+			case int64:
+				score = strconv.FormatInt(v, 10)
+			case int:
+				score = strconv.Itoa(v)
+			default:
+				score = fmt.Sprintf("%v", v)
+			}
+			score += " 💎"
 
 			var userID int
 			if id, ok := count["_id"]; ok {
@@ -1589,7 +1600,7 @@ func handleMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, client *mong
 				name += " " + strings.Join(equippedEmojis, "")
 			}
 
-			rankDisplay := fmt.Sprintf("%d", i+1)
+			rankDisplay := strconv.Itoa(i + 1)
 			if i < 3 {
 				rankDisplay = rankEmojis[i]
 			} else {
