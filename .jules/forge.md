@@ -25,3 +25,6 @@ Action: When parsing or evaluating Wordle/Eordle game board feedback emojis, alw
 YYYY-MM-DD - Add Cancellation to Anime Game
 Learning: Consistent user experience across different game modes (like having a "Cancel" feature) is a valuable, low-risk improvement that prevents users from getting stuck in an unwanted state.
 Action: Always check if newly added game modes or features lack standard navigational or state-reset commands that exist in similar older features, and implement them to maintain a uniform UX.
+YYYY-MM-DD - Add Cancellation to Anime Game in Category Bot
+Learning: Consistent user experience across different game modes (like having a "Cancel" feature) is a valuable, low-risk improvement that prevents users from getting stuck in an unwanted state. When game modes exist across multiple bots (like main bot and category bot), it's easy to miss commands in one of them.
+Action: Always check if newly added game modes or features lack standard navigational or state-reset commands that exist in similar older features, and implement them across all relevant bots to maintain a uniform UX.
